@@ -1,12 +1,12 @@
 // Teaching content, in every language: tutorials run, every level has an intro, and hints /
 // "similar problem" examples never solve the terminal they belong to.
-const { LANGS, runChallenge, GameData } = require('./langs.js');
+const { LANGS, runChallenge, GameData, levelsOf } = require('./langs.js');
 const { CH, LEVELS } = GameData;
 let fails = 0;
 const fail = (...a) => { fails++; console.log('FAIL', ...a); };
 (async () => {
   for (const lang of LANGS) {
-    for (const L of LEVELS) {
+    for (const L of levelsOf(lang)) {
       if (!L.intro[lang]) fail(lang, L.id, 'no level intro');
       const pages = GameData.tutorialFor(L.id, lang);
       if (!pages || pages.length < 2) { fail(lang, L.id, 'no tutorial'); continue; }

@@ -13,6 +13,11 @@
     cave: { sky: ['#14112c', '#2b2756'], ground: '#4b4472', dark: '#37315a', top: '#8b7fe0', wall: '#3a335f', far: '#211d44', far2: '#2a2550', glyph: 'rgba(140,130,255,0.25)' },
     circuit: { sky: ['#041319', '#0b3340'], ground: '#1b4954', dark: '#133640', top: '#2ef2c8', wall: '#15323c', far: '#0a2a33', far2: '#0e3843', glyph: 'rgba(46,242,200,0.25)' },
     wilds: { sky: ['#ff8f7a', '#ffd9a0'], ground: '#5b3e2c', dark: '#45301f', top: '#79c850', wall: '#7c6b5e', far: '#d77a6f', far2: '#e9a07c', glyph: 'rgba(255,255,255,0.3)' },
+    isle: { style: 'meadow', sky: ['#4fc3e8', '#c9f4ff'], ground: '#a07a4f', dark: '#7d5c3a', top: '#f2d98b', wall: '#7f8f99', far: '#3fa9a0', far2: '#62c4b0', glyph: 'rgba(255,255,255,0.35)' },
+    neon: { style: 'circuit', sky: ['#0a0220', '#2a0a4a'], ground: '#2a1450', dark: '#1c0d38', top: '#ff4fd8', wall: '#25124a', far: '#160838', far2: '#4a1a80', glyph: 'rgba(255,79,216,0.28)' },
+    forge: { style: 'lair', sky: ['#1a0d05', '#4a2410'], ground: '#4a3a32', dark: '#33281f', top: '#ff9a3c', wall: '#5a4a40', far: '#2a1a10', far2: '#3a2414', glyph: 'rgba(255,154,60,0.25)' },
+    crystal: { style: 'cave', sky: ['#0b1238', '#2d3f8a'], ground: '#3d4f9a', dark: '#2a3878', top: '#9ff0ff', wall: '#34448a', far: '#1c2a66', far2: '#2a3c80', glyph: 'rgba(159,240,255,0.3)' },
+    coffee: { style: 'wilds', sky: ['#c98a5a', '#f4d9b0'], ground: '#5a3a26', dark: '#40281a', top: '#d9a066', wall: '#6e5444', far: '#a0684a', far2: '#b87f5a', glyph: 'rgba(255,240,220,0.35)' },
     lair: { sky: ['#0d0108', '#3b0a1c'], ground: '#2b1022', dark: '#1f0b19', top: '#ff2d6b', wall: '#3a1830', far: '#1d0612', far2: '#290a1a', glyph: 'rgba(255,45,107,0.25)' },
   };
 
@@ -95,8 +100,8 @@
     get maxHp() { return 3 + this.skill('vitality'); }
 
     // ------------------------------------------------------------- level loading
-    load(index) {
-      const L = GameData.LEVELS[index];
+    load(index, level) {
+      const L = level || GameData.LEVELS[index];
       this.levelIndex = index; this.L = L;
       this.theme = THEMES[L.theme] || THEMES.meadow;
       const rows = L.map;
@@ -150,8 +155,9 @@
       const p = this.player = { x: start.x, y: start.y, w: 20, h: 30, vx: 0, vy: 0, onGround: false, facing: 1, coyote: 0, jumpBuf: 0, jumps: 0, inv: 0, attackT: 0, attackCD: 0, hp: this.maxHp, dead: 0, hist: [] };
       // checkpoint restore
       // each level keeps its own checkpoint, so replaying an old level never moves your main progress
-      const legacy = this.save.checkpoint && this.save.checkpoint.level === index ? this.save.checkpoint : null;
-      const cp = (this.save.checkpoints || {})[index] || legacy;
+      const P = this.prog();
+      const legacy = !L.chapter && this.save.checkpoint && this.save.checkpoint.level === index ? this.save.checkpoint : null;
+      const cp = (P.checkpoints || {})[index] || legacy;
       if (cp) {
         p.x = cp.x * TILE + 6; p.y = (cp.y + 1) * TILE - 30;
         const k = this.checkpoints.find(k => k.x === cp.x && k.y === cp.y); if (k) k.active = true;
@@ -190,6 +196,8 @@
     solidAt(tx, ty) { return SOLID.has(this.tileAt(tx, ty)); }
 
     // ------------------------------------------------------------- effects called by challenges
+    // progress record of the chapter being played (Chapter 2 keeps its own)
+    prog() { return (this.app && this.app.prog) ? this.app.prog() : this.save; }
     openGate(g) {
       for (const gate of this.gates) if (gate.g === g && !gate.open) {
         gate.open = true; gate.anim = this.instantMode ? 1 : 0;
@@ -412,8 +420,9 @@
       for (const k of this.checkpoints) {
         if (!k.active && overlap(p, { x: k.x * TILE + 8, y: k.y * TILE - 16, w: 16, h: 48 })) {
           this.checkpoints.forEach(o => o.active = false); k.active = true;
-          if (!this.save.checkpoints) this.save.checkpoints = {};
-          this.save.checkpoints[this.levelIndex] = { x: k.x, y: k.y };
+          const P = this.prog();
+          if (!P.checkpoints) P.checkpoints = {};
+          P.checkpoints[this.levelIndex] = { x: k.x, y: k.y };
           this.respawnPoint = { x: k.x * TILE + 6, y: (k.y + 1) * TILE - 30 };
           p.hp = this.maxHp;
           this.burst(k.x * TILE + 16, k.y * TILE, '#58ff8b', 14);
@@ -806,7 +815,7 @@
       const g = ctx.createLinearGradient(0, 0, 0, VH);
       g.addColorStop(0, th.sky[0]); g.addColorStop(1, th.sky[1]);
       ctx.fillStyle = g; ctx.fillRect(0, 0, VW, VH);
-      const theme = this.L.theme;
+      const theme = th.style || this.L.theme;
       // far layer
       const off1 = this.cam.x * 0.15, off2 = this.cam.x * 0.35;
       const baseY = VH - (this.cam.y - Math.max(0, this.H * TILE - VH)) * 0.2;

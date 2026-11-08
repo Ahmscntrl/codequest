@@ -1,13 +1,13 @@
 // Every terminal, in every language: the reference solution passes, the starter code alone does not,
 // and every glitch snippet really contains an error.
-const { LANGS, SOL, runChallenge, GameData } = require('./langs.js');
+const { LANGS, SOL, runChallenge, GameData, levelsOf } = require('./langs.js');
 const { CH, LEVELS, SNIPPETS } = GameData;
 let fails = 0;
 const fail = (...a) => { fails++; console.log('FAIL', ...a); };
 (async () => {
   for (const lang of LANGS) {
     let n = 0;
-    for (const L of LEVELS) for (const id of L.terminals) {
+    for (const L of levelsOf(lang)) for (const id of L.terminals) {
       const ch = CH[id];
       if (!SOL[id] || !SOL[id][lang]) { fail(lang, id, 'no reference solution'); continue; }
       if (!ch.starter[lang]) { fail(lang, id, 'no starter code'); continue; }
