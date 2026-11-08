@@ -3,7 +3,7 @@
   'use strict';
 
   const SKIN = ['#ffdbac', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a1e', '#a8e6cf', '#b4a7ff'];
-  const CLOTH = ['#4f8cff', '#ff5470', '#2ec4b6', '#ffbe0b', '#8338ec', '#fb5607', '#3a3a3a', '#f4f4f4', '#06d6a0', '#ef476f'];
+  const CLOTH = ['#4f8cff', '#ff5470', '#2ec4b6', '#ffbe0b', '#8338ec', '#fb5607', '#3a3a3a', '#f4f4f4', '#06d6a0', '#7a4b2a'];
   const HATS = ['none', 'cap', 'wizard', 'crown', 'beanie', 'headphones', 'antenna', 'bow'];
   const EYES = ['dots', 'happy', 'glasses', 'visor'];
 

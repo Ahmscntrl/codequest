@@ -1161,9 +1161,7 @@ System.out.println("Served: " + CoffeeMachine.getCupsServed() + " cups, " + mach
   GD.addChapter2('java', {
     title: 'The Coffee Works',
     blurb: 'Deep in the hills stands the Coffee Works, a great steaming factory of Java machines, and the bugs have jammed every one of them.',
-    outro: `<p>The boilers hiss, the grinders spin, and the smell of fresh coffee drifts over Syntaxia again. <b>The Coffee Works is running!</b></p>
-      <p>You now know the heart of Java: <b>encapsulation</b>, <b>static</b> members, <b>inheritance</b>, <b>interfaces</b> and <b>abstract classes</b>, <b>collections</b> with <b>lambdas</b> and <b>streams</b>, and <b>exceptions</b>. Android apps and giant servers are built from these same pieces.</p>
-      <p>Pour yourself a cup. You've earned it.</p>`,
+    outro: '<p>The boilers are running again. Encapsulation, inheritance, interfaces, collections with lambdas and exceptions are the core of everyday Java.</p>',
     theme: 'coffee',
     challenges: ch,
     levels: [

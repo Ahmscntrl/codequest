@@ -119,6 +119,15 @@
   }
 
   // ---------------------------------------------------------------- friendly error explanations
+  // what an error is called in the player's language (the C-family interpreter uses Python-style names inside)
+  function errName(err, lang) {
+    const t = err.type;
+    if (lang !== 'cpp' && lang !== 'csharp' && lang !== 'java') return t;
+    if (/^(SyntaxError|NameError|TypeError|AccessError)$/.test(t)) return 'Compile error';
+    if (t === 'RuntimeError') return lang === 'java' ? 'Exception' : lang === 'csharp' ? 'Unhandled exception' : 'Runtime error';
+    if (t === 'TimeoutError') return 'Timeout';
+    return t;
+  }
   function explain(err, lang) {
     const py = lang === 'python';
     if (Lang.get(lang).family === 'c') return explainC(err, lang);
@@ -155,6 +164,7 @@
       if (/main/.test(m)) return lang === 'java' ? 'Java code runs from <code>public static void main(String[] args)</code>, which must be inside a class. Keep your code inside main.' : 'C++ code runs from <code>int main() { ... }</code>. Statements have to go inside a function like main.';
       return `${L.label} couldn't understand this line. Look for a missing semicolon <code>;</code>, bracket <code>( )</code>, brace <code>{ }</code> or quote.`;
     }
+    if (t === 'AccessError') return `That member is <b>private</b> (or protected), so only code inside its own class can use it. Go through a public method or property instead.`;
     if (t === 'NameError') return `You used a name ${L.label} doesn't know. Check the spelling (capital letters matter), and remember a variable must be <b>declared with a type</b> before you use it (like <code>${lang === 'java' ? 'String' : 'string'} color = "red";</code>).`;
     if (t === 'TypeError') return `In ${L.label}, every variable has a <b>type</b> and only holds values of that type: ${types}.` + (lang === 'cpp' && /operator\+/.test(m) ? ' To glue a number onto text, turn it into text first with <code>to_string(n)</code>.' : '');
     if (t === 'TimeoutError') return 'Your code never finished! A loop that never stops is called an <b>infinite loop</b>. Make sure your loop condition eventually becomes false.';
@@ -188,7 +198,6 @@
       this.bindEditor();
       $('#map-back').onclick = () => { Sound.play('click'); this.showScreen('game'); this.game.running = true; this.updateHUD(); };
       $('#map-title').onclick = () => { Sound.play('click'); this.persist(); this.showTitle(); };
-      this.bindTouch();
       this.fit();
       window.addEventListener('resize', () => this.fit());
       setInterval(() => { if (this.save && this.screen === 'game' && !this.game.frozen) this.save.playtime = (this.save.playtime || 0) + 1; }, 1000);
@@ -442,8 +451,8 @@
       if (this.chapter() === 1) this.save.checkpoint = null;
       this.persist();
       const nextL = LV[P.level];
-      this.dialog(`Level ${LV.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b>: ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${P.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
-        [{ label: 'Map', fn: () => this.showMap(false) }, { label: 'Next level ▶', cls: 'primary', fn: () => this.loadLevel(P.level) }], { noClose: true });
+      this.dialog(`Level ${LV.indexOf(L) + 1} complete!`, `<p><b>${escapeHTML(L.topic)}</b>: ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${P.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
+        [{ label: 'Map', fn: () => this.showMap(false) }, { label: 'Next level', cls: 'primary', fn: () => this.loadLevel(P.level) }], { noClose: true });
     }
     chapter2Complete() {
       const P = this.prog(), def = this.save.course ? GameData.COURSES[this.save.course] : GameData.CHAPTER2[this.save.lang];
@@ -453,7 +462,7 @@
       if (first) this.save.sp += 3;
       this.persist();
       Sound.play('victory');
-      this.dialog(`${escapeHTML(def.title)} complete!`, `<p class="big-check">✔</p><p>You finished ${this.save.course ? `<b>${escapeHTML(def.title)}</b>` : `<b>Chapter 2</b> of ${LANGS[this.save.lang].label}`}: ${def.levels.map(l => '<b>' + escapeHTML(l.topic) + '</b>').join(', ')}.</p>${def.outro ? `<p>${def.outro}</p>` : ''}<p class="muted">${first ? '+3 SP bonus. ' : ''}You can replay any level from the map.</p>`,
+      this.dialog(`${escapeHTML(def.title)} complete!`, `<p>You finished ${this.save.course ? `<b>${escapeHTML(def.title)}</b>` : `<b>Chapter 2</b> of ${LANGS[this.save.lang].label}`}.</p>${def.outro ? `<p>${def.outro}</p>` : ''}<p class="muted">${first ? '+3 SP bonus. ' : ''}You can replay any level from the map.</p>`,
         [{ label: 'Title screen', fn: () => this.showTitle() }, { label: 'Map', cls: 'primary', fn: () => this.showMap(false) }], { noClose: true, wide: true });
     }
     victory() {
@@ -469,14 +478,14 @@
       const mins = Math.floor((s.playtime || 0) / 60);
       const lang = LANGS[s.lang];
       this.dialog('Segfault is defeated!', `
-        <p>With one last blast of compiled code, the Bug King dissolves into harmless comments. Syntaxia is <b>bug-free</b>... for now.</p>
+        <p>Segfault breaks apart into a pile of harmless comments. The bugs are gone, for now.</p>
         <div class="credits">
           <div><span>Hero</span><b>${escapeHTML(s.hero.name)}</b></div>
           <div><span>Language</span><b>${lang.label}</b></div>
           <div><span>Bugs squashed</span><b>${s.bugs}</b></div>
           <div><span>Terminals solved</span><b>${Object.keys(s.solved).length}</b></div>
           <div><span>Companions</span><b>i${s.pet ? ', ' + escapeHTML(s.pet.name) : ''}</b></div>
-          <div><span>Weapon</span><b>${s.weapon ? escapeHTML(s.weapon.name) : 'None (pure code!)'}</b></div>
+          <div><span>Weapon</span><b>${s.weapon ? escapeHTML(s.weapon.name) : 'None'}</b></div>
           <div><span>Time</span><b>${mins} min</b></div>
         </div>
         <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>.</p>
@@ -565,13 +574,13 @@
       const i = this.mapSel, L = LV[i];
       const locked = i > max, done = open && this.levelDone(i, ch);
       const why = !open ? (ch === 2 ? 'Defeat Segfault in Chapter 1 to unlock' : 'Locked') : `Finish ${i > 0 ? LV[i - 1].topic : 'the previous level'} to unlock`;
-      const label = locked ? 'Locked' : i === front && !done ? (L.terminals.some(id => s.solved[id] !== undefined) || P.checkpoints[i] ? 'Continue ▶' : 'Start ▶') : done ? '↺ Replay' : 'Play ▶';
+      const label = locked ? 'Locked' : i === front && !done ? (L.terminals.some(id => s.solved[id] !== undefined) || P.checkpoints[i] ? 'Continue' : 'Start') : done ? 'Replay' : 'Play';
       const terms = L.terminals.map(id => {
         const t = CH[id]; const solved = s.solved[id] !== undefined;
-        return `<span class="mp-term ${solved ? 'solved' : ''}">${solved ? '✔ ' : ''}${escapeHTML(t.title.replace(/^Side Quest — /, ''))}</span>`;
+        return `<span class="mp-term ${solved ? 'solved' : ''}">${escapeHTML(t.title.replace(/^Side Quest — /, ''))}</span>`;
       }).join('');
       $('#map-panel').innerHTML = `
-        <div><div class="mp-kicker">${course ? '' : `Chapter ${ch} · `}Level ${i + 1}${locked ? ' · locked' : done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
+        <div><div class="mp-kicker">${course ? '' : `Chapter ${ch} · `}Level ${i + 1}${locked ? ' · locked' : done ? ' · complete' : i === front ? ' · you are here' : ''}</div>
         <div class="mp-title">${escapeHTML(L.topic)}</div>
         <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ': ' : ''}${escapeHTML(L.blurb)}</div>
         <div class="mp-terms">${terms}</div>
@@ -753,7 +762,7 @@
         [{ label: Sound.on ? 'Sound on' : 'Sound off', keepOpen: true, fn: () => { Sound.on = !Sound.on; try { localStorage.setItem('codequest.sound', Sound.on ? 'on' : 'off'); } catch (e) { /* ignore */ } $$('#modal-btns .btn')[0].innerHTML = Sound.on ? 'Sound on' : 'Sound off'; } },
           { label: 'Save & quit', fn: () => { this.persist(); this.showTitle(); } },
           { label: 'Map', fn: () => this.showMap(true) },
-          { label: 'Resume ▶', cls: 'primary', fn: () => this.persist() }],
+          { label: 'Resume', cls: 'primary', fn: () => this.persist() }],
         { wide: true });
       if (s.course) this.bindLangSwitch($('#modal'), () => { this.closeModal ? this.closeModal() : null; this.pause(); });
     }
@@ -937,10 +946,10 @@
         const LVs = this.levels().some(l => l.terminals.includes(ed.chId)) ? this.levels() : LEVELS;
         const li = LVs.findIndex(l => l.terminals.includes(ed.chId));
         const Lv = LVs[li];
-        $('#ed-kicker').textContent = `${LVs === LEVELS ? '' : 'CH2 · '}LEVEL ${li + 1} · ${Lv.topic.toUpperCase()} · TERMINAL ${Lv.terminals.indexOf(ed.chId) + 1}/${Lv.terminals.length}` + (solved ? ' · SOLVED ✔' : '');
+        $('#ed-kicker').textContent = `${this.chapter() === 2 && LVs !== LEVELS ? 'CH2 · ' : ''}LEVEL ${li + 1} · ${Lv.topic.toUpperCase()} · TERMINAL ${Lv.terminals.indexOf(ed.chId) + 1}/${Lv.terminals.length}` + (solved ? ' · SOLVED ✔' : '');
         $('#ed-title').textContent = ch.title;
         let html = GameData.descFor(ed.chId, ctx);
-        if (solved) html += '<p class="solved-note">✔ Already solved. Experiment all you like, nothing will break.</p>';
+        if (solved) html += '<p class="solved-note">Already solved. Experiment all you like, nothing will break.</p>';
         if (ed.chId === 'cannon' && this.save.cannonCorrupt) html += '<p class="corrupt-note">Segfault <b>corrupted</b> this code! Find and fix the error, then fire.</p>';
         $('#ed-desc').innerHTML = html;
         // variables + functions
@@ -1029,11 +1038,11 @@
         const key = T.page;
         $('#tut-code').value = T.code[key] !== undefined ? T.code[key] : p.code[lang];
         $('#tut-code').rows = Math.min(12, Math.max(3, $('#tut-code').value.split('\n').length + 1));
-        $('#tut-out').innerHTML = '<div class="c-dim">Press ▶ Run to see what this code does.</div>';
+        $('#tut-out').innerHTML = '<div class="c-dim">Press Run to see what this code does.</div>';
       }
       $('#tut-prev').disabled = T.page === 0;
       const last = T.page === T.pages.length - 1;
-      $('#tut-next').innerHTML = last ? (this.editorOpen ? 'Back to the terminal ▶' : this.screen === 'map' ? 'Back to the map' : 'Start the level ▶') : 'Next ▶';
+      $('#tut-next').innerHTML = last ? (this.editorOpen ? 'Back to the terminal' : this.screen === 'map' ? 'Back to the map' : 'Start the level') : 'Next';
       $('#tut-count').textContent = `${T.page + 1} / ${T.pages.length}`;
     }
     async runTutorial() {
@@ -1043,7 +1052,7 @@
       const r = await CodeRunner.run(this.save.lang, code, { globals: {}, api: {} });
       this.playLoop($('#tut-i-stage'), r.loop);
       let html = r.output.slice(0, 100).map(l => `<div class="c-out">${escapeHTML(l) || '&nbsp;'}</div>`).join('');
-      if (r.error) html += `<div class="c-err">${r.error.line ? 'Line ' + r.error.line + ': ' : ''}<b>${escapeHTML(r.error.type)}</b>: ${escapeHTML(r.error.message)}</div><div class="c-dim">${explain(r.error, this.save.lang)}</div>`;
+      if (r.error) html += `<div class="c-err">${r.error.line ? 'Line ' + r.error.line + ': ' : ''}<b>${escapeHTML(errName(r.error, this.save.lang))}</b>: ${escapeHTML(r.error.message)}</div><div class="c-dim">${explain(r.error, this.save.lang)}</div>`;
       if (!html) html = '<div class="c-dim">(nothing printed)</div>';
       $('#tut-out').innerHTML = html;
       Sound.play(r.error ? 'error' : 'click');
@@ -1098,7 +1107,7 @@
       const lang = this.save.lang;
       const con = $('#console');
       const where = err.line ? `Line ${err.line}: ` : '';
-      con.innerHTML += `<div class="c-err">${label ? `<span class="c-label">${escapeHTML(label)}</span> ` : ''}${escapeHTML(where)}<b>${escapeHTML(err.type)}</b>: ${escapeHTML(err.message)}</div>`;
+      con.innerHTML += `<div class="c-err">${label ? `<span class="c-label">${escapeHTML(label)}</span> ` : ''}${escapeHTML(where)}<b>${escapeHTML(errName(err, lang))}</b>: ${escapeHTML(err.message)}</div>`;
       if (err.line) {
         this.ed.errLine = err.line;
         const el = $('#err-line');
@@ -1108,7 +1117,7 @@
       }
       const fb = $('#feedback');
       fb.className = 'feedback bad';
-      fb.innerHTML = `<b>${escapeHTML(err.type)}</b>: ${explain(err, lang)}`;
+      fb.innerHTML = `<b>${escapeHTML(errName(err, lang))}</b>: ${explain(err, lang)}`;
       Sound.play('error');
     }
     // The i friend acts out the first for loop of a run: one hop per pass, holding up the loop variable.
@@ -1200,7 +1209,7 @@
       this.save.solved[ed.chId] = res.data === undefined ? true : res.data;
       this.persist();
       this.pendingEffect = () => { ch.effect(this.game, res.data); this.persist(); this.updateHUD(); };
-      fb.innerHTML += '<div class="closing">✔ Solved! Closing terminal...</div>';
+      fb.innerHTML += '<div class="closing">Solved. Closing the terminal...</div>';
       setTimeout(() => { if (this.ed && this.ed.chId === ed.chId) this.closeEditor(); }, 1500);
     }
     async runDebug(code) {
@@ -1224,7 +1233,7 @@
       this.persist();
       Sound.play('success');
       fb.className = 'feedback good';
-      fb.innerHTML = `✔ <b>${G.name} fixed!</b> ${G.effect.replace('disabled', 'restored').replace('reversed', 'back to normal').replace('slowed', 'back to full speed')}.`;
+      fb.innerHTML = `<b>${G.name} fixed.</b> ${G.effect.replace('disabled', 'restored').replace('reversed', 'back to normal').replace('slowed', 'back to full speed')}.`;
       this.toast(`Glitch fixed: <b>${G.name}</b>`, 'good');
       const remaining = Object.keys(this.save.glitches);
       setTimeout(() => {
@@ -1234,18 +1243,6 @@
       }, 1300);
     }
 
-    // ------------------------------------------------------------ touch controls
-    bindTouch() {
-      const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-      if (!isTouch) return;
-      document.body.classList.add('touch');
-      $$('#touch [data-k]').forEach(b => {
-        const k = b.dataset.k;
-        const down = (e) => { e.preventDefault(); Sound.ensure(); if (this.inputBlocked()) return; this.game.virtualKey(k, true); b.classList.add('on'); };
-        const up = (e) => { e.preventDefault(); this.game.virtualKey(k, false); b.classList.remove('on'); };
-        b.addEventListener('pointerdown', down); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up); b.addEventListener('pointerleave', up);
-      });
-    }
   }
 
   window.addEventListener('DOMContentLoaded', () => { window.app = new App(); });

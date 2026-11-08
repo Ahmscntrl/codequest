@@ -6,7 +6,7 @@
     title: 'Data Structures & Algorithms',
     short: 'DSA',
     blurb: 'Searching, sorting, stacks, trees and graphs. Pick any language and switch whenever you like.',
-    outro: 'You worked through arrays, binary search, hash maps, stacks and queues, recursion, sorting, linked lists, trees and graphs. These are the ideas coding interviews and real programs are built on.',
+    outro: 'Arrays, binary search, hash maps, stacks and queues, recursion, sorting, linked lists, trees and graphs come up in almost every program, and in most coding interviews.',
     theme: 'circuit',
   });
 })(typeof window !== 'undefined' ? window : globalThis);

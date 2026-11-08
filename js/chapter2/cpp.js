@@ -420,7 +420,7 @@ public:
       gate: 'C',
       expect: ['Golem says ...', 'Clay says squelch', 'Iron says clang'],
       require: [[/virtual\s+string\s+speak\s*\(/, 'Make ' + c('speak') + ' virtual in ' + c('Golem') + ': ' + c('virtual string speak() const') + '.'], [/speak\s*\(\s*\)\s*const\s+override[^]*speak\s*\(\s*\)\s*const\s+override/, 'Mark both derived ' + c('speak') + ' methods with ' + c('override') + '.']],
-      success: 'The stones speak, each in its own voice. That is the power of virtual!',
+      success: 'Each stone speaks in its own voice. That is what virtual does.',
     },
     cpp2_virt4: {
       title: 'The Echo of the Base',
@@ -766,7 +766,7 @@ public:
   GD.addChapter2('cpp', {
     title: 'The Iron Forge',
     blurb: 'Deep in the Iron Forge, learn what makes C++ C++: references, guarded classes, the STL with lambdas, overloading and virtual inheritance.',
-    outro: '<p>The last golem marches out of the <b>Iron Forge</b>, and the furnaces glow brighter than ever.</p><p>You learned to pass the real thing with <b>references</b>, to guard your data with <b>private</b> members and constructors, to let the <b>STL</b> and <b>lambdas</b> do the looping, to <b>overload</b> functions, and to command a whole army through one <b>virtual</b> base class.</p><p>The smiths salute you, Master of the Forge!</p>',
+    outro: '<p>The last golem marches out of the forge. References, private members, the STL with lambdas, overloading and virtual functions are now part of your toolkit.</p>',
     theme: 'forge',
     challenges,
     levels,
