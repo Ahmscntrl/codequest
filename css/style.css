@@ -347,3 +347,10 @@ button.chip { cursor: pointer; }
 .course-slot .slot-btns .btn { flex: 0 0 auto; }
 .course-slot .slot-btns .btn.primary { min-width: 180px; }
 .ed-kicker { line-height: 1.7; }
+
+.title-start { margin: 34px 0 10px; }
+.title-start .btn { min-width: 220px; font-size: 22px; padding: 14px 40px; }
+.title-start.hidden, .title-saves.hidden { display: none; }
+.saves-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin: 4px 0 6px; }
+.saves-head .btn { justify-self: start; }
+.saves-head h2 { margin: 0; font-size: 18px; color: #cfd5ff; }

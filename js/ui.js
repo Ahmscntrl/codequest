@@ -204,6 +204,10 @@
       document.addEventListener('pointerdown', () => Sound.ensure(), { once: true });
       document.addEventListener('keydown', () => Sound.ensure(), { once: true });
       try { Sound.on = localStorage.getItem('codequest.sound') !== 'off'; } catch (e) { /* ignore */ }
+      this.titleStage = 'start';
+      $('#title-play').onclick = () => { Sound.play('click'); this.titleStage = 'saves'; this.showTitle(); };
+      $('#title-back').onclick = () => { Sound.play('click'); this.titleStage = 'start'; this.showTitle(); };
+      document.addEventListener('keydown', (e) => { if (this.screen === 'title' && this.titleStage === 'start' && !this.modalOpen && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); $('#title-play').click(); } });
       this.showTitle();
     }
     fit() {
@@ -268,6 +272,8 @@
       this.game.running = false;
       this.save = null;
       this.showScreen('title');
+      $('#title-start').classList.toggle('hidden', this.titleStage !== 'start');
+      $('#title-saves').classList.toggle('hidden', this.titleStage === 'start');
       this.migrateOldSlots();
       const wrap = $('#slots');
       wrap.innerHTML = '';
@@ -279,7 +285,7 @@
         const ready = isCourse || GameData.hasContent(lang);
         const card = document.createElement('div');
         card.className = 'slot lang-slot' + (isCourse ? ' course-slot' : '') + (s ? '' : ' empty');
-        const head = `<div class="slot-lang"><span class="lang-badge">${L.badge}</span><b>${L.label}</b></div>`;
+        const head = `<div class="slot-lang"><b>${L.label}</b></div>`;
         if (s) {
           const inCh2 = s.chapter === 2 && GameData.CHAPTER2[lang] && s.ch2;
           const lvls = isCourse ? COURSE.levels : inCh2 ? GameData.CHAPTER2[lang].levels : LEVELS;
