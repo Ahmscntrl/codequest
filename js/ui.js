@@ -1,7 +1,7 @@
 /* CodeQuest — menus, save slots, character creator, code editor, HUD, sound. */
 (function () {
   'use strict';
-  const { LEVELS, XP, BOSS_XP, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML } = GameData;
+  const { LEVELS, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML } = GameData;
   const $ = (s, el) => (el || document).querySelector(s);
   const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
   const SLOTS = 3;
@@ -324,7 +324,7 @@
     // ------------------------------------------------------------ game flow
     startGame(slot, save) {
       this.slot = slot; this.save = save;
-      this.mapOpen = null;
+      this.mapSel = null;
       // migrate older/partial saves
       const fresh = this.newSave(save.hero, save.lang);
       for (const k of Object.keys(fresh)) if (save[k] === undefined) save[k] = fresh[k];
@@ -363,10 +363,9 @@
       this.save.maxLevel = Math.max(this.save.maxLevel || 0, this.save.level);
       this.save.checkpoint = null;
       this.persist();
-      const badge = firstClear ? `<div class="badge-earned"><span>${L.badge[0]}</span><div>Badge earned<br><b>${escapeHTML(L.badge[1])}</b></div></div>` : '';
       const nextL = LEVELS[this.save.level];
-      this.dialog(`Chapter ${LEVELS.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b> — ${escapeHTML(L.name)} cleared.</p>${badge}${extra}<p class="muted">Up next: <b>Chapter ${this.save.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
-        [{ label: '🗺 Quest Map', fn: () => this.showMap(false) }, { label: 'Next chapter ▶', cls: 'primary', fn: () => this.loadLevel(this.save.level) }], { noClose: true });
+      this.dialog(`Level ${LEVELS.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b> — ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${this.save.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
+        [{ label: '🗺 Map', fn: () => this.showMap(false) }, { label: 'Next level ▶', cls: 'primary', fn: () => this.loadLevel(this.save.level) }], { noClose: true });
     }
     victory() {
       Sound.play('victory');
@@ -393,123 +392,62 @@
         </div>
         <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>. That's real programming. 🎉</p>
         <p class="muted">${firstWin ? '+3 SP bonus. ' : ''}Return to the Wilds to finish any side quests.</p>`,
-        [{ label: 'Title screen', fn: () => this.showTitle() }, { label: '🗺 Quest Map', fn: () => this.showMap(false) }, { label: 'Return to the Wilds', cls: 'primary', fn: () => this.loadLevel(WORLD_INDEX) }], { noClose: true, wide: true });
+        [{ label: 'Title screen', fn: () => this.showTitle() }, { label: '🗺 Map', fn: () => this.showMap(false) }, { label: 'Return to the Wilds', cls: 'primary', fn: () => this.loadLevel(WORLD_INDEX) }], { noClose: true, wide: true });
     }
-    // ------------------------------------------------------------ quest map
-    progress() {
-      const s = this.save;
-      const allTerms = LEVELS.flatMap(l => l.terminals.filter(id => XP[id]));
-      const solvedTerms = allTerms.filter(id => s.solved[id] !== undefined);
-      const xp = solvedTerms.reduce((t, id) => t + XP[id], 0) + (s.completed ? BOSS_XP : 0);
-      const maxXp = allTerms.reduce((t, id) => t + XP[id], 0) + BOSS_XP;
-      const chapterDone = (i) => LEVELS[i].boss ? !!s.completed : i < (s.maxLevel || 0);
-      const chaptersDone = LEVELS.filter((l, i) => chapterDone(i)).length;
-      const lvl = Math.floor(xp / 150) + 1;
-      const titles = ['Newbie', 'Script Kid', 'Apprentice', 'Coder', 'Hacker', 'Engineer', 'Wizard', 'Legend'];
-      return { xp, maxXp, terms: solvedTerms.length, totalTerms: allTerms.length, chaptersDone, chapterDone, lvl, title: titles[Math.min(lvl - 1, titles.length - 1)], lvlPct: (xp % 150) / 150 };
-    }
+    // ------------------------------------------------------------ level map
+    // Where "Continue" takes you: the furthest level you've unlocked (or the Wilds once the game is beaten).
+    frontier() { return this.save.completed ? WORLD_INDEX : Math.min(this.save.maxLevel || 0, LEVELS.length - 1); }
+    levelDone(i) { return LEVELS[i].boss ? !!this.save.completed : i < (this.save.maxLevel || 0); }
     showMap(fromGame) {
       if (this.screen === 'game' && this.game.running) this.persist();
       this.mapFromGame = !!fromGame && !!this.game.tiles;
       this.game.running = false;
+      this.mapSel = this.frontier();
       this.showScreen('map');
       this.renderMap();
     }
-    // Where "Continue" takes you: the furthest chapter you've unlocked (or the Wilds once the game is beaten).
-    frontier() { return this.save.completed ? WORLD_INDEX : Math.min(this.save.maxLevel || 0, LEVELS.length - 1); }
     renderMap() {
-      const s = this.save, P = this.progress();
-      const max = s.maxLevel || 0;
-      const front = this.frontier();
-      {
-        const L = LEVELS[front];
-        const nextId = L.terminals.find(id => s.solved[id] === undefined);
-        const what = L.boss ? 'Defeat Segfault, the Bug King' : nextId ? CH[nextId].title : (L.openWorld ? 'Explore the Wilds and finish side quests' : 'Reach the exit portal');
-        const fresh = !L.terminals.some(id => s.solved[id] !== undefined) && !s.checkpoints[front];
-        $('#map-continue').innerHTML = `
-          <canvas width="60" height="70"></canvas>
-          <div class="mc-text"><div class="mc-kicker">${fresh && front === 0 ? 'Start your quest' : 'Continue where you left off'}</div>
-            <div class="mc-title">Chapter ${front + 1} · ${escapeHTML(L.topic)}</div>
-            <div class="mc-sub">Next up: <b>${escapeHTML(what)}</b></div></div>
-          <button class="btn primary big" id="mc-go">${fresh ? 'Start' : 'Continue'} ▶</button>`;
-        Art.drawHero($('#map-continue canvas').getContext('2d'), 30, 66, s.hero, { scale: 1.4, t: 0 });
-        $('#mc-go').onclick = () => { Sound.play('click'); this.loadLevel(front); };
-      }
-      const lang = LANGS[s.lang];
+      const s = this.save, max = s.maxLevel || 0, front = this.frontier();
       $('#map-back').classList.toggle('hidden', !this.mapFromGame);
-      $('#map-lang').textContent = `${lang.icon} ${lang.label}`;
-      const open = this.mapOpen || (this.mapOpen = new Set([front]));
-      const rows = (L, i, unlocked) => {
-        const items = L.terminals.map((id, k) => ({ id, label: (L.openWorld ? (XP[id] && ['gems', 'decoder', 'fib'].includes(id) ? 'Core' : 'Side quest') : 'Terminal ' + (k + 1)), title: CH[id].title.replace(/^(Core [IV]+|Side Quest) — /, ''), done: s.solved[id] !== undefined }));
-        if (L.boss) items.splice(0, items.length, { label: 'Boss', title: 'Defeat Segfault, the Bug King', done: !!s.completed });
-        if (L.id === 'loops') items.unshift({ label: 'Secret', title: 'Find your friend i', done: !!s.foundI });
-        let nextMarked = false;
-        return items.map(it => {
-          let st;
-          if (!unlocked) st = `<span class="ex-btn locked">???</span>`;
-          else if (it.done) st = `<span class="ex-btn done">✔ Done</span>`;
-          else if (!nextMarked) { nextMarked = true; st = `<button class="ex-btn next" data-play="${i}">Start</button>`; }
-          else st = `<span class="ex-btn todo">○</span>`;
-          return `<div class="ex-row ${it.done ? 'is-done' : ''}"><span class="ex-label">${it.label}</span><span class="ex-title">${unlocked ? escapeHTML(it.title) : '???'}</span>${st}</div>`;
-        }).join('');
-      };
-      $('#chapters').innerHTML = LEVELS.map((L, i) => {
-        const unlocked = i <= max;
-        const done = P.chapterDone(i);
-        const current = i === front;
-        const isOpen = open.has(i);
-        const nDone = L.terminals.filter(id => s.solved[id] !== undefined).length;
-        const playLabel = !unlocked ? `🔒 Finish Chapter ${i} to unlock` : i === front && !done ? ((nDone || s.checkpoints[i]) ? 'Continue ▶' : 'Start ▶') : done ? '↺ Replay' : 'Play ▶';
-        return `<div class="chapter ${unlocked ? '' : 'locked'} ${done ? 'done' : ''} ${current ? 'current' : ''} ${isOpen ? 'open' : ''}" ${unlocked ? '' : `title="Locked — finish Chapter ${i} first"`}>
-          <div class="ch-node">${done ? '✔' : unlocked ? i + 1 : '🔒'}</div>
-          <div class="ch-card">
-            <button class="ch-head" data-toggle="${i}">
-              <span class="ch-titles"><span class="ch-kicker">Chapter ${i + 1}${L.openWorld ? ' · Open world' : L.boss ? ' · Final' : ''}</span><span class="ch-title">${escapeHTML(L.topic)}</span></span>
-              ${unlocked && !L.boss ? `<span class="ch-count">${nDone}/${L.terminals.length}</span>` : ''}
-              <span class="ch-chev">${isOpen ? '▴' : '▾'}</span>
-            </button>
-            <div class="ch-body">
-              <p class="ch-blurb"><b>${escapeHTML(L.name)}.</b> ${escapeHTML(L.blurb)}</p>
-              ${unlocked ? '' : `<p class="ch-locked-note">🔒 This chapter is locked. Finish <b>Chapter ${i}: ${escapeHTML(LEVELS[i - 1].topic)}</b> to unlock it.</p>`}
-              <div class="ex-list">${rows(L, i, unlocked)}</div>
-              <div class="ch-foot">
-                <span class="ch-badge ${done ? 'got' : ''}" title="${escapeHTML(L.badge[1])}">${L.badge[0]} ${done ? escapeHTML(L.badge[1]) : 'Complete to earn a badge'}</span>
-                <button class="btn ${unlocked && !done ? 'primary' : ''}" data-play="${i}" ${unlocked ? '' : 'disabled'}>${playLabel}</button>
-              </div>
-            </div>
-          </div>
-        </div>`;
+      $('#map-lang').textContent = `${LANGS[s.lang].icon} ${LANGS[s.lang].label}`;
+      // node positions on a 1000 x 560 map
+      const pts = [[90, 460], [255, 395], [175, 235], [360, 135], [545, 220], [480, 405], [730, 430], [880, 190]];
+      const regionColor = { meadow: '#3f8f4f', cave: '#4b3f8a', circuit: '#1d6b70', wilds: '#a35a3a', lair: '#7a1838' };
+      let svg = '';
+      LEVELS.forEach((L, i) => { const [x, y] = pts[i]; svg += `<ellipse cx="${x}" cy="${y + 8}" rx="105" ry="70" fill="${regionColor[L.theme]}" opacity="0.35"/>`; });
+      for (let i = 0; i < LEVELS.length - 1; i++) {
+        const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
+        const cx = (x1 + x2) / 2 + (y2 - y1) * 0.25, cy = (y1 + y2) / 2 - (x2 - x1) * 0.25;
+        const walked = i + 1 <= max;
+        svg += `<path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" class="map-path ${walked ? 'walked' : ''}"/>`;
+      }
+      const nodes = LEVELS.map((L, i) => {
+        const [x, y] = pts[i];
+        const unlocked = i <= max, done = this.levelDone(i);
+        const cls = ['map-node', unlocked ? '' : 'locked', done ? 'done' : '', i === front ? 'current' : '', i === this.mapSel ? 'sel' : ''].join(' ');
+        return `<button class="${cls}" data-i="${i}" style="left:${x / 10}%;top:${y / 5.6}%" ${unlocked ? '' : `title="Finish ${escapeHTML(LEVELS[i - 1].topic)} to unlock"`}>
+          <span class="mn-dot">${unlocked ? (L.boss ? '👑' : i + 1) : '🔒'}</span>
+          <span class="mn-label">${escapeHTML(L.topic)}</span></button>`;
       }).join('');
-      $$('#chapters [data-toggle]').forEach(b => b.onclick = () => { const i = +b.dataset.toggle; open.has(i) ? open.delete(i) : open.add(i); Sound.play('click'); this.renderMap(); });
-      $$('#chapters [data-play]').forEach(b => b.onclick = (e) => { e.stopPropagation(); Sound.play('click'); this.loadLevel(+b.dataset.play); });
-      // sidebar
-      const bar = (v, m) => `<div class="pbar"><div style="width:${m ? Math.round(100 * v / m) : 0}%"></div></div>`;
-      $('#map-side').innerHTML = `
-        <div class="side-card hero-card">
-          <canvas id="map-hero" width="70" height="80"></canvas>
-          <div><div class="hc-name">${escapeHTML(s.hero.name)}</div><div class="hc-lvl">Level ${P.lvl} · ${P.title}</div>${bar(P.lvlPct, 1)}</div>
-        </div>
-        <div class="side-card">
-          <h3>Quest Progress</h3>
-          <div class="prog"><span class="pi">🖥️</span><div><div class="pl"><b>Terminals</b><span>${P.terms} / ${P.totalTerms}</span></div>${bar(P.terms, P.totalTerms)}</div></div>
-          <div class="prog"><span class="pi">📖</span><div><div class="pl"><b>Chapters</b><span>${P.chaptersDone} / ${LEVELS.length}</span></div>${bar(P.chaptersDone, LEVELS.length)}</div></div>
-          <div class="prog"><span class="pi">✨</span><div><div class="pl"><b>XP Earned</b><span>${P.xp} / ${P.maxXp}</span></div>${bar(P.xp, P.maxXp)}</div></div>
-        </div>
-        <div class="side-card">
-          <h3>Badges <span class="muted">${P.chaptersDone} / ${LEVELS.length}</span></h3>
-          <p class="muted small">Complete a chapter to earn its badge.</p>
-          <div class="badges">${LEVELS.map((L, i) => `<span class="bdg ${P.chapterDone(i) ? 'got' : ''}" title="${escapeHTML(L.badge[1])}${P.chapterDone(i) ? '' : ' (locked)'}">${L.badge[0]}</span>`).join('')}</div>
-        </div>
-        <div class="side-card">
-          <h3>Party & Gear</h3>
-          <div class="gear"><span>${s.foundI ? '✔' : '○'}</span> i <span class="muted">— loop companion</span></div>
-          <div class="gear"><span>${s.pet ? '✔' : '○'}</span> ${s.pet ? '🐾 ' + escapeHTML(s.pet.name) : 'Pet'} <span class="muted">${s.pet ? '— ' + escapeHTML(s.pet.species) : '— adopt one in Ch. 6'}</span></div>
-          <div class="gear"><span>${s.weapon ? '✔' : '○'}</span> ${s.weapon ? '⚔️ ' + escapeHTML(s.weapon.name) : 'Weapon'} <span class="muted">${s.weapon ? '— dmg ' + s.weapon.damage : '— forge one in Ch. 6'}</span></div>
-          <div class="gear"><span>⭐</span> ${s.spUnlocked ? `${s.sp} skill points` : '<span class="muted">Skill points unlock in Ch. 6</span>'}</div>
-          <div class="gear"><span>🐛</span> ${s.bugs || 0} bugs squashed</div>
-        </div>`;
-      const c = $('#map-hero').getContext('2d');
-      Art.drawHero(c, 35, 74, s.hero, { scale: 1.6, t: 0 });
+      const [hx, hy] = pts[front];
+      $('#map-board').innerHTML = `<svg viewBox="0 0 1000 560" preserveAspectRatio="none">${svg}</svg>${nodes}
+        <canvas id="map-hero" width="60" height="70" style="left:${hx / 10}%;top:${hy / 5.6}%"></canvas>`;
+      Art.drawHero($('#map-hero').getContext('2d'), 30, 66, s.hero, { scale: 1.3, t: 0 });
+      $$('#map-board .map-node').forEach(b => b.onclick = () => {
+        const i = +b.dataset.i;
+        Sound.play('click');
+        if (i > max) { this.toast(`🔒 Finish <b>${escapeHTML(LEVELS[i - 1].topic)}</b> to unlock this level.`, 'info'); return; }
+        this.mapSel = i; this.renderMap();
+      });
+      // selected level panel
+      const i = this.mapSel, L = LEVELS[i], done = this.levelDone(i);
+      const label = i === front && !done ? (L.terminals.some(id => s.solved[id] !== undefined) || s.checkpoints[i] ? 'Continue ▶' : 'Start ▶') : done ? '↺ Replay' : 'Play ▶';
+      $('#map-panel').innerHTML = `
+        <div><div class="mp-kicker">Level ${i + 1}${done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
+        <div class="mp-title">${escapeHTML(L.topic)}</div>
+        <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div></div>
+        <button class="btn primary big" id="mp-go">${label}</button>`;
+      $('#mp-go').onclick = () => { Sound.play('click'); this.loadLevel(i); };
     }
 
     onBugSquashed() {
@@ -548,7 +486,7 @@
       $('#hud-hearts').innerHTML = hearts;
       const L = LEVELS[s.level];
       const done = L.terminals.filter(id => s.solved[id] !== undefined).length;
-      $('#hud-level').innerHTML = `<button class="topic-chip" data-act="map" title="Quest Map (M)"><span class="tc-ch">CH ${s.level + 1}</span><span class="tc-topic">${escapeHTML(L.topic)}</span>${L.boss ? '' : `<span class="tc-prog">${done}/${L.terminals.length}</span>`}<span class="tc-map">🗺</span></button>`;
+      $('#hud-level').innerHTML = `<button class="topic-chip" data-act="map" title="Level map (M)"><span class="tc-ch">LV ${s.level + 1}</span><span class="tc-topic">${escapeHTML(L.topic)}</span>${L.boss ? '' : `<span class="tc-prog">${done}/${L.terminals.length}</span>`}<span class="tc-map">🗺</span></button>`;
       const extras = [];
       if (s.spUnlocked) extras.push(`<button class="chip sp" data-act="skills">⭐ ${s.sp} SP <kbd>K</kbd></button>`);
       if (LEVELS[s.level].openWorld) extras.push(`<span class="chip">💠 Cores ${g.coreCount()}/3</span>`);
@@ -631,13 +569,13 @@
             <tr><td><kbd>X</kbd> / <kbd>J</kbd></td><td>Attack (with a weapon)</td></tr>
             <tr><td><kbd>Q</kbd></td><td>Debugger (fix glitches)</td></tr>
             <tr><td><kbd>K</kbd></td><td>Skills</td></tr>
-            <tr><td><kbd>M</kbd></td><td>Quest Map</td></tr>
+            <tr><td><kbd>M</kbd></td><td>Level map</td></tr>
             <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Run code</td></tr>
           </table></div>
         </div>`,
         [{ label: Sound.on ? '🔊 Sound on' : '🔇 Sound off', keepOpen: true, fn: () => { Sound.on = !Sound.on; try { localStorage.setItem('codequest.sound', Sound.on ? 'on' : 'off'); } catch (e) { /* ignore */ } $$('#modal-btns .btn')[0].innerHTML = Sound.on ? '🔊 Sound on' : '🔇 Sound off'; } },
           { label: 'Save & quit', fn: () => { this.persist(); this.showTitle(); } },
-          { label: '🗺 Quest Map', fn: () => this.showMap(true) },
+          { label: '🗺 Map', fn: () => this.showMap(true) },
           { label: 'Resume ▶', cls: 'primary', fn: () => this.persist() }],
         {
           wide: true,
@@ -809,7 +747,7 @@
         const solved = this.save.solved[ed.chId] !== undefined && !ch.repeatable;
         const li = LEVELS.findIndex(l => l.terminals.includes(ed.chId));
         const Lv = LEVELS[li];
-        $('#ed-kicker').textContent = `CH ${li + 1} · ${Lv.topic.toUpperCase()} · TERMINAL ${Lv.terminals.indexOf(ed.chId) + 1}/${Lv.terminals.length}` + (solved ? ' · SOLVED ✔' : '');
+        $('#ed-kicker').textContent = `LEVEL ${li + 1} · ${Lv.topic.toUpperCase()} · TERMINAL ${Lv.terminals.indexOf(ed.chId) + 1}/${Lv.terminals.length}` + (solved ? ' · SOLVED ✔' : '');
         $('#ed-title').textContent = ch.title;
         let html = ch.desc(ctx);
         if (solved) html += '<p class="solved-note">✔ Already solved! Feel free to experiment — nothing will break.</p>';
@@ -950,7 +888,6 @@
       if (!first) { fb.innerHTML += '<div class="muted">(Already solved — but nice work!)</div>'; return; }
       this.save.solved[ed.chId] = res.data === undefined ? true : res.data;
       this.persist();
-      if (XP[ed.chId]) setTimeout(() => this.toast(`✨ +${XP[ed.chId]} XP — <b>${escapeHTML(CH[ed.chId].title)}</b> complete`, 'good'), 1600);
       this.pendingEffect = () => { ch.effect(this.game, res.data); this.persist(); this.updateHUD(); };
       fb.innerHTML += '<div class="closing">✔ Solved! Closing terminal...</div>';
       setTimeout(() => { if (this.ed && this.ed.chId === ed.chId) this.closeEditor(); }, 1500);

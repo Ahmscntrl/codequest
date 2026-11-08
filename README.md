@@ -26,15 +26,15 @@ You can also publish it with GitHub Pages (Settings → Pages → deploy from th
 | X / J | Attack (once you've forged a weapon) |
 | Q | Debugger (fix glitches) |
 | K | Skill tree |
-| M | Quest Map |
+| M | Level map |
 | Esc | Pause, switch language, save & quit |
 | Ctrl + Enter | Run code in the editor |
 
 Touch controls appear automatically on phones and tablets.
 
-## Quest Map
+## Level map
 
-Each save opens on the **Quest Map**: a timeline of 8 chapters, one per topic (print, Variables, Conditions, Loops, Functions, Classes & Objects, Lists/Strings/Dictionaries, Final Boss). Open a chapter to see its terminals, marked done, next (**Start**), or locked (`???`). You can replay any chapter you've unlocked. The sidebar shows your coder level, XP, terminals and chapters completed, chapter badges, and your party and gear. In-game, the chip at the top left shows the current chapter, its topic and your terminal progress. Click it or press **M** to open the map.
+Each save opens on a little map of the course: one stop per level, labelled with the topic it teaches. Your hero stands on the level you're up to. Click any level you've unlocked to play it, whether that's continuing where you left off or replaying an old one. Levels you haven't reached yet are locked. In-game, the label at the top left shows the current level and topic. Click it or press **M** to open the map.
 
 ## Features (from the original idea list)
 
