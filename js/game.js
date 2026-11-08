@@ -1,4 +1,4 @@
-/* CodeQuest — platformer engine: physics, entities, effects, boss, rendering. */
+/* CodeQuest — platformer engine: physics, entities, effects, boss, rendering */
 (function (root) {
   'use strict';
   const TILE = 32, VW = 960, VH = 540;
