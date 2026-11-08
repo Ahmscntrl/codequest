@@ -892,9 +892,7 @@
   GD.addChapter2('python', {
     title: 'The Pythonic Isles',
     blurb: 'Sail to five islands and learn the tricks that make code Pythonic: comprehensions, slices, f-strings, tuples, exceptions and inheritance.',
-    outro: `<p>The <b>Boilerplate Fog</b> rolls back out to sea, and the Pythonic Isles shine again. Islanders cheer from every dock.</p>
-      <p>"Squawk! You write Python like a native now," says Pip. "Comprehensions, slices, f-strings, tuples, dicts, exceptions, inheritance. Not bad at all!"</p>
-      <p>You've finished <b>Chapter 2</b>. Try the Isles again for every data bit, or explore another language's Chapter 2.</p>`,
+    outro: '<p>The Boilerplate Fog drifts back out to sea. Comprehensions, slices, f-strings, tuples, dicts, exceptions and inheritance cover most of the Python people write every day.</p>',
     theme: 'isle',
     challenges,
     levels,

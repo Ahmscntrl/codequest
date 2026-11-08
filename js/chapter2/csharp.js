@@ -620,7 +620,7 @@
   GD.addChapter2('csharp', {
     title: 'The Crystal Spire',
     blurb: 'A tower of living crystal rises over Syntaxia. Learn properties, LINQ, interfaces and exceptions to drive out the Null Wraith.',
-    outro: '<p>The heart of the Crystal Spire blazes, and its light washes over all of Syntaxia. The Null Wraith is gone: there is no crash it can cause that you can\'t catch.</p><p>Look at what you can write now: classes that protect their data with <b>properties</b>, questions answered in one line of <b>LINQ</b>, families of classes joined by <b>interfaces</b> and <b>inheritance</b>, and programs that handle trouble with <b>exceptions</b>.</p><p>These are the same tools used to build apps, websites and Unity games. Keep building, Coder!</p>',
+    outro: '<p>The Null Wraith is gone and the Spire is lit again. Properties, LINQ, interfaces and exceptions are what most C# programs (and Unity games) lean on.</p>',
     theme: 'crystal',
     challenges,
     levels,

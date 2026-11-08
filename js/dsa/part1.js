@@ -329,7 +329,7 @@
     },
     require: [[/\bwhile\b|\bfor\b/, 'Use a loop that halves n again and again.']],
     gate: 'A',
-    success: 'Two billion, halved 30 times, is down to 1. <b>That is the power of O(log n).</b>',
+    success: 'Two billion, halved 30 times, is down to 1. That is O(log n) at work.',
   });
 
   ch.dsa_search2 = fnT({

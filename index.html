@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>CodeQuest</title>
-  <meta name="description" content="A puzzle platformer where you progress by writing real code in Python or JavaScript.">
+  <meta name="description" content="A puzzle platformer where you progress by writing real code in Python, JavaScript, C++, C# or Java.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Nunito:wght@400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
@@ -43,7 +43,7 @@
         <label class="cc-label">Eyes</label><div id="cc-eyes" class="opts"></div>
         <div class="cc-actions">
           <button id="cc-back" class="btn ghost">← Back</button>
-          <button id="cc-start" class="btn primary big">Begin Quest ▶</button>
+          <button id="cc-start" class="btn primary big">Start</button>
         </div>
       </div>
     </div>
@@ -79,11 +79,6 @@
     <div id="sign" class="sign hidden"></div>
     <div id="toasts"></div>
     <div class="keyhints"><kbd>E</kbd> use · <kbd>Q</kbd> debug · <kbd>Esc</kbd> menu</div>
-    <div id="touch">
-      <div class="t-left"><button data-k="left">◀</button><button data-k="right">▶</button></div>
-      <div class="t-right"><button data-k="attack">X</button><button data-k="interact">E</button><button data-k="jump" class="big">⤒</button></div>
-      <div class="t-top"><button data-k="debug">Q</button><button data-k="pause">❚❚</button></div>
-    </div>
   </div>
 
   <!-- ============ MODAL ============ -->
@@ -100,20 +95,20 @@
     <div class="tut">
       <div class="tut-head">
         <div><div id="tut-kicker" class="ed-kicker"></div><h2 id="tut-title"></h2></div>
-        <button id="tut-close" class="btn small ghost" title="Close (Esc)">✕</button>
+        <button id="tut-close" class="btn small ghost" title="Close (Esc)">×</button>
       </div>
       <div id="tut-body" class="tut-body"></div>
       <div id="tut-try" class="tut-try">
-        <div class="tut-try-head"><span>Try it: edit the code and run it</span><span class="spacer"></span><button id="tut-reset" class="btn small ghost">↺ Reset</button><button id="tut-run" class="btn small primary">▶ Run</button></div>
+        <div class="tut-try-head"><span>Try it: edit the code and run it</span><span class="spacer"></span><button id="tut-reset" class="btn small ghost">Reset</button><button id="tut-run" class="btn small primary">Run</button></div>
         <textarea id="tut-code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea>
         <canvas id="tut-i-stage" class="i-stage hidden" width="640" height="84"></canvas>
         <div id="tut-out" class="console tut-out"></div>
       </div>
       <div class="tut-foot">
-        <button id="tut-prev" class="btn">◀ Back</button>
+        <button id="tut-prev" class="btn">Back</button>
         <div id="tut-dots" class="tut-dots"></div>
         <span id="tut-count" class="muted small"></span>
-        <button id="tut-next" class="btn primary">Next ▶</button>
+        <button id="tut-next" class="btn primary">Next</button>
       </div>
     </div>
   </div>
@@ -135,9 +130,9 @@
           <span class="spacer"></span>
           <button id="ed-tut" class="btn small ghost" title="Review this level's tutorial">Tutorial</button>
           <button id="ed-hint" class="btn small ghost">Hint</button>
-          <button id="ed-reset" class="btn small ghost" title="Reset to starter code">↺ Reset</button>
-          <button id="ed-close" class="btn small ghost" title="Close (Esc)">✕ Close</button>
-          <button id="ed-run" class="btn primary">▶ Run <small>Ctrl+Enter</small></button>
+          <button id="ed-reset" class="btn small ghost" title="Reset to starter code">Reset</button>
+          <button id="ed-close" class="btn small ghost" title="Close (Esc)">Close</button>
+          <button id="ed-run" class="btn primary">Run <small>Ctrl+Enter</small></button>
         </div>
         <div class="code-wrap">
           <div id="gutter" class="gutter"></div>

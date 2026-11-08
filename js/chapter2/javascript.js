@@ -861,7 +861,7 @@ console.log(defaults.volume);
   GD.addChapter2('javascript', {
     title: 'The Neon Grid',
     blurb: 'Race through a glowing city of data and learn modern JavaScript: array methods, destructuring, JSON, closures and class families.',
-    outro: '<p>The last light-lane flickers back on. With a final crackle, The Undefined shrinks into one tiny, harmless <code>undefined</code>, and Lumen sweeps it into the recycle bin.</p><p>"Look at you," Lumen beeps. "Arrow functions, <code>map</code>, <code>filter</code> and <code>reduce</code>. Destructuring and spread. JSON. Closures. Class families with <code>super</code>, getters and statics. Not bad for one chapter."</p><p><b>The Neon Grid is saved.</b> Its lights will keep shining for you, any time you want to come back.</p>',
+    outro: '<p>The last light-lane flickers back on and The Undefined is gone. Array methods, destructuring, JSON, closures and classes are how most JavaScript is written today.</p>',
     theme: 'neon',
     challenges,
     levels,

@@ -77,7 +77,7 @@
         '<p>Once a box is made for one type, it only takes that type. An <code>int</code> box can\'t hold text, even text that looks like a number such as <code>"6"</code>.</p><p>Run it to see the error, then fix it by storing the number <code>6</code> (no quotes).</p>',
         'int level = 5;\nlevel = "6";\nConsole.WriteLine(level);', { expectError: true }),
       page('Maths with variables',
-        '<p>You can do maths with the values inside boxes, and store the answer in a <b>new</b> box.</p><p>Change <code>width</code> and run again: the area updates automatically. That\'s the power of variables!</p>',
+        '<p>You can do maths with the values inside boxes, and store the answer in a <b>new</b> box.</p><p>Change <code>width</code> and run again: the area updates on its own.</p>',
         'int width = 4;\nint height = 3;\nint area = width * height;\nConsole.WriteLine(area);'),
       page('Changing a variable',
         '<p>A box can get a <b>new value</b>. This line reads the old score, adds 5, and stores the result back in the same box:</p>' + pre('score = score + 5;') + '<p>The shortcut <code>score += 5;</code> does exactly the same thing. <b>Only write the type the first time</b>: after that, the box already exists.</p>',

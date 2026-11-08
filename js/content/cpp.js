@@ -96,7 +96,7 @@
         '<p>Each box has a <b>type</b>, and only that kind of value fits inside:</p><ul><li>' + c('string') + ': text in quotes, ' + c('"Ada"') + '</li><li>' + c('int') + ': a whole number, ' + c('5') + '</li><li>' + c('double') + ': a number with a decimal point, ' + c('2.5') + '</li><li>' + c('bool') + ': ' + c('true') + ' or ' + c('false') + ', a yes/no value</li></ul><p>C++ shows ' + c('true') + ' as ' + c('1') + ' unless you print ' + c('boolalpha') + ' first. And careful: ' + c('"5"') + ' in quotes is <i>text</i>, so ' + c('int level = "5";') + ' is an error.</p>',
         P('string name = "Ada";\nint level = 5;\ndouble speed = 2.5;\nbool alive = true;\ncout << name << " " << level << " " << speed << " " << alive << endl;\ncout << boolalpha << alive << endl;')),
       page('Maths with variables',
-        '<p>You can do maths with the values inside boxes, and store the answer in a <b>new</b> box.</p><p>Change ' + c('width') + ' and run again: the area updates automatically. That\'s the power of variables!</p>',
+        '<p>You can do maths with the values inside boxes, and store the answer in a <b>new</b> box.</p><p>Change ' + c('width') + ' and run again: the area updates on its own.</p>',
         P('int width = 4;\nint height = 3;\nint area = width * height;\ncout << area << endl;')),
       page('Changing a variable',
         '<p>A box can get a <b>new value</b>. This line reads the old score, adds 5, and stores the result back in the same box:</p>' + block('score = score + 5;') + '<p>The shortcut ' + c('score += 5;') + ' does exactly the same thing.</p><p><b>Only write the type the first time.</b> After that, the box already exists. Writing ' + c('int') + ' again would try to make a second box with the same name.</p>',

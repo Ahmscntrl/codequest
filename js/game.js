@@ -87,12 +87,6 @@
       window.addEventListener('keyup', (e) => { const a = map(e); if (a) this.keys[a] = false; });
       window.addEventListener('blur', () => { this.keys = {}; });
     }
-    virtualKey(a, down) {
-      if (down && !this.keys[a]) this.pressed[a] = true;
-      this.keys[a] = down;
-      if (down && a === 'pause' && !this.frozen) this.app.pause();
-      if (down && a === 'debug' && !this.frozen) this.app.openDebugger();
-    }
     clearKeys() { this.keys = {}; this.pressed = {}; }
 
     get save() { return this.app.save; }
