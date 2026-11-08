@@ -918,7 +918,7 @@
       if (/SuperCoder/.test(src)) return { ok: false, msg: 'Don\'t type <b>SuperCoder</b> as one word — make the computer glue <code>"Super"</code> and <code>"Coder"</code> with <code>+</code>.' };
       if (out.includes('Super Coder')) return { ok: false, msg: 'There\'s a space in there! <code>+</code> adds nothing between the pieces — check your quotes for extra spaces.' };
       if (!out.includes('SuperCoder')) return { ok: false, msg: `The smith needs to see <b>SuperCoder</b> printed. You printed <b>${escapeHTML(out.join(' / ') || 'nothing')}</b>.` };
-      if (!/["'`]\s*\+\s*["'`]/.test(src)) return { ok: false, msg: 'Join the two texts with <code>+</code>.' };
+      if (!/["'`]\s*\)?\s*\+\s*["'`]/.test(src)) return { ok: false, msg: 'Join the two texts with <code>+</code>.' };
       return { ok: true, msg: '<b>SuperCoder</b>, forged from two pieces. <b>Gate open!</b>' };
     },
     effect: (game) => game.openGate('C'),

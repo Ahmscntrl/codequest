@@ -1,6 +1,6 @@
 # CodeQuest
 
-A puzzle platformer where you build things and make progress by **writing real code**, in the language of your choice (**Python** or **JavaScript**).
+A puzzle platformer where you build things and make progress by **writing real code**, in the language of your choice: **Python, JavaScript, C++, C# or Java**.
 
 Walk up to terminals, write scripts, and watch your code change the world: build bridges, open gates, turn lava into stone, raise staircases, forge weapons, and fight a final boss with loops.
 
@@ -38,7 +38,7 @@ Each save opens on a little map of the course: one stop per level, labelled with
 
 ## Features (from the original idea list)
 
-- **A puzzle platformer where you write scripts in a language of your choice.** Python runs on a small Python interpreter built for the game (`js/python.js`), with real Python-style errors. JavaScript runs on the browser's own JS engine inside a sandboxed Web Worker with a timeout. You can switch languages at any time, and every terminal works in both.
+- **A puzzle platformer where you write scripts in a language of your choice.** Python runs on a small Python interpreter built for the game (`js/python.js`). JavaScript runs in the browser in a sandboxed Web Worker. C++, C# and Java run on one C-family interpreter (`js/clike.js`) with a dialect per language, real program shapes (`int main()`, `public class Main`, C# top-level statements) and compiler-style error messages. Every terminal, tutorial, hint and glitch exists in all five languages.
 - **You collect objects as variables and print them when you need them.** Glowing boxes like `planks` and `password` become variables in your scripts. The password is random for each player, so you have to print the variable rather than type the value.
 - **A character creator** with your name, skin, clothes, hats and eyes. The guard bot even checks visitors against your name.
 - **Levels, starting with "Hello, World".** Each level opens with a step-by-step **tutorial** that teaches the syntax: one idea per page, each with an example you can edit and run. Then a series of terminals practises one new idea each:
@@ -53,7 +53,7 @@ Each save opens on a little map of the course: one stop per level, labelled with
 - **Varied obstacles and fun paths.** Each terminal unlocks a different kind of obstacle: code-block stairs up a cliff, a code bridge over lava, a spike tunnel whose spikes retract, a launch spring over a tall wall, a lava lake that cools to stone, or the classic gate. Between terminals there are hills, lava pits with stepping platforms, moving platforms, climbable towers and hidden **data bits** (). Every 20 bits earns a skill point once skill points are unlocked.
 - **Hints that teach.** Hints nudge you toward the idea without giving code to copy. The last hint shows a *similar* problem solved step by step, never the answer to your own terminal (a test checks this).
 - **The `i` in loops is a little friend you can find.** `i` is hidden in the Loops level, and the Staircase Engine won't run until you find them. They hop up each step your loop builds (`i=0`, `i=1`, ...) and follow you for the rest of the game.
-- **Save slots.** There are 3 slots stored in your browser's localStorage. The game saves at checkpoints and when you solve terminals.
+- **One save file per language.** The title screen has a save file for each language, so you can run a Python adventure and a Java adventure side by side. Each save stays in its language. Saves are stored in your browser's localStorage.
 - **Classes can be used for weapons or pets.** Write a `class` with `name`/`damage` to get a real weapon, or one with `name`/`speak()` to get a pet that follows you around and talks (cats, dogs, birds, robots, dragons, slimes...).
 - **Once you reach classes you earn skill points and unlock an open world.** The skills are Double Jump, Swift Boots, Vitality, Sharpened Code, Debugger's Eye, Companion Strike and Overclock. You earn points from Core terminals, side quests (FizzBuzz, a dictionary merchant) and squashing bugs.
 - **Enemies can put errors in your code.** SyntaxBugs, NameBugs and TypeBugs bite you and corrupt your code with a *glitch*: jumping is disabled, your controls are reversed, or you're slowed down. Press **Q** to open the debugger and fix the broken snippet to get your powers back. The boss can also corrupt your cannon code in the middle of the fight.
@@ -66,6 +66,9 @@ index.html        page shell (title, creator, HUD, editor)
 css/style.css     styles
 js/python.js      Python interpreter (tokenizer, parser, evaluator)
 js/runner.js      runs player code: Python interpreter or JS in a Web Worker
+js/clike.js       C++ / C# / Java interpreter
+js/langs.js       naming and printing rules per language
+js/content/       C++, C# and Java course content (see docs/ADDING_A_LANGUAGE.md)
 js/levels.js      level maps, terminal challenges, glitch snippets, skills
 js/teach.js       tutorials, hints and similar-problem examples
 js/art.js         procedural drawing: hero, i, pets, bugs, boss
@@ -112,4 +115,6 @@ A challenge has a description, starter code for each language, the API functions
 node tests/py_test.js          # Python interpreter
 node tests/challenges_test.js  # every challenge solved in both languages + every glitch snippet errors
 node tests/teach_test.js       # tutorials run; hints and similar examples never solve their terminal
+node tests/clike_test.js       # the C++ / C# / Java interpreter
+LANGS=cpp node tests/challenges_test.js   # just one language
 ```

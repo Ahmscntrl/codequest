@@ -1121,15 +1121,23 @@
           let items;
           if (coll instanceof CList) items = coll.a.slice();
           else if (typeof coll === 'string') items = [...coll].map(c => new Chr(c));
-          else if (coll instanceof CMap) items = [...coll.m.entries()].map(([k, v]) => ({ __pair: true, k, v }));
+          else if (coll instanceof CMap) { items = [...coll.m.entries()].map(([k, v]) => ({ __pair: true, k, v })); if (id === 'cpp') items.sort((x, y) => cmp(x.k, y.k)); }
           else if (coll && coll.__keys) items = coll.__keys;
           else throw E('TypeError', id === 'java' ? 'for-each not applicable to expression type' : id === 'csharp' ? `foreach statement cannot operate on variables of type '${tname(coll)}'` : `'begin' was not declared in this scope (cannot loop over ${tname(coll)})`);
-          for (const it of items) {
+          const byRef = id === 'cpp' && s.ty && s.ty.ref && (coll instanceof CList || typeof coll === 'string');
+          const chars = typeof coll === 'string' ? [...coll] : null;
+          for (let k = 0; k < items.length; k++) {
+            const it = items[k];
             curLine = s.line; tick();
             const ls = new Scope(scope);
-            ls.declare(s.name, { v: coerce(it && it.__pair ? it : it, it && it.__pair ? null : s.ty, s.name), ty: s.ty });
-            try { exec(s.body, ls); } catch (e) { if (e === BREAK) break; if (e === CONTINUE) continue; throw e; }
+            const cell = { v: coerce(it && it.__pair ? it : it, it && it.__pair ? null : s.ty, s.name), ty: s.ty };
+            ls.declare(s.name, cell);
+            let stop = false;
+            try { exec(s.body, ls); } catch (e) { if (e === BREAK) stop = true; else if (e !== CONTINUE) throw e; }
+            if (byRef) { if (chars) chars[k] = cell.v instanceof Chr ? cell.v.c : str(cell.v); else coll.a[k] = cell.v; }
+            if (stop) break;
           }
+          if (byRef && chars) assignTo(s.iter, chars.join(''), scope);
           return;
         }
         case 'Switch': {
@@ -1179,6 +1187,7 @@
         if (vals.length === 2 && vals[0] instanceof Iter) return iterRangeString(vals[0], vals[1]);
         return vals.length ? str(vals[0]) : '';
       }
+      if (vals.length === 0 && STR_T.has(ty.name)) return '';
       if (vals.length === 1) return coerce(vals[0], ty);
       throw E('TypeError', D.msg.args(ty.name, 0, vals.length));
     }
@@ -1764,6 +1773,10 @@
           if (e.op === '&&') return truthy(evalExpr(e.left, scope)) ? truthy(evalExpr(e.right, scope)) : false;
           if (e.op === '||') return truthy(evalExpr(e.left, scope)) ? true : truthy(evalExpr(e.right, scope));
           if (e.op === '??') { const l = evalExpr(e.left, scope); return l === null ? evalExpr(e.right, scope) : l; }
+          if (id === 'cpp' && e.op === '+' && e.left.type === 'Str' && e.right.type === 'Str') {
+            curLine = e.line;
+            throw E('TypeError', `invalid operands of types 'const char[${e.left.value.length + 1}]' and 'const char[${e.right.value.length + 1}]' to binary 'operator+' — wrap the first one in string(...) to glue them`);
+          }
           const a = evalExpr(e.left, scope);
           if (e.op === '<<' && a && a.__stream) {
             // cout << x << y ...
@@ -1884,7 +1897,7 @@
         }
         if (apiNames[name]) { const av = args(); curLine = e.line; return apiCall(apiNames[name], av); }
         if (classes.has(name) && id === 'cpp') return construct(classes.get(name), args(), e.line);
-        if (id === 'cpp' && (STR_T.has(name) || name === 'int' || name === 'double' || name === 'char')) { const av = args(); return name === 'string' ? (av.length === 2 && av[0] instanceof Iter ? iterRangeString(av[0], av[1]) : av.length === 2 && av[1] instanceof Chr ? av[1].c.repeat(nv(av[0])) : str(av[0])) : evalExpr({ type: 'Cast', to: name, value: e.args[0], line: e.line }, scope); }
+        if (id === 'cpp' && (STR_T.has(name) || name === 'int' || name === 'double' || name === 'char')) { const av = args(); return name === 'string' ? (av.length === 0 ? '' : av.length === 2 && av[0] instanceof Iter ? iterRangeString(av[0], av[1]) : av.length === 2 && av[1] instanceof Chr ? av[1].c.repeat(nv(av[0])) : str(av[0])) : evalExpr({ type: 'Cast', to: name, value: e.args[0], line: e.line }, scope); }
         const av = args();
         const r = callBuiltinFn(name, av, e, scope);
         if (r !== undefined) return r;
