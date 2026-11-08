@@ -50,6 +50,21 @@ Beat Segfault and a **Chapter 2** tab opens on the level map. Each language gets
 
 Chapter 2 keeps its own progress and checkpoints. See `docs/CHAPTER2.md` to write or change one.
 
+## Data Structures & Algorithms
+
+The sixth save file on the title screen is a course instead of a language. Pick a language when you start it and switch whenever you like, from the map or the pause menu (your code is kept for each language). Eight levels, five terminals each, every one in all five languages:
+
+1. **Arrays & Big-O**: linear search, min/max, reverse in place, palindromes, two pointers
+2. **Searching**: binary search, first occurrence, insert position, integer square root
+3. **Hash Maps**: counting, anagrams, first unique character, two sum, grouping
+4. **Stacks & Queues**: reversing, backspace, balanced brackets, hot potato, reverse-notation calculator (miniboss: Stack Overflow)
+5. **Recursion**: factorial, digit sums, power, memoised Fibonacci, grid paths
+6. **Sorting**: bubble, insertion, merging, merge sort
+7. **Linked Lists & Trees**: walking, appending, reversing a list, binary search trees, traversal and height
+8. **Graphs**: adjacency lists, DFS, BFS shortest path, counting islands, escaping a maze (miniboss: The Big O)
+
+See `docs/DSA.md` to change it.
+
 ## Features (from the original idea list)
 
 - **A puzzle platformer where you write scripts in a language of your choice.** Python runs on a small Python interpreter built for the game (`js/python.js`). JavaScript runs in the browser in a sandboxed Web Worker. C++, C# and Java run on one C-family interpreter (`js/clike.js`) with a dialect per language, real program shapes (`int main()`, `public class Main`, C# top-level statements) and compiler-style error messages. Every terminal, tutorial, hint and glitch exists in all five languages.
@@ -84,6 +99,8 @@ js/clike.js       C++ / C# / Java interpreter
 js/langs.js       naming and printing rules per language
 js/content/       C++, C# and Java course content (see docs/ADDING_A_LANGUAGE.md)
 js/chapter2/      one Chapter 2 per language (see docs/CHAPTER2.md)
+js/dsa/           the Data Structures & Algorithms course (see docs/DSA.md)
+js/miniboss.js    minibosses and their arenas
 js/levels.js      level maps, terminal challenges, glitch snippets, skills
 js/teach.js       tutorials, hints and similar-problem examples
 js/art.js         procedural drawing: hero, i, pets, bugs, boss

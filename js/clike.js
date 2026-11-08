@@ -1595,14 +1595,14 @@
     }
     function evalInit(init, ty, scope) {
       if (init.type === 'InitList') {
-        const items = init.items.map(x => x.type === 'InitList' ? evalInit(x, ty && ty.args && ty.args[0], scope) : evalExpr(x, scope));
+        const items = init.items.map(x => x.type === 'InitList' ? evalInit(x, ty && ty.arr > 1 ? Object.assign({}, ty, { arr: ty.arr - 1 }) : ty && ty.args && ty.args[0], scope) : evalExpr(x, scope));
         if (ty && (/^(map|unordered_map|Dictionary|HashMap)$/.test(ty.name))) {
           const m = new CMap(id === 'cpp' ? 'map' : ty.name);
           for (const pair of items) { if (pair instanceof CList) m.m.set(keyOf(pair.a[0]), pair.a[1]); }
           return m;
         }
         if (ty && classes.has(ty.name) && !ty.arr) return construct(classes.get(ty.name), items);
-        const elem = ty ? (ty.arr ? ty.name : (ty.args[0] && ty.args[0].name)) : null;
+        const elem = ty ? (ty.arr ? (ty.arr > 1 ? null : ty.name) : (ty.args[0] && ty.args[0].name)) : null;   // int[][]: the items are arrays
         const kind = ty && ty.arr ? 'array' : (ty && /^(List|ArrayList)$/.test(ty.name) ? ty.name : (id === 'cpp' ? 'vector' : 'array'));
         return new CList(ty && ty.name === 'vector' ? 'vector' : kind, items.map(x => elem ? coerce(x, { name: elem, args: [] }) : x), elem);
       }
