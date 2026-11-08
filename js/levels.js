@@ -750,6 +750,21 @@
     },
   ];
 
+  // Chapter info for the Quest Map: the topic each level teaches, a short description and its badge.
+  const CHAPTERS = {
+    hello: { topic: 'print()', blurb: 'Write your very first line of code and make the computer talk.', badge: ['👋', 'First Words'] },
+    vars: { topic: 'Variables', blurb: 'Store values in named boxes. Objects you collect in the world become variables in your code.', badge: ['📦', 'Box Collector'] },
+    ifs: { topic: 'Conditions', blurb: 'Make decisions with if / else. Your code is tested against several different cases.', badge: ['🔀', 'Decision Maker'] },
+    loops: { topic: 'Loops', blurb: 'Repeat code with for and while loops — and find your little friend i.', badge: ['🔁', 'Loop Legend'] },
+    funcs: { topic: 'Functions', blurb: 'Package code into reusable functions that take inputs and return answers.', badge: ['🧩', 'Function Smith'] },
+    classes: { topic: 'Classes & Objects', blurb: 'Design blueprints with attributes and methods. Forge a weapon or adopt a pet.', badge: ['🏛️', 'Architect'] },
+    world: { topic: 'Lists, Strings & Dictionaries', blurb: 'Explore the open world, earn skill points, and recover the 3 Core fragments.', badge: ['🗺️', 'Explorer'] },
+    boss: { topic: 'Final Boss', blurb: 'Debug under pressure and defeat Segfault with looped cannon fire.', badge: ['👑', 'Bug Slayer'] },
+  };
+  LEVELS.forEach(l => Object.assign(l, CHAPTERS[l.id]));
+  const XP = { hello: 20, bridge: 30, password: 30, guard: 40, pump: 40, stairs: 50, countdown: 50, double: 50, greet: 50, total: 60, forge: 70, den: 70, gems: 80, decoder: 80, fib: 100, fizz: 60, merchant: 60 };
+  const BOSS_XP = 200;
+
   const SKILLS = [
     { id: 'double_jump', name: 'Double Jump', icon: '🦘', cost: 2, max: 1, desc: 'Jump again in mid-air.' },
     { id: 'swift', name: 'Swift Boots', icon: '👟', cost: 1, max: 2, desc: '+20% movement speed per level.' },
@@ -760,5 +775,5 @@
     { id: 'overclock', name: 'Overclock', icon: '⏱️', cost: 1, max: 2, desc: 'Compiler Cannon recharges faster & hits harder.' },
   ];
 
-  root.GameData = { LEVELS, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML, stripComments };
+  root.GameData = { LEVELS, XP, BOSS_XP, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML, stripComments };
 })(typeof window !== 'undefined' ? window : globalThis);

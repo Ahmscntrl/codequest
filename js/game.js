@@ -60,6 +60,7 @@
         if (k === 'x' || k === 'j') return 'attack';
         if (k === 'q') return 'debug';
         if (k === 'k') return 'skills';
+        if (k === 'm') return 'map';
         if (k === 'escape' || k === 'p') return 'pause';
         return null;
       };
@@ -74,6 +75,7 @@
         if (a === 'pause' && !this.frozen) this.app.pause();
         if (a === 'debug' && !this.frozen) this.app.openDebugger();
         if (a === 'skills' && !this.frozen) this.app.openSkills();
+        if (a === 'map' && !this.frozen) this.app.showMap(true);
       });
       window.addEventListener('keyup', (e) => { const a = map(e); if (a) this.keys[a] = false; });
       window.addEventListener('blur', () => { this.keys = {}; });
