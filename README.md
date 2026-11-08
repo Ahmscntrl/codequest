@@ -34,7 +34,7 @@ Touch controls appear automatically on phones and tablets.
 
 ## Level map
 
-Each save opens on a little map of the course: one stop per level, labelled with the topic it teaches. Your hero stands on the level you're up to. Click any level you've unlocked to play it, whether that's continuing where you left off or replaying an old one. Levels you haven't reached yet are locked. In-game, the label at the top left shows the current level and topic. Click it or press **M** to open the map.
+Each save opens on a little map of the course: one stop per level, labelled with the topic it teaches. Every language has its own map for each chapter (Python's Chapter 1 is a meadow valley, its Chapter 2 a chain of islands, and so on). You can look at locked chapters and levels too: see their topics and terminals and read their tutorials. They just can't be played until you unlock them. Your hero stands on the level you're up to. Click any level you've unlocked to play it, whether that's continuing where you left off or replaying an old one. Levels you haven't reached yet are locked. In-game, the label at the top left shows the current level and topic. Click it or press **M** to open the map.
 
 ## Chapter 2
 
@@ -88,6 +88,7 @@ js/levels.js      level maps, terminal challenges, glitch snippets, skills
 js/teach.js       tutorials, hints and similar-problem examples
 js/art.js         procedural drawing: hero, i, pets, bugs, boss
 js/game.js        platformer engine: physics, entities, effects, boss
+js/mapart.js      the level-map boards (scenery and routes per language and chapter)
 js/ui.js          menus, save slots, character creator, code editor, HUD, sound
 tests/            Node test scripts
 ```
