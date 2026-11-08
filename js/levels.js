@@ -120,9 +120,9 @@
       <p>Use ${c(printFn(ctx) + '(...)')} to make the computer say it.</p>`,
     starter: { python: '# Make the computer say hello!\n# Text goes inside quotes, like "this".\n\n', javascript: '// Make the computer say hello!\n// Text goes inside quotes, like "this".\n\n' },
     api: [],
-    check(runs) {
+    check(runs, ctx) {
       const r = runs[0];
-      if (!r.output.length) return { ok: false, msg: `Nothing was printed. Try ${c('print("Hello, World")')}.` };
+      if (!r.output.length) return { ok: false, msg: `Nothing was printed. Try ${c(printEx(ctx, '"Hello, World"'))}.` };
       const ok = r.output.some(l => /^\s*hello\s*,?\s*world\s*[!.]?\s*$/i.test(l));
       if (!ok) return { ok: false, msg: `The gate heard <b>${escapeHTML(r.output.join(' / '))}</b>, but it's listening for <b>Hello, World</b>.` };
       return { ok: true, msg: 'The gate recognises a fellow programmer. <b>Gate unlocked!</b>' };
