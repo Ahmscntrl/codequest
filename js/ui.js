@@ -4,9 +4,9 @@
   const { LEVELS, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML } = GameData;
   const $ = (s, el) => (el || document).querySelector(s);
   const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
-  const SLOTS = 3;
-  const KEY = (n) => `codequest.slot.${n}`;
-  const LANGS = { python: { label: 'Python', icon: 'Py' }, javascript: { label: 'JavaScript', icon: 'JS' } };
+  const KEY = (lang) => `codequest.save.${lang}`;
+  const OLD_KEY = (n) => `codequest.slot.${n}`;
+  const LANGS = Lang.LANGS;
   const WORLD_INDEX = LEVELS.findIndex(l => l.openWorld);
 
   const FUNC_DOCS = {
@@ -84,12 +84,17 @@
   // ---------------------------------------------------------------- syntax highlighting
   const PY_KW = new Set('and or not if elif else while for in def return class True False None break continue pass is lambda global try except finally raise with as assert import from del'.split(' '));
   const JS_KW = new Set('let const var if else while for of in function return class new this true false null undefined break continue do switch case default typeof instanceof try catch finally throw extends super'.split(' '));
-  const BUILTINS = new Set('print len range str int float list dict set tuple abs min max sum round sorted reversed enumerate zip type isinstance console log Math self input'.split(' '));
+  const C_KW = {
+    cpp: new Set('int double float char bool void string auto const if else for while do return break continue class struct public private protected new delete true false nullptr this using namespace switch case default static vector map long unsigned'.split(' ')),
+    java: new Set('public private protected static final void int double float long boolean char String class new return if else for while do break continue true false null this extends implements import switch case default'.split(' ')),
+    csharp: new Set('public private protected static readonly void int double float long bool char string var class new return if else for foreach in while do break continue true false null this using namespace switch case default override'.split(' ')),
+  };
+  const BUILTINS = new Set('print len range str int float list dict set tuple abs min max sum round sorted reversed enumerate zip type isinstance console log Math self input cout endl std System out println Console WriteLine Write to_string'.split(' '));
   function highlight(code, lang) {
     const re = lang === 'python'
       ? /(#.*$)|((?:[fFrRbB]{1,2})?(?:"""[\s\S]*?(?:"""|$(?![\s\S]))|'''[\s\S]*?(?:'''|$(?![\s\S]))|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?))|(\b\d+(?:\.\d+)?\b)|([A-Za-z_]\w*)|([^\S\n]+|\n)|(.)/gm
-      : /(\/\/.*$|\/\*[\s\S]*?(?:\*\/|$(?![\s\S])))|(`(?:\\.|[^`\\])*`?|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([^\S\n]+|\n)|(.)/gm;
-    const kw = lang === 'python' ? PY_KW : JS_KW;
+      : /(\/\/.*$|\/\*[\s\S]*?(?:\*\/|$(?![\s\S]))|^[ \t]*#.*$)|(`(?:\\.|[^`\\])*`?|"(?:\\.|[^"\\\n])*"?|'(?:\\.|[^'\\\n])*'?)|(\b\d+(?:\.\d+)?\b)|([A-Za-z_$][\w$]*)|([^\S\n]+|\n)|(.)/gm;
+    const kw = lang === 'python' ? PY_KW : C_KW[lang] || JS_KW;
     const apiNames = new Set(Object.keys(FUNC_DOCS).flatMap(n => [n, CodeRunner.camel(n)]));
     let out = '', m;
     re.lastIndex = 0;
@@ -116,6 +121,7 @@
   // ---------------------------------------------------------------- friendly error explanations
   function explain(err, lang) {
     const py = lang === 'python';
+    if (Lang.get(lang).family === 'c') return explainC(err, lang);
     const t = err.type;
     if (t === 'SyntaxError') {
       if (/never closed|unterminated|missing \)|expected '\)'|missing \) after/i.test(err.message)) return 'Something was opened but never closed — check your brackets ( ) [ ] { } and quotes.';
@@ -137,10 +143,34 @@
     return 'Read the error message carefully — it usually tells you exactly what went wrong.';
   }
 
+  function explainC(err, lang) {
+    const L = Lang.get(lang), t = err.type, m = err.message;
+    const types = lang === 'java' ? '<code>int</code> for whole numbers, <code>double</code> for decimals, <code>boolean</code> for true/false and <code>String</code> for text'
+      : lang === 'csharp' ? '<code>int</code> for whole numbers, <code>double</code> for decimals, <code>bool</code> for true/false and <code>string</code> for text'
+        : '<code>int</code> for whole numbers, <code>double</code> for decimals, <code>bool</code> for true/false and <code>string</code> for text';
+    if (t === 'SyntaxError') {
+      if (/;/.test(m) && /expected/.test(m)) return `In ${L.label}, every statement ends with a <b>semicolon</b> <code>;</code> — like a full stop at the end of a sentence. Check the end of the line the error points to (or the line just before it).`;
+      if (/end of (input|file)|\} expected/.test(m)) return 'A <code>{</code> was opened but never closed with a matching <code>}</code>. Count your braces!';
+      if (/string|constant|literal/.test(m)) return 'A piece of text is missing its closing quote <code>"</code>.';
+      if (/main/.test(m)) return lang === 'java' ? 'Java code runs from <code>public static void main(String[] args)</code>, which must be inside a class. Keep your code inside main.' : 'C++ code runs from <code>int main() { ... }</code>. Statements have to go inside a function like main.';
+      return `${L.label} couldn't understand this line. Look for a missing semicolon <code>;</code>, bracket <code>( )</code>, brace <code>{ }</code> or quote.`;
+    }
+    if (t === 'NameError') return `You used a name ${L.label} doesn't know. Check the spelling — capital letters matter! — and remember a variable must be <b>declared with a type</b> before you use it (like <code>${lang === 'java' ? 'String' : 'string'} color = "red";</code>).`;
+    if (t === 'TypeError') return `In ${L.label}, every variable has a <b>type</b> and only holds values of that type: ${types}.` + (lang === 'cpp' && /operator\+/.test(m) ? ' To glue a number onto text, turn it into text first with <code>to_string(n)</code>.' : '');
+    if (t === 'TimeoutError') return 'Your code never finished! A loop that never stops is called an <b>infinite loop</b>. Make sure your loop condition eventually becomes false.';
+    if (t === 'RuntimeError') {
+      if (/zero/i.test(m)) return 'You can\'t divide by zero — not even in Syntaxia.';
+      if (/index|range|bounds/i.test(m)) return 'You asked for a position that isn\'t in the list or text. The first item is at index 0, and the last is at size − 1.';
+      if (/null|Segmentation/i.test(m)) return 'You used an object that doesn\'t exist yet (it\'s empty / null). Make sure you created it first.';
+      return 'Your code compiled, but crashed while running. Read the message — it says what went wrong.';
+    }
+    return 'Read the error message carefully — it usually tells you exactly what went wrong.';
+  }
+
   function corruptCode(code, lang) {
     const muts = lang === 'python'
       ? [c => c.replace(/:(\s*(#.*)?)$/m, '$1'), c => c.replace(/\bfire\(/, 'fier('), c => c.replace(/\brange\(/, 'rnage('), c => c.replace(/\(([^()\n]*)\)(\s*:)/, '($1$2'), c => c.replace(/^(\s+)fire/m, 'fire')]
-      : [c => c.replace('{', ''), c => c.replace(/\bfire\(/, 'fier('), c => c.replace(/\blet\b/, 'lett'), c => c.replace(/\)\s*\{/, ' {'), c => c.replace(/\bfor\b/, 'fro')];
+      : [c => c.replace(/\b([Ff])ire\(/, '$1ier('), c => c.replace(/;(\s*\n)/, '$1'), c => c.replace(/\blet\b/, 'lett'), c => c.replace(/\)\s*\{/, ' {'), c => c.replace(/\bfor\b/, 'fro')];
     const order = muts.sort(() => Math.random() - 0.5);
     for (const m of order) { const n = m(code); if (n !== code) return n; }
     return (lang === 'python' ? 'fier()\n' : 'fier();\n') + code;
@@ -158,7 +188,6 @@
       this.bindEditor();
       $('#map-back').onclick = () => { Sound.play('click'); this.showScreen('game'); this.game.running = true; this.updateHUD(); };
       $('#map-title').onclick = () => { Sound.play('click'); this.persist(); this.showTitle(); };
-      $('#map-langbtn').onclick = () => { Sound.play('click'); this.save.lang = this.save.lang === 'python' ? 'javascript' : 'python'; this.persist(); this.renderMap(); };
       this.bindTouch();
       this.fit();
       window.addEventListener('resize', () => this.fit());
@@ -182,11 +211,24 @@
     ctx() { return { lang: this.save.lang, save: this.save, vars: this.save.vars, name: this.save.hero.name, game: this.game }; }
 
     // ------------------------------------------------------------ persistence
-    readSlot(n) { try { const s = localStorage.getItem(KEY(n)); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+    readSlot(lang) { try { const s = localStorage.getItem(KEY(lang)); return s ? JSON.parse(s) : null; } catch (e) { return null; } }
+    // Saves used to be 3 numbered slots. Move each language's most recent one into its language save file.
+    migrateOldSlots() {
+      try {
+        if (localStorage.getItem('codequest.migrated')) return;
+        localStorage.setItem('codequest.migrated', '1');
+        const old = [1, 2, 3].map(n => { const raw = localStorage.getItem(OLD_KEY(n)); return raw ? { n, s: JSON.parse(raw) } : null; }).filter(Boolean);
+        old.sort((a, b) => (b.s.updated || 0) - (a.s.updated || 0));
+        for (const o of old) {
+          const lang = o.s.lang || 'python';
+          if (!localStorage.getItem(KEY(lang))) { localStorage.setItem(KEY(lang), JSON.stringify(o.s)); localStorage.removeItem(OLD_KEY(o.n)); }
+        }
+      } catch (e) { /* storage may be unavailable */ }
+    }
     persist() {
       if (!this.save) return;
       this.save.updated = Date.now();
-      try { localStorage.setItem(KEY(this.slot), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
+      try { localStorage.setItem(KEY(this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
     }
     newSave(hero, lang) {
       return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: { python: {}, javascript: {} }, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, seenIntro: {}, cannonCorrupt: false };
@@ -203,34 +245,37 @@
       this.game.running = false;
       this.save = null;
       this.showScreen('title');
+      this.migrateOldSlots();
       const wrap = $('#slots');
       wrap.innerHTML = '';
-      for (let n = 1; n <= SLOTS; n++) {
-        const s = this.readSlot(n);
+      for (const lang of Lang.ORDER) {
+        const L = LANGS[lang];
+        const s = this.readSlot(lang);
+        const ready = GameData.hasContent(lang);
         const card = document.createElement('div');
-        card.className = 'slot' + (s ? '' : ' empty');
+        card.className = 'slot lang-slot' + (s ? '' : ' empty');
+        const head = `<div class="slot-lang"><span class="lang-badge">${L.badge}</span><b>${L.label}</b></div>`;
         if (s) {
           const lvl = LEVELS[s.level] || LEVELS[0];
           const mins = Math.floor((s.playtime || 0) / 60);
-          card.innerHTML = `<canvas width="80" height="90"></canvas>
-            <div class="slot-info"><div class="slot-name">${escapeHTML(s.hero.name)} ${s.completed ? '' : ''}</div>
-            <div class="slot-meta">${LANGS[s.lang].label}</div>
-            <div class="slot-meta">${escapeHTML(lvl.name)}</div>
+          card.innerHTML = `${head}<canvas width="80" height="90"></canvas>
+            <div class="slot-info"><div class="slot-name">${escapeHTML(s.hero.name)}</div>
+            <div class="slot-meta">Level ${s.level + 1}: ${escapeHTML(lvl.topic)}${s.completed ? ' · game complete' : ''}</div>
             <div class="slot-meta">${mins} min · ${s.bugs || 0} bugs fixed</div></div>
             <div class="slot-btns"><button class="btn primary" data-act="play">Continue</button><button class="btn ghost small" data-act="del">Delete</button></div>`;
-          const cv = $('canvas', card);
-          this.drawMini(cv, s.hero);
+          this.drawMini($('canvas', card), s.hero);
         } else {
-          card.innerHTML = `<div class="slot-empty-label">Slot ${n}<br><span>— empty —</span></div><button class="btn primary" data-act="new">New Game</button>`;
+          card.innerHTML = `${head}<div class="slot-empty-label"><span>${escapeHTML(L.blurb)}</span><code>${escapeHTML(L.hello)}</code></div>
+            <button class="btn primary" data-act="new" ${ready ? '' : 'disabled'}>${ready ? 'New Game' : 'Coming soon'}</button>`;
         }
         card.addEventListener('click', (e) => {
           const act = e.target.dataset.act;
           if (!act) return;
           Sound.play('click');
-          if (act === 'new') this.showCreator(n);
-          if (act === 'play') this.startGame(n, s);
+          if (act === 'new') this.showCreator(lang);
+          if (act === 'play') this.startGame(lang, s);
           if (act === 'del') {
-            this.dialog('Delete save?', `<p>Delete <b>${escapeHTML(s.hero.name)}</b>'s adventure in slot ${n}? This can't be undone.</p>`, [{ label: 'Cancel' }, { label: 'Delete', cls: 'danger', fn: () => { try { localStorage.removeItem(KEY(n)); } catch (er) { /* ignore */ } this.showTitle(); } }]);
+            this.dialog('Delete save?', `<p>Delete <b>${escapeHTML(s.hero.name)}</b>'s ${L.label} adventure? This can't be undone.</p>`, [{ label: 'Cancel' }, { label: 'Delete', cls: 'danger', fn: () => { try { localStorage.removeItem(KEY(lang)); } catch (er) { /* ignore */ } this.showTitle(); } }]);
           }
         });
         wrap.appendChild(card);
@@ -261,11 +306,10 @@
     }
 
     // ------------------------------------------------------------ character creator
-    showCreator(slot) {
-      this.creatorSlot = slot;
+    showCreator(lang) {
+      this.creatorSlot = lang;
       this.showScreen('creator');
       const look = this.look = { name: '', skin: Art.SKIN[0], shirt: Art.CLOTH[0], pants: Art.CLOTH[6], hat: 'cap', hatColor: Art.CLOTH[1], eyes: 'dots' };
-      let lang = 'python';
       const sw = (id, list, key) => {
         const el = $(id); el.innerHTML = '';
         list.forEach(col => {
@@ -291,10 +335,7 @@
       build();
       $('#cc-name').value = '';
       $('#cc-name').oninput = (e) => { look.name = e.target.value; };
-      $$('.lang-card').forEach(card => {
-        card.classList.toggle('on', card.dataset.lang === lang);
-        card.onclick = () => { lang = card.dataset.lang; $$('.lang-card').forEach(c => c.classList.toggle('on', c === card)); Sound.play('click'); };
-      });
+      $('#cc-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> <b>${LANGS[lang].label}</b> <span class="muted">— this save file learns ${LANGS[lang].label}</span>`;
       $('#cc-random').onclick = () => {
         const pick = (a) => a[Math.floor(Math.random() * a.length)];
         Object.assign(look, { skin: pick(Art.SKIN), shirt: pick(Art.CLOTH), pants: pick(Art.CLOTH), hat: pick(Art.HATS), hatColor: pick(Art.CLOTH), eyes: pick(Art.EYES) });
@@ -306,9 +347,9 @@
         if (!name) { $('#cc-name').focus(); $('#cc-name').classList.add('shake'); setTimeout(() => $('#cc-name').classList.remove('shake'), 500); return; }
         const hero = { name, skin: look.skin, shirt: look.shirt, pants: look.pants, hat: look.hat, hatColor: look.hatColor, eyes: look.eyes };
         const save = this.newSave(hero, lang);
-        this.slot = slot; this.save = save; this.persist();
+        this.slot = lang; this.save = save; this.persist();
         Sound.play('success');
-        this.startGame(slot, save);
+        this.startGame(lang, save);
       };
       const cv = $('#cc-preview'), c = cv.getContext('2d');
       let t = 0;
@@ -575,10 +616,9 @@
 
     pause() {
       const s = this.save;
-      const langBtns = Object.entries(LANGS).map(([k, v]) => `<button class="opt ${s.lang === k ? 'on' : ''}" data-lang="${k}">${v.label}</button>`).join('');
       this.dialog('Paused', `
         <div class="pause-grid">
-          <div><h4>Language</h4><div class="row" id="pause-lang">${langBtns}</div><p class="muted">Switch any time — every terminal works in both.</p></div>
+          <div><h4>Language</h4><p><span class="lang-badge">${LANGS[s.lang].badge}</span> <b>${LANGS[s.lang].label}</b></p><p class="muted">Each save file learns one language. To try another, pick its save file on the title screen.</p></div>
           <div><h4>Controls</h4><table class="keys">
             <tr><td><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd></td><td>Move</td></tr>
             <tr><td><kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd></td><td>Jump</td></tr>
@@ -595,16 +635,7 @@
           { label: 'Save & quit', fn: () => { this.persist(); this.showTitle(); } },
           { label: 'Map', fn: () => this.showMap(true) },
           { label: 'Resume ▶', cls: 'primary', fn: () => this.persist() }],
-        {
-          wide: true,
-          onOpen: (body) => {
-            $$('#pause-lang .opt', body).forEach(b => b.onclick = () => {
-              this.save.lang = b.dataset.lang;
-              $$('#pause-lang .opt', body).forEach(x => x.classList.toggle('on', x === b));
-              this.updateHUD(); this.persist(); Sound.play('click');
-            });
-          },
-        });
+        { wide: true });
     }
 
     openSkills(fromShrine) {
@@ -734,13 +765,6 @@
         if (e.key === 'ArrowRight') $('#tut-next').click();
         if (e.key === 'ArrowLeft') $('#tut-prev').click();
       }, true);
-      $('#ed-lang').onchange = (e) => {
-        this.storeCode();
-        this.save.lang = e.target.value;
-        this.persist();
-        this.renderEditor();
-        this.updateHUD();
-      };
     }
     codeKey() { const ed = this.ed; return ed.mode === 'debug' ? `glitch:${ed.kind}:${this.save.glitches[ed.kind].i}` : ed.chId; }
     defaultCode() {
@@ -777,7 +801,7 @@
     }
     renderEditor() {
       const ed = this.ed, lang = this.save.lang, ctx = this.ctx();
-      $('#ed-lang').value = lang;
+      $('#ed-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> ${LANGS[lang].label}`;
       $('#console').innerHTML = '<div class="c-dim">Output will appear here. Press <b>Run</b> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div>';
       $('#feedback').innerHTML = ''; $('#feedback').className = 'feedback';
       $('#hints').innerHTML = '';
@@ -793,7 +817,7 @@
         const Lv = LEVELS[li];
         $('#ed-kicker').textContent = `LEVEL ${li + 1} · ${Lv.topic.toUpperCase()} · TERMINAL ${Lv.terminals.indexOf(ed.chId) + 1}/${Lv.terminals.length}` + (solved ? ' · SOLVED ✔' : '');
         $('#ed-title').textContent = ch.title;
-        let html = ch.desc(ctx);
+        let html = GameData.descFor(ed.chId, ctx);
         if (solved) html += '<p class="solved-note">✔ Already solved! Feel free to experiment — nothing will break.</p>';
         if (ed.chId === 'cannon' && this.save.cannonCorrupt) html += '<p class="corrupt-note">Segfault <b>corrupted</b> this code! Find and fix the error, then fire.</p>';
         $('#ed-desc').innerHTML = html;
@@ -851,7 +875,7 @@
     // ------------------------------------------------------------ tutorials
     openTutorial(levelIndex, startPage) {
       const L = LEVELS[levelIndex];
-      const pages = GameData.TUTORIALS[L.id] || [];
+      const pages = GameData.tutorialFor(L.id, this.save.lang);
       if (!pages.length) return;
       this.tut = { level: levelIndex, page: startPage || 0, pages, code: {} };
       this.tutOpen = true;
@@ -913,7 +937,7 @@
     globalsFor(ch, test, display) {
       const lang = this.save.lang;
       const g = {};
-      const conv = (k) => lang === 'javascript' ? CodeRunner.camel(k) : k;
+      const conv = (k) => Lang.varName(k, lang);
       for (const [k, v] of Object.entries(this.save.vars)) g[conv(k)] = v;
       if (ch === CH.guard) g[conv('my_name')] = this.save.hero.name;
       const t = test || (ch && ch.tests ? ch.tests(this.ctx())[0] : null);

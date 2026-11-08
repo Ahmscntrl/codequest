@@ -235,6 +235,7 @@
     },
   };
   function fill(html, lang) {
+    if (!PH[lang]) return String(html);
     return String(html).replace(/\{(\w+)\}/g, (m, k) => (PH[lang][k] !== undefined ? fill(PH[lang][k], lang) : m));
   }
 

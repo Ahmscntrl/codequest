@@ -89,14 +89,18 @@
   // room = a terminal on the ground, then its obstacle
   const room = (m, x, n, kind, g) => { m.put(x + 1, 14, String(n)); return OB[kind](m, x + 4, g) + 2; };
   const isJS = (ctx) => ctx.lang === 'javascript';
-  const fn = (n, ctx) => (isJS(ctx) ? CodeRunner.camel(n) : n);
+  const fn = (n, ctx) => Lang.fnName(n, ctx.lang);
   const c = (s) => `<code>${s}</code>`;
   const show = (v) => JSON.stringify(v);
-  const hasLoop = (code, ctx) => isJS(ctx) ? /\b(for|while)\s*\(|\.forEach\s*\(|\.map\s*\(/.test(stripComments(code, ctx)) : /\b(for|while)\b/.test(stripComments(code, ctx));
+  const hasLoop = (code, ctx) => Lang.hasLoop(code, ctx.lang);
   function stripComments(code, ctx) {
-    return isJS(ctx) ? code.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '') : code.replace(/#.*$/gm, '');
+    return Lang.stripComments(code, ctx.lang);
   }
   const printFn = (ctx) => isJS(ctx) ? 'console.log' : 'print';
+  const printEx = (ctx, x) => Lang.get(ctx.lang).print(x);
+  const isC = (ctx) => Lang.get(ctx.lang).family === 'c';
+  const selfWord = (ctx) => Lang.get(ctx.lang).self;
+  const tn = (n, ctx) => Lang.testName(n, ctx.lang);
   const actionsOf = (run, name) => run.actions.filter(a => a.fn === name);
   const firstErr = (runs) => runs.find(r => r.error);
   function randomWord() {
@@ -168,7 +172,7 @@
       const pw = ctx.vars.password;
       if (stripComments(code, ctx).includes(pw)) return { ok: false, msg: "Sneaky! But the lock only trusts the variable. Print <code>password</code> instead of typing the secret." };
       if (r.output.some(l => l.trim() === 'password')) return { ok: false, msg: 'You printed the <i>word</i> "password". Remove the quotes so you print what is <i>inside</i> the variable.' };
-      if (!r.output.some(l => l.trim() === pw)) return { ok: false, msg: `The lock didn't hear the password. Try ${c(printFn(ctx) + '(password)')}.` };
+      if (!r.output.some(l => l.trim() === pw)) return { ok: false, msg: `The lock didn't hear the password. Try ${c(printEx(ctx, 'password'))}.` };
       return { ok: true, msg: `The lock whispers "<b>${escapeHTML(pw)}</b>"... <b>Unlocked!</b>` };
     },
     hints: {
@@ -355,15 +359,15 @@
     api: ['equip'],
     check(runs, ctx) {
       const calls = actionsOf(runs[0], 'equip');
-      if (!calls.length) return { ok: false, msg: `Nothing was equipped. Call ${c(fn('equip', ctx) + (isJS(ctx) ? '(mySword)' : '(my_sword)'))}.` };
+      if (!calls.length) return { ok: false, msg: `Nothing was equipped. Call ${c(fn('equip', ctx) + '(...)')} with your weapon object.` };
       const o = calls[calls.length - 1].args[0];
       if (!o || !o.__obj) {
-        if (o && o.__class) return { ok: false, msg: `You passed the <b>blueprint</b> (the class itself). Create an object first: ${c(isJS(ctx) ? 'new ' + o.__class + '()' : o.__class + '()')}` };
+        if (o && o.__class) return { ok: false, msg: `You passed the <b>blueprint</b> (the class itself). Create an object first: ${c(ctx.lang === 'python' ? o.__class + '()' : ctx.lang === 'cpp' ? o.__class + ' my_weapon;' : 'new ' + o.__class + '()')}` };
         return { ok: false, msg: 'You can only equip an <b>object</b> made from a class.' };
       }
       const p = o.props;
-      if (typeof p.name !== 'string') return { ok: false, msg: `Your weapon needs a ${c('name')} that is text, e.g. ${c(isJS(ctx) ? 'this.name = "Byte Blade"' : 'self.name = "Byte Blade"')}.` };
-      if (typeof p.damage !== 'number') return { ok: false, msg: `Your weapon needs a ${c('damage')} number, e.g. ${c(isJS(ctx) ? 'this.damage = 3' : 'self.damage = 3')}.` };
+      if (typeof p.name !== 'string') return { ok: false, msg: `Your weapon needs a ${c('name')} that is text, e.g. ${c(selfWord(ctx) + (ctx.lang === 'cpp' ? '->' : '.') + 'name = "Byte Blade"')}.` };
+      if (typeof p.damage !== 'number') return { ok: false, msg: `Your weapon needs a ${c('damage')} number, e.g. ${c(selfWord(ctx) + (ctx.lang === 'cpp' ? '->' : '.') + 'damage = 3')}.` };
       if (p.damage > 5) return { ok: false, msg: `Damage ${p.damage}?! The forge melts. Max is <b>5</b> for now (skill points can make it stronger later).` };
       if (p.damage < 1) return { ok: false, msg: 'A weapon that does no damage is just a decoration. Use damage of at least 1.' };
       const cry = Object.entries(o.methods).map(([k, m]) => m.value).find(v => typeof v === 'string');
@@ -397,7 +401,7 @@
       const sp = o.methods.speak;
       if (!sp) return { ok: false, msg: `Your pet needs a ${c('speak')} method.` };
       if (sp.error) return { ok: false, msg: `${c('speak()')} crashed: <b>${escapeHTML(sp.error)}</b>` };
-      if (sp.arity) return { ok: false, msg: `${c('speak')} shouldn't need extra inputs${isJS(ctx) ? '' : ' (just self)'}.` };
+      if (sp.arity) return { ok: false, msg: `${c('speak')} shouldn't need extra inputs${ctx.lang === 'python' ? ' (just self)' : ''}.` };
       if (typeof sp.value !== 'string' || sp.value === '...' || !sp.value.trim()) return { ok: false, msg: `${c('speak()')} should return something your pet says (text), like "Meow!". It returned ${escapeHTML(show(sp.value))}.` };
       const species = String(o.props.species || o.className || 'pet').toLowerCase();
       return { ok: true, msg: `<b>${escapeHTML(o.props.name)}</b> the ${escapeHTML(species)} joins you and says "<b>${escapeHTML(sp.value)}</b>"!`, data: { pet: { className: o.className, name: o.props.name.slice(0, 16), species, speak: sp.value.slice(0, 40) } } };
@@ -564,7 +568,7 @@
       const src = stripComments(code, ctx);
       if (/\b(42|99)\b/.test(src)) return { ok: false, msg: 'No cheating — let the computer do the math with <code>*</code> and <code>-</code>!' };
       const i42 = out.indexOf('42'), i99 = out.indexOf('99');
-      if (i42 < 0) return { ok: false, msg: 'I don\'t see the answer to 7 × 6 yet. Try <code>' + printFn(ctx) + '(7 * 6)</code>.' };
+      if (i42 < 0) return { ok: false, msg: 'I don\'t see the answer to 7 × 6 yet. Try <code>' + printEx(ctx, '7 * 6') + '</code>.' };
       if (i99 < 0) return { ok: false, msg: 'Now print the answer to 100 − 1.' };
       if (i99 < i42) return { ok: false, msg: 'Print 7 × 6 first, then 100 − 1.' };
       return { ok: true, msg: '42 and 99 — correct! <b>Gate open!</b>' };
@@ -587,7 +591,7 @@
       const v = r.vars.color;
       if (v === undefined) return { ok: false, msg: `I can't find a variable called ${c('color')}. Spell it exactly like that (all lowercase).` };
       if (typeof v !== 'string' || !v.trim()) return { ok: false, msg: `${c('color')} should hold some text, like ${c('"blue"')}.` };
-      if (!new RegExp('\\(\\s*color\\s*\\)').test(stripComments(code, ctx))) return { ok: false, msg: `Now print the <b>variable</b>: ${c(printFn(ctx) + '(color)')} — no quotes around the name.` };
+      if (!Lang.printsVar(code, 'color', ctx.lang)) return { ok: false, msg: `Now print the <b>variable</b>: ${c(printEx(ctx, 'color'))} — no quotes around the name.` };
       if (!lines(r).includes(v.trim())) return { ok: false, msg: `Print the variable so it shows <b>${escapeHTML(v)}</b>.` };
       return { ok: true, msg: `The name plate glows <b>${escapeHTML(v)}</b>. <b>Gate open!</b>` };
     },
@@ -644,8 +648,8 @@
     check(runs, ctx) {
       for (let i = 0; i < runs.length; i++) {
         const t = runs.tests[i], got = lastLine(runs[i]);
-        const want = isJS(ctx) ? String(t.expect) : (t.expect ? 'True' : 'False');
-        if (!got || got.toLowerCase() !== want.toLowerCase()) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected <b>${want}</b> but got <b>${nothing(got)}</b>.` + (t.globals.hp === 50 ? ' <i>Is 50 greater than 50?</i>' : '') };
+        const want = Lang.boolOut(t.expect, ctx.lang);
+        if (!Lang.boolOutOk(got, t.expect, ctx.lang)) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected <b>${want}</b> but got <b>${nothing(got)}</b>.` + (t.globals.hp === 50 ? ' <i>Is 50 greater than 50?</i>' : '') };
       }
       return { ok: true, msg: 'The detector agrees with you every time. <b>Gate open!</b>' };
     },
@@ -825,7 +829,8 @@
     api: [],
     check(runs, ctx, code) {
       const src = stripComments(code, ctx);
-      if (!(isJS(ctx) ? /new\s+Crate\s*\(/ : /Crate\s*\(\s*\)/).test(src)) return { ok: false, msg: `First create an object from the blueprint: ${c(isJS(ctx) ? 'new Crate()' : 'Crate()')}.` };
+      const made = ctx.lang === 'python' ? /Crate\s*\(\s*\)/ : ctx.lang === 'cpp' ? /\bCrate\s+\w+\s*[;({=]|Crate\s*\(\s*\)/ : /new\s+Crate\s*\(/;
+      if (!made.test(src.replace(/class\s+Crate/, ''))) return { ok: false, msg: `First create an object from the blueprint: ${c(ctx.lang === 'python' ? 'Crate()' : ctx.lang === 'cpp' ? 'Crate my_crate;' : 'new Crate()')}.` };
       if (!lines(runs[0]).includes('golden key')) return { ok: false, msg: `Now print the object's ${c('contents')} attribute.` };
       if (!/\.contents/.test(src)) return { ok: false, msg: 'Read it from the object with <code>.contents</code> — don\'t just type it!' };
       return { ok: true, msg: 'The crate creaks open: a <b>golden key</b>! <b>Gate open!</b>' };
@@ -946,7 +951,8 @@
     check(runs, ctx, code) {
       const src = stripComments(code, ctx), out = lines(runs[0]);
       if (/100/.test(src)) return { ok: false, msg: 'Let the computer calculate <code>25 * 4</code>.' };
-      if (!/["'`]Score:\s*["'`]\s*,\s*25\s*\*\s*4/.test(src)) return { ok: false, msg: `Put a <b>comma</b> between the text and the calculation: ${c(printFn(ctx) + '("Score:", 25 * 4)')}… well, almost — try it!` };
+      const sepOk = ctx.lang === 'cpp' ? /["']Score:\s*["']\s*<<\s*25\s*\*\s*4/ : isC(ctx) ? /["']Score:\s*["']\s*\+\s*25\s*\*\s*4|\{\s*25\s*\*\s*4\s*\}/ : /["'`]Score:\s*["'`]\s*,\s*25\s*\*\s*4/;
+      if (!sepOk.test(src)) return { ok: false, msg: ctx.lang === 'cpp' ? 'Chain the two values with <code>&lt;&lt;</code>: the text <code>"Score: "</code>, then the calculation <code>25 * 4</code>.' : isC(ctx) ? 'Join the text <code>"Score: "</code> and the calculation <code>25 * 4</code> with <code>+</code>.' : 'Put a <b>comma</b> between the text <code>"Score:"</code> and the calculation <code>25 * 4</code>.' };
       if (!out.includes('Score: 100')) return { ok: false, msg: `The scoreboard should show <b>Score: 100</b> but shows <b>${escapeHTML(out.join(' / ') || 'nothing')}</b>.` };
       return { ok: true, msg: '<b>Score: 100</b> lights up the board. <b>Gate open!</b>' };
     },
@@ -964,13 +970,13 @@
     captureVars: ['name', 'level', 'alive'],
     check(runs, ctx) {
       const v = runs[0].vars;
-      const T = isJS(ctx) ? 'true' : 'True';
+      const T = Lang.get(ctx.lang).True;
       if (v.name === undefined) return { ok: false, msg: `Make a variable called ${c('name')}.` };
       if (typeof v.name !== 'string') return { ok: false, msg: `${c('name')} should hold <b>text</b> — put it in quotes.` };
       if (v.level === undefined) return { ok: false, msg: `Make a variable called ${c('level')}.` };
       if (typeof v.level !== 'number') return { ok: false, msg: `${c('level')} should be a <b>number</b>. ${typeof v.level === 'string' ? 'Remove the quotes — <code>"5"</code> is text that looks like a number!' : ''}` };
       if (v.alive === undefined) return { ok: false, msg: `Make a variable called ${c('alive')}.` };
-      if (v.alive !== true) return { ok: false, msg: `${c('alive')} should be ${c(T)}${typeof v.alive === 'string' ? ' — without quotes, and' : ''} spelled exactly like that${isJS(ctx) ? '' : ' (capital T)'}.` };
+      if (v.alive !== true) return { ok: false, msg: `${c('alive')} should be ${c(T)}${typeof v.alive === 'string' ? ' — without quotes, and' : ''} spelled exactly like that${ctx.lang === 'python' ? ' (capital T)' : ''}.` };
       return { ok: true, msg: 'Scanner reads: text ✔ number ✔ boolean ✔. <b>Gate open!</b>' };
     },
     effect: (game) => game.openGate('B'),
@@ -1020,7 +1026,7 @@
     check(runs, ctx) {
       for (let i = 0; i < runs.length; i++) {
         const t = runs.tests[i], did = runs[i].actions.map(a => a.fn);
-        if (did.length !== 1 || did[0] !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected ${c(fn(t.expect, ctx) + '()')} but your code did ${c(did.length ? did.map(d => fn(d, ctx) + '()').join(' and ') : 'nothing')}.` + (t.globals.weather === 'snow' ? ` <i>Each side of ${isJS(ctx) ? '||' : 'or'} needs its own full comparison: <code>weather ${isJS(ctx) ? '===' : '=='} "snow"</code>.</i>` : '') };
+        if (did.length !== 1 || did[0] !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected ${c(fn(t.expect, ctx) + '()')} but your code did ${c(did.length ? did.map(d => fn(d, ctx) + '()').join(' and ') : 'nothing')}.` + (t.globals.weather === 'snow' ? ` <i>Each side of ${ctx.lang === 'python' ? 'or' : '||'} needs its own full comparison: <code>weather ${ctx.lang === 'javascript' ? '===' : '=='} "snow"</code>.</i>` : '') };
       }
       return { ok: true, msg: 'Ready for any weather. <b>Gate open!</b>' };
     },
@@ -1078,7 +1084,8 @@
     check(runs, ctx, code) {
       const r = checkCalls(runs[0], this.callTests, [25, 0, 9], ctx, 'square');
       if (!r.ok) return r;
-      if (!/square\(\s*3\s*\)\s*\+\s*square\(\s*4\s*\)/.test(stripComments(code, ctx))) return { ok: false, msg: `Your function works! Now print ${c('square(3) + square(4)')}.` };
+      const sq = tn('square', ctx);
+      if (!new RegExp(sq + '\\(\\s*3\\s*\\)\\s*\\+\\s*' + sq + '\\(\\s*4\\s*\\)').test(stripComments(code, ctx))) return { ok: false, msg: `Your function works! Now print ${c(sq + '(3) + ' + sq + '(4)')}.` };
       if (!lines(runs[0]).includes('25')) return { ok: false, msg: 'Print the result of <code>square(3) + square(4)</code>.' };
       return { ok: true, msg: '9 + 16 = 25 — returned values add up! <b>Gate open!</b>' };
     },
@@ -1093,7 +1100,7 @@
     callTests: [{ fn: 'even', args: [4] }, { fn: 'even', args: [7] }, { fn: 'even', args: [0] }, { fn: 'even', args: [11] }],
     check(runs, ctx) {
       const calls = runs[0].calls;
-      if (calls.some(cl => typeof cl.value === 'string')) return { ok: false, msg: `Return the value ${c(isJS(ctx) ? 'true' : 'True')} itself, not the text ${c(isJS(ctx) ? '"true"' : '"True"')} in quotes.` };
+      if (calls.some(cl => typeof cl.value === 'string')) return { ok: false, msg: `Return the value ${c(Lang.get(ctx.lang).True)} itself, not the text ${c('"' + Lang.get(ctx.lang).True + '"')} in quotes.` };
       return checkCalls(runs[0], this.callTests, [true, false, true, false], ctx, 'even');
     },
     effect: (game) => game.openGate('E'),
@@ -1142,7 +1149,8 @@
     api: [],
     tests: () => [['rope', 'torch'], [], ['map', 'key', 'coin']].map(b => ({ label: `bag = ${show(b)}`, globals: { bag: b }, expect: [String(b.length + 1), 'potion'] })),
     check(runs, ctx, code) {
-      if (!(isJS(ctx) ? /\.push\s*\(/ : /\.append\s*\(/).test(stripComments(code, ctx))) return { ok: false, msg: `Add to the list with ${c(isJS(ctx) ? 'bag.push(...)' : 'bag.append(...)')}.` };
+      const addName = Lang.get(ctx.lang).append;
+      if (!new RegExp('\\.' + addName + '\\s*\\(').test(stripComments(code, ctx))) return { ok: false, msg: `Add to the list with ${c('bag.' + addName + '(...)')}.` };
       for (let i = 0; i < runs.length; i++) {
         const t = runs.tests[i], got = lines(runs[i]).slice(-2).map(s => s.replace(/^['"]|['"]$/g, ''));
         if (got.join('|') !== t.expect.join('|')) return { ok: false, msg: `Test ${i + 1} (${escapeHTML(t.label)}): your last two lines should be <b>${t.expect.join(', ')}</b> but were <b>${escapeHTML(got.join(', ') || 'nothing')}</b>.` };
@@ -1153,17 +1161,18 @@
   };
 
   function checkCalls(run, tests, expected, ctx, name) {
+    name = tn(name, ctx);
     for (let i = 0; i < tests.length; i++) {
       const call = run.calls[i];
       const args = tests[i].args.map(show).join(', ');
       if (!call) return { ok: false, msg: `Couldn't find the function ${c(name)}.` };
       if (call.error) {
-        if (/is not defined/.test(call.error)) return { ok: false, msg: `There's no function called ${c(name)}. Make sure you ${isJS(ctx) ? `wrote ${c('function ' + name + '(...)')}` : `used ${c('def ' + name + '(...):')}`} and spelled it exactly.` };
+        if (/is not defined/.test(call.error)) return { ok: false, msg: `There's no function called ${c(name)}. Make sure you ${ctx.lang === 'javascript' ? `wrote ${c('function ' + name + '(...)')}` : ctx.lang === 'python' ? `used ${c('def ' + name + '(...):')}` : `defined ${c(name + '(...)')} with a return type`} and spelled it exactly (capitals matter!).` };
         return { ok: false, msg: `${c(name + '(' + escapeHTML(args) + ')')} crashed: <b>${escapeHTML(call.error)}</b>` };
       }
       if (show(call.value) !== show(expected[i])) {
-        const none = call.value === null ? ` <i>(${isJS(ctx) ? 'undefined' : 'None'} means nothing was <b>returned</b> — did you forget ${c('return')}?)</i>` : '';
-        return { ok: false, msg: `${c(name + '(' + escapeHTML(args) + ')')} returned ${c(call.value === null ? (isJS(ctx) ? 'undefined' : 'None') : escapeHTML(show(call.value)))} but should return ${c(escapeHTML(show(expected[i])))}.${none}` };
+        const none = call.value === null ? ` <i>(${isC(ctx) ? 'Nothing' : Lang.get(ctx.lang).none} means nothing was <b>returned</b> — did you forget ${c('return')}?)</i>` : '';
+        return { ok: false, msg: `${c(name + '(' + escapeHTML(args) + ')')} returned ${c(call.value === null ? Lang.get(ctx.lang).none : escapeHTML(show(call.value)))} but should return ${c(escapeHTML(show(expected[i])))}.${none}` };
       }
     }
     return { ok: true, msg: `All ${tests.length} tests pass! ✔ Your function ${c(name)} works.` };
