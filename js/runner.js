@@ -103,7 +103,7 @@
     for (const n of (d.api || [])) {
       const f = function (...args) {
         actions.push({ fn: n, args: args.map(a => norm(a)) });
-        if (actions.length > 5000) throw new RangeError('too many actions — slow down!');
+        if (actions.length > 5000) throw new RangeError('your code called a function thousands of times — is a loop stuck going forever?');
         const r = (d.apiReturns || {})[n];
         return r === undefined ? undefined : r;
       };

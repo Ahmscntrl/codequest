@@ -21,6 +21,10 @@
     adopt: ['pet', 'Adopts a pet object.'],
     deposit: ['gem', 'Deposits one gem.'],
     fire: ['', 'Fires one cannon shot.'],
+    heal: ['', 'Heals you.'],
+    turn_away: ['', 'Politely turns the visitor away.'],
+    charge_up: ['', 'Charges the battery a little.'],
+    brew: ['potion', 'Brews one potion object.'],
   };
 
   // ---------------------------------------------------------------- sound
@@ -116,6 +120,7 @@
       return py ? 'Python couldn\'t understand this line. Look for a missing bracket, quote, comma or colon.' : 'JavaScript couldn\'t understand this. Look for missing brackets ( ), braces { }, quotes or commas.';
     }
     if (t === 'IndentationError') return 'Python uses indentation (spaces at the start of a line) to know which lines belong inside an if/for/def. Make sure they line up!';
+    if (t === 'ReferenceError' && /before initialization/.test(err.message)) return 'You used <code>let</code> (or <code>const</code>) on a variable that <b>already exists</b>, so JavaScript made a brand-new empty one. Remove the <code>let</code> and just write <code>name = ...</code>.';
     if (t === 'NameError' || t === 'ReferenceError') return 'You used a name that doesn\'t exist. Check the spelling — and capital letters matter!' + (py ? '' : ' (Did you declare it with <code>let</code> or <code>const</code>?)');
     if (t === 'TypeError') return py ? 'You used a value in a way its type doesn\'t allow — like adding text and a number. <code>str(5)</code> turns a number into text, <code>int("5")</code> turns text into a number.' : 'You used a value in a way it doesn\'t allow — like calling something that isn\'t a function, reading a property of <code>null</code>, or changing a <code>const</code>.';
     if (t === 'TimeoutError') return 'Your code never finished! A loop that never stops is called an <b>infinite loop</b>. Make sure your loop condition eventually becomes false.';
@@ -864,7 +869,7 @@
       const api = Object.fromEntries((ch.api || []).map(n => [n, true]));
       for (let i = 0; i < tests.length; i++) {
         const t = tests[i];
-        const r = await CodeRunner.run(lang, code, { globals: this.globalsFor(ch, t), api, callTests: ch.callTests || [], captureVars: [] });
+        const r = await CodeRunner.run(lang, code, { globals: this.globalsFor(ch, t), api, callTests: ch.callTests || [], captureVars: ch.captureVars || [] });
         runs.push(r);
         const label = tests.length > 1 ? `Test ${i + 1}: ${t.label}` : null;
         this.printOutput(r.output, label);

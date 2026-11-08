@@ -273,3 +273,4 @@ body.touch .keyhints { display: none; }
 .chapter.locked .ch-head { cursor: pointer; }
 .chapter.locked .btn:disabled { opacity: .6; }
 @media (max-width: 600px) { .map-continue { grid-template-columns: 1fr; text-align: center; } .map-continue canvas { justify-self: center; } }
+.ed-desc pre { white-space: pre-wrap; word-break: break-word; }

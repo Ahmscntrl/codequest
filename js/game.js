@@ -5,6 +5,7 @@
   const T = { EMPTY: 0, GROUND: 1, WALL: 2, ONEWAY: 3, SPIKES: 4, LAVA: 5, CLAVA: 6, STONE: 7, GATE: 8, SLOT: 9, BRIDGE: 10, STEP: 11 };
   const SOLID = new Set([T.GROUND, T.WALL, T.STONE, T.GATE, T.BRIDGE, T.STEP]);
   const BUG_KINDS = ['syntax', 'name', 'type'];
+  const GATE_COLORS = { A: '#4ef0ff', B: '#ff5cf4', C: '#ffd166', D: '#58ff8b', E: '#ff9f43' };
 
   const THEMES = {
     meadow: { sky: ['#6ec3ff', '#d9f2ff'], ground: '#7a5538', dark: '#5e3f28', top: '#58c96a', wall: '#8b90a8', far: '#9ed6a6', far2: '#b8e3c0', glyph: 'rgba(255,255,255,0.35)' },
@@ -114,7 +115,7 @@
           case '^': set(T.SPIKES); break;
           case '~': set(T.LAVA); break;
           case '%': set(T.CLAVA); break;
-          case 'A': case 'B': set(T.GATE); this.gates.push({ x, y, g: ch, open: false, anim: 0 }); break;
+          case 'A': case 'B': case 'C': case 'D': case 'E': set(T.GATE); this.gates.push({ x, y, g: ch, open: false, anim: 0 }); break;
           case '_': set(T.SLOT); this.slots.push({ x, y }); break;
           case 'S': this.stairOrigin = { x, y }; break;
           case 'P': start = { x: x * TILE + 6, y: (y + 1) * TILE - 30 }; break;
@@ -852,7 +853,7 @@
           }
           case T.GATE: {
             const gate = this.gates.find(g => g.x === x && g.y === y);
-            const col = gate && gate.g === 'B' ? '#ff5cf4' : '#4ef0ff';
+            const col = GATE_COLORS[gate ? gate.g : 'A'];
             ctx.fillStyle = 'rgba(10,20,40,0.85)'; ctx.fillRect(px + 2, py, TILE - 4, TILE);
             ctx.fillStyle = col; ctx.globalAlpha = 0.6 + 0.3 * Math.sin(this.t * 0.1 + y);
             for (let k = 0; k < 4; k++) ctx.fillRect(px + 4 + k * 7, py, 3, TILE);
@@ -883,7 +884,7 @@
       for (const g of this.gates) if (g.open && g.anim < 1) {
         g.anim += 0.03;
         const px = g.x * TILE, py = g.y * TILE + g.anim * TILE;
-        ctx.globalAlpha = 1 - g.anim; ctx.fillStyle = g.g === 'B' ? '#ff5cf4' : '#4ef0ff';
+        ctx.globalAlpha = 1 - g.anim; ctx.fillStyle = GATE_COLORS[g.g];
         for (let k = 0; k < 4; k++) ctx.fillRect(px + 4 + k * 7, py, 3, TILE * (1 - g.anim));
         ctx.globalAlpha = 1;
       }

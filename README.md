@@ -41,15 +41,15 @@ Each save opens on a little map of the course: one stop per level, labelled with
 - **A puzzle platformer where you write scripts in a language of your choice.** Python runs on a small Python interpreter built for the game (`js/python.js`), with real Python-style errors. JavaScript runs on the browser's own JS engine inside a sandboxed Web Worker with a timeout. You can switch languages at any time, and every terminal works in both.
 - **You collect objects as variables and print them when you need them.** Glowing boxes like `planks` and `password` become variables in your scripts. The password is random for each player, so you have to print the variable rather than type the value.
 - **A character creator** with your name, skin, clothes, hats and eyes. The guard bot even checks visitors against your name.
-- **Levels, starting with "Hello, World":**
-  1. Hello, World (`print`)
-  2. Variables
-  3. Conditions (`if` / `elif` / `else`, checked against several test cases)
-  4. Loops
-  5. Functions (your function is tested with different inputs)
-  6. Classes (forge a weapon and/or adopt a pet)
-  7. The Wilds of Syntaxia, an open world
-  8. The final boss, Segfault the Bug King
+- **Levels, starting with "Hello, World".** Each topic is a series of small steps, and every terminal teaches one new idea:
+  1. **print()**: Hello World → printing several lines → math with numbers
+  2. **Variables**: make a variable → use a collected one → do math with variables → change a variable → print a secret
+  3. **Conditions**: true/false comparisons → `if` → `if/else` → `elif` → `and`
+  4. **Loops**: repeat → use the counter `i` → count 1 to 10 → count down → `while` → add up totals
+  5. **Functions**: call a function → parameters → `return` → returning text → functions with loops → functions with `if`
+  6. **Classes**: objects and attributes → constructor inputs and methods → forge a weapon / adopt a pet
+  7. **The Wilds**, an open world: list and string warm-ups, then lists, strings, Fibonacci, FizzBuzz and dictionaries
+  8. **The final boss**: Segfault the Bug King
 - **The `i` in loops is a little friend you can find.** `i` is hidden in the Loops level, and the Staircase Engine won't run until you find them. They hop up each step your loop builds (`i=0`, `i=1`, ...) and follow you for the rest of the game.
 - **Save slots.** There are 3 slots stored in your browser's localStorage. The game saves at checkpoints and when you solve terminals.
 - **Classes can be used for weapons or pets.** Write a `class` with `name`/`damage` to get a real weapon, or one with `name`/`speak()` to get a pet that follows you around and talks (cats, dogs, birds, robots, dragons, slimes...).
