@@ -181,7 +181,7 @@
       try { localStorage.setItem(KEY(this.slot), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
     }
     newSave(hero, lang) {
-      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: { python: {}, javascript: {} }, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, completed: false, seenIntro: {}, cannonCorrupt: false };
+      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: { python: {}, javascript: {} }, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, seenIntro: {}, cannonCorrupt: false };
     }
 
     // ------------------------------------------------------------ screens
@@ -324,6 +324,7 @@
     // ------------------------------------------------------------ game flow
     startGame(slot, save) {
       this.slot = slot; this.save = save;
+      this.mapOpen = null;
       // migrate older/partial saves
       const fresh = this.newSave(save.hero, save.lang);
       for (const k of Object.keys(fresh)) if (save[k] === undefined) save[k] = fresh[k];
@@ -357,6 +358,7 @@
         extra = '<div class="unlock">✨ <b>SKILL POINTS UNLOCKED!</b> ✨<br>You earned <b>2 SP</b>. Spend them at a Skill Shrine or press <b>K</b> anytime.<br>The <b>open world</b> awaits!</div>';
       }
       const firstClear = next > (this.save.maxLevel || 0);
+      delete this.save.checkpoints[this.save.level];
       this.save.level = Math.min(next, LEVELS.length - 1);
       this.save.maxLevel = Math.max(this.save.maxLevel || 0, this.save.level);
       this.save.checkpoint = null;
@@ -370,6 +372,7 @@
       Sound.play('victory');
       const firstWin = !this.save.completed;
       this.save.completed = true;
+      delete this.save.checkpoints[this.save.level];
       this.save.level = WORLD_INDEX;
       this.save.checkpoint = null;
       if (firstWin) this.save.sp += 3;
@@ -412,13 +415,30 @@
       this.showScreen('map');
       this.renderMap();
     }
+    // Where "Continue" takes you: the furthest chapter you've unlocked (or the Wilds once the game is beaten).
+    frontier() { return this.save.completed ? WORLD_INDEX : Math.min(this.save.maxLevel || 0, LEVELS.length - 1); }
     renderMap() {
       const s = this.save, P = this.progress();
       const max = s.maxLevel || 0;
+      const front = this.frontier();
+      {
+        const L = LEVELS[front];
+        const nextId = L.terminals.find(id => s.solved[id] === undefined);
+        const what = L.boss ? 'Defeat Segfault, the Bug King' : nextId ? CH[nextId].title : (L.openWorld ? 'Explore the Wilds and finish side quests' : 'Reach the exit portal');
+        const fresh = !L.terminals.some(id => s.solved[id] !== undefined) && !s.checkpoints[front];
+        $('#map-continue').innerHTML = `
+          <canvas width="60" height="70"></canvas>
+          <div class="mc-text"><div class="mc-kicker">${fresh && front === 0 ? 'Start your quest' : 'Continue where you left off'}</div>
+            <div class="mc-title">Chapter ${front + 1} · ${escapeHTML(L.topic)}</div>
+            <div class="mc-sub">Next up: <b>${escapeHTML(what)}</b></div></div>
+          <button class="btn primary big" id="mc-go">${fresh ? 'Start' : 'Continue'} ▶</button>`;
+        Art.drawHero($('#map-continue canvas').getContext('2d'), 30, 66, s.hero, { scale: 1.4, t: 0 });
+        $('#mc-go').onclick = () => { Sound.play('click'); this.loadLevel(front); };
+      }
       const lang = LANGS[s.lang];
       $('#map-back').classList.toggle('hidden', !this.mapFromGame);
       $('#map-lang').textContent = `${lang.icon} ${lang.label}`;
-      const open = this.mapOpen || (this.mapOpen = new Set([Math.min(max, LEVELS.length - 1)]));
+      const open = this.mapOpen || (this.mapOpen = new Set([front]));
       const rows = (L, i, unlocked) => {
         const items = L.terminals.map((id, k) => ({ id, label: (L.openWorld ? (XP[id] && ['gems', 'decoder', 'fib'].includes(id) ? 'Core' : 'Side quest') : 'Terminal ' + (k + 1)), title: CH[id].title.replace(/^(Core [IV]+|Side Quest) — /, ''), done: s.solved[id] !== undefined }));
         if (L.boss) items.splice(0, items.length, { label: 'Boss', title: 'Defeat Segfault, the Bug King', done: !!s.completed });
@@ -436,11 +456,11 @@
       $('#chapters').innerHTML = LEVELS.map((L, i) => {
         const unlocked = i <= max;
         const done = P.chapterDone(i);
-        const current = i === s.level && !done && unlocked;
+        const current = i === front;
         const isOpen = open.has(i);
         const nDone = L.terminals.filter(id => s.solved[id] !== undefined).length;
-        const playLabel = !unlocked ? '🔒 Locked' : done ? '↺ Replay' : (i === s.level && (nDone || s.checkpoint) ? 'Continue ▶' : 'Start ▶');
-        return `<div class="chapter ${unlocked ? '' : 'locked'} ${done ? 'done' : ''} ${current ? 'current' : ''} ${isOpen ? 'open' : ''}">
+        const playLabel = !unlocked ? `🔒 Finish Chapter ${i} to unlock` : i === front && !done ? ((nDone || s.checkpoints[i]) ? 'Continue ▶' : 'Start ▶') : done ? '↺ Replay' : 'Play ▶';
+        return `<div class="chapter ${unlocked ? '' : 'locked'} ${done ? 'done' : ''} ${current ? 'current' : ''} ${isOpen ? 'open' : ''}" ${unlocked ? '' : `title="Locked — finish Chapter ${i} first"`}>
           <div class="ch-node">${done ? '✔' : unlocked ? i + 1 : '🔒'}</div>
           <div class="ch-card">
             <button class="ch-head" data-toggle="${i}">
@@ -450,6 +470,7 @@
             </button>
             <div class="ch-body">
               <p class="ch-blurb"><b>${escapeHTML(L.name)}.</b> ${escapeHTML(L.blurb)}</p>
+              ${unlocked ? '' : `<p class="ch-locked-note">🔒 This chapter is locked. Finish <b>Chapter ${i}: ${escapeHTML(LEVELS[i - 1].topic)}</b> to unlock it.</p>`}
               <div class="ex-list">${rows(L, i, unlocked)}</div>
               <div class="ch-foot">
                 <span class="ch-badge ${done ? 'got' : ''}" title="${escapeHTML(L.badge[1])}">${L.badge[0]} ${done ? escapeHTML(L.badge[1]) : 'Complete to earn a badge'}</span>

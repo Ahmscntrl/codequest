@@ -136,8 +136,10 @@
       this.start = start;
       const p = this.player = { x: start.x, y: start.y, w: 20, h: 30, vx: 0, vy: 0, onGround: false, facing: 1, coyote: 0, jumpBuf: 0, jumps: 0, inv: 0, attackT: 0, attackCD: 0, hp: this.maxHp, dead: 0, hist: [] };
       // checkpoint restore
-      const cp = this.save.checkpoint;
-      if (cp && cp.level === index) {
+      // each level keeps its own checkpoint, so replaying an old level never moves your main progress
+      const legacy = this.save.checkpoint && this.save.checkpoint.level === index ? this.save.checkpoint : null;
+      const cp = (this.save.checkpoints || {})[index] || legacy;
+      if (cp) {
         p.x = cp.x * TILE + 6; p.y = (cp.y + 1) * TILE - 30;
         const k = this.checkpoints.find(k => k.x === cp.x && k.y === cp.y); if (k) k.active = true;
       }
@@ -363,7 +365,8 @@
       for (const k of this.checkpoints) {
         if (!k.active && overlap(p, { x: k.x * TILE + 8, y: k.y * TILE - 16, w: 16, h: 48 })) {
           this.checkpoints.forEach(o => o.active = false); k.active = true;
-          this.save.checkpoint = { level: this.levelIndex, x: k.x, y: k.y };
+          if (!this.save.checkpoints) this.save.checkpoints = {};
+          this.save.checkpoints[this.levelIndex] = { x: k.x, y: k.y };
           this.respawnPoint = { x: k.x * TILE + 6, y: (k.y + 1) * TILE - 30 };
           p.hp = this.maxHp;
           this.burst(k.x * TILE + 16, k.y * TILE, '#58ff8b', 14);
