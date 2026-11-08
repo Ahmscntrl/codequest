@@ -784,6 +784,16 @@
     let depth = 0;
     const result = { output: [], error: null, vars: {}, calls: [], actions: [] };
 
+    // the first for loop that runs is traced, so the i friend can act it out (one hop per pass)
+    let loopTrace = null;
+    const traceLoop = (node, name, v) => {
+      if (!loopTrace) loopTrace = { node, name, values: [], total: 0 };
+      if (loopTrace.node !== node) return;
+      loopTrace.total++;
+      if (loopTrace.values.length < 60) { let t; try { t = (typeof v === 'string' ? JSON.stringify(v) : str(v)); } catch (e) { t = '?'; } loopTrace.values.push(String(t).slice(0, 16)); }
+    };
+    Object.defineProperty(result, 'loop', { enumerable: true, get: () => loopTrace ? { name: loopTrace.name, values: loopTrace.values, total: loopTrace.total } : null });
+
     const globalScope = new Scope(null, 'global');
     const builtins = new Scope(null, 'builtins');
     globalScope.parent = builtins;
@@ -1497,6 +1507,7 @@
           for (const it of items) {
             curLine = s.line; tick();
             assign(s.target, it, scope);
+            traceLoop(s, s.target.type === 'Name' ? s.target.id : 'item', it);
             try { execBlock(s.body, scope); }
             catch (e) { if (e === BREAK) { broke = true; break; } if (e === CONTINUE) continue; throw e; }
           }

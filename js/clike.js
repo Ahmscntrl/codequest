@@ -213,10 +213,10 @@
       }
       let arr = 0;
       while (isOp('[') && isOp(']', 1)) { next(); next(); arr++; }
-      let ref = false;
-      while (isOp('&') || isOp('*') || isOp('&&')) { next(); ref = true; }
+      let ref = false, ptr = false;
+      while (isOp('&') || isOp('*') || isOp('&&')) { if (isOp('*')) ptr = true; next(); ref = true; }
       if (isOp('?') && (isName(1))) next(); // C# nullable int? x
-      return { name, args, arr, ref };
+      return ptr ? { name, args, arr, ref, ptr } : { name, args, arr, ref };
     }
     const typeLooksReal = (ty) => ty && !ty.bad;
     // A declaration starts with a type followed by a name.
@@ -943,6 +943,16 @@
     let out = '';
     let boolalpha = false;
     const result = { output: [], error: null, vars: {}, calls: [], actions: [] };
+
+    // the first for loop that runs is traced, so the i friend can act it out (one hop per pass)
+    let loopTrace = null;
+    const traceLoop = (node, name, v) => {
+      if (!loopTrace) loopTrace = { node, name, values: [], total: 0 };
+      if (loopTrace.node !== node) return;
+      loopTrace.total++;
+      if (loopTrace.values.length < 60) { let t; try { t = (typeof v === 'string' ? JSON.stringify(v) : str(v)); } catch (e) { t = '?'; } loopTrace.values.push(String(t).slice(0, 16)); }
+    };
+    Object.defineProperty(result, 'loop', { enumerable: true, get: () => loopTrace ? { name: loopTrace.name, values: loopTrace.values, total: loopTrace.total } : null });
     const E = (type, msg) => new CError(type, msg, curLine);
     const tick = () => { if (++steps > maxSteps) throw E('TimeoutError', 'your code ran too long — is there an infinite loop?'); };
 
@@ -1237,7 +1247,7 @@
       params.forEach((p, i) => {
         const ax = argExprs && argExprs[i];
         if (id === 'cpp' && p.ty && p.ty.ref && !p.isConst && ax && ['Num', 'Str', 'Bool', 'Char'].includes(ax.type)) throw E('TypeError', `cannot bind a non-const reference '${p.name}' to the value ${ax.type === 'Str' ? JSON.stringify(ax.value) : String(ax.value)}: a & parameter needs a variable to change (or make it a const reference)`);
-        if (id === 'cpp' && p.ty && p.ty.ref && ax && ['Name', 'Member', 'Index'].includes(ax.type) && !(args[i] instanceof CObj || args[i] instanceof CList || args[i] instanceof CMap)) {
+        if (id === 'cpp' && p.ty && p.ty.ref && !p.ty.ptr && ax && ['Name', 'Member', 'Index'].includes(ax.type) && !(args[i] instanceof CObj || args[i] instanceof CList || args[i] instanceof CMap)) {
           // a reference parameter: reading and writing it reads and writes the caller's variable
           scope.declare(p.name, { get v() { return evalExpr(ax, callerScope); }, set v(nv2) { assignTo(ax, nv2, callerScope); }, ty: p.ty, isConst: p.isConst });
           return;
@@ -1400,7 +1410,7 @@
           for (const v of s.vars) {
             if (scope.vars.has(v.name) && (scope !== globals || scope.vars.get(v.name).user)) throw E('SyntaxError', D.msg.redeclared(v.name));
             let val;
-            if (id === 'cpp' && v.ty.ref && v.init && ['Name', 'Member', 'Index'].includes(v.init.type)) {
+            if (id === 'cpp' && v.ty.ref && !v.ty.ptr && v.init && ['Name', 'Member', 'Index'].includes(v.init.type)) {
               // a C++ reference variable (int &r = x;): another name for the same box
               const ax = v.init, target = evalExpr(ax, scope);
               if (target instanceof CObj || target instanceof CList || target instanceof CMap) scope.declare(v.name, { v: target, ty: v.ty.name === 'auto' ? inferType(target) : v.ty, isConst: s.isConst, user: true });
@@ -1436,9 +1446,11 @@
         case 'For': {
           const fs = new Scope(scope);
           if (s.init) exec(s.init, fs);
+          const loopVar = s.init && s.init.type === 'Decl' && s.init.vars && s.init.vars[0] ? s.init.vars[0].name : [...fs.vars.keys()][0];
           while (true) {
             curLine = s.line; tick();
             if (s.test && !truthy(evalExpr(s.test, fs))) break;
+            if (loopVar) { const cell = fs.find(loopVar); if (cell) traceLoop(s, loopVar, cell.v); }
             try { exec(s.body, new Scope(fs)); } catch (e) { if (e === BREAK) break; if (e !== CONTINUE) throw e; }
             if (s.update) evalExpr(s.update, fs);
           }
@@ -1459,6 +1471,7 @@
             curLine = s.line; tick();
             const ls = new Scope(scope);
             const cell = { v: coerce(it && it.__pair ? it : it, it && it.__pair ? null : s.ty, s.name), ty: s.ty };
+            if (it && it.__pair) traceLoop(s, s.names ? s.names[0] : s.name, it.k); else traceLoop(s, s.name, cell.v);
             if (s.names && it && it.__pair) { ls.declare(s.names[0], { v: it.k, ty: null }); ls.declare(s.names[1], { v: it.v, ty: null }); }
             else ls.declare(s.name, cell);
             let stop = false;
@@ -1563,6 +1576,7 @@
       const vals = args.map(a => evalExpr(a, scope));
       if (classes.has(ty.name)) return construct(classes.get(ty.name), vals);
       if (id === 'cpp' && /^[A-Z]/.test(ty.name)) throw E('NameError', `'${ty.name}' was not declared in this scope (there is no class called ${ty.name} yet)`);
+      if (/^(vector|list)$/.test(ty.name) && vals.length === 2 && vals[0] instanceof Iter) return new CList('vector', iterRange(vals[0], vals[1]).map(clone), ty.args[0] && ty.args[0].name);   // vector<int> left(v.begin(), v.begin() + mid)
       if (/^(vector|list)$/.test(ty.name)) { const n = nv(vals[0] || 0); return new CList('vector', Array.from({ length: n }, () => vals.length > 1 ? clone(vals[1]) : defaultFor(ty.args[0])), ty.args[0] && ty.args[0].name); }
       if (STR_T.has(ty.name)) {
         if (vals.length === 2 && typeof vals[0] === 'number' && vals[1] instanceof Chr) return vals[1].c.repeat(vals[0]);
@@ -1853,6 +1867,7 @@
         return obj.a.length;
       }
       if (obj instanceof CList && name === 'Count' && id === 'csharp') return obj.a.length;
+      if (obj instanceof CSB && name === 'Length' && id === 'csharp') return obj.s.length;
       if (obj instanceof CMap && name === 'Count' && id === 'csharp') return obj.m.size;
       if (obj instanceof CMap && name === 'Keys') return new CList('List', [...obj.m.keys()].map(k => outKey(obj, k)));
       if (obj instanceof CMap && name === 'Values') return new CList('List', [...obj.m.values()]);
@@ -1915,6 +1930,8 @@
         if (name === 'reverse') { obj.s = [...obj.s].reverse().join(''); return obj; }
         if (name === 'toString' || name === 'ToString') return obj.s;
         if (name === 'length') return obj.s.length;
+        if (name === 'deleteCharAt' && id === 'java') { const i = nv(args[0]); if (i < 0 || i >= obj.s.length) throw E('RuntimeError', `java.lang.StringIndexOutOfBoundsException: index ${i},length ${obj.s.length}`); obj.s = obj.s.slice(0, i) + obj.s.slice(i + 1); return obj; }
+        if (name === 'Remove' && id === 'csharp') { const i = nv(args[0]), n = nv(args[1]); if (i < 0 || n < 0 || i + n > obj.s.length) throw E('RuntimeError', 'System.ArgumentOutOfRangeException: Index was out of range.'); obj.s = obj.s.slice(0, i) + obj.s.slice(i + n); return obj; }
       }
       if (isNum(obj) || typeof obj === 'boolean') {
         if (name === 'ToString' || name === 'toString') return args.length ? fmtSpec(obj, str(args[0])) : str(obj);
@@ -1967,6 +1984,7 @@
           case 'rend': return new Iter(s, 'rend', node.callee.obj);
           case 'c_str': return s;
           case 'push_back': assignTo(node.callee.obj, s + str(a[0]), scope); return null;
+          case 'pop_back': assignTo(node.callee.obj, s.slice(0, -1), scope); return null;
           case 'append': assignTo(node.callee.obj, s + str(a[0]), scope); return null;
           case 'compare': return s < a[0] ? -1 : s > a[0] ? 1 : 0;
         }
@@ -2117,6 +2135,7 @@
           }
           case 'contains': return l.a.some(x => eq(x, a[0]));
           case 'indexOf': return l.a.findIndex(x => eq(x, a[0]));
+          case 'subList': { const from = nv(a[0]), to = nv(a[1]); if (from < 0 || to > l.a.length || from > to) throw E('RuntimeError', `java.lang.IndexOutOfBoundsException: fromIndex: ${from}, toIndex: ${to}, size: ${l.a.length}`); return new CList(l.kind, l.a.slice(from, to), l.elem); }
           case 'clear': l.a.length = 0; return null;
           case 'toString': return str(l);
         }
@@ -2159,6 +2178,7 @@
         case 'RemoveAt': l.a.splice(chk(nv(a[0])), 1); return null;
         case 'Contains': return l.a.some(x => eq(x, a[0]));
         case 'IndexOf': return l.a.findIndex(x => eq(x, a[0]));
+        case 'GetRange': { const from = nv(a[0]), n = nv(a[1]); if (from < 0 || n < 0 || from + n > l.a.length) throw E('RuntimeError', 'System.ArgumentException: Offset and length were out of bounds for the array or count is greater than the number of elements from index to the end of the source collection.'); return new CList('List', l.a.slice(from, from + n), l.elem); }
         case 'Clear': l.a.length = 0; return null;
         case 'ToArray': return new CList('array', l.a.slice(), l.elem);
         case 'ToList': return new CList('List', l.a.slice(), l.elem);
@@ -2431,7 +2451,9 @@
           if (classes.has(t)) {
             const kc = classes.get(t);
             if (kc.isIface || ((id === 'csharp' || id === 'java') && kc.decl && kc.decl.isAbstract)) throw E('TypeError', id === 'java' ? `${t} is abstract; cannot be instantiated` : `Cannot create an instance of the abstract type or interface '${t}'`);
-            return construct(kc, args, e.line);
+            const made = construct(kc, args, e.line);
+            if (id === 'cpp' && made instanceof CObj) made.heap = true;   // C++ new gives a pointer: copies of it share the object
+            return made;
           }
           if ((id === 'csharp' && /^(Stack|Queue)$/.test(t)) || (id === 'java' && /^(Stack|ArrayDeque)$/.test(t))) {   // stacks and queues (see sqMethod)
             const src = args[0] instanceof CList ? args[0].a.slice() : [];

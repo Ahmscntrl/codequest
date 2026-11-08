@@ -245,7 +245,7 @@
       try { localStorage.setItem(KEY(this.slot || this.save.course || this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
     }
     newSave(hero, lang, course) {
-      return { v: 1, course: course || null, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false, minis: {}, ...(course ? { spUnlocked: true } : {}) };
+      return { v: 1, course: course || null, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false, minis: {}, ...(course ? { spUnlocked: true, foundI: true } : {}) };
     }
 
     // ------------------------------------------------------------ screens
@@ -1041,6 +1041,7 @@
       const code = $('#tut-code').value;
       T.code[T.page] = code;
       const r = await CodeRunner.run(this.save.lang, code, { globals: {}, api: {} });
+      this.playLoop($('#tut-i-stage'), r.loop);
       let html = r.output.slice(0, 100).map(l => `<div class="c-out">${escapeHTML(l) || '&nbsp;'}</div>`).join('');
       if (r.error) html += `<div class="c-err">${r.error.line ? 'Line ' + r.error.line + ': ' : ''}<b>${escapeHTML(r.error.type)}</b>: ${escapeHTML(r.error.message)}</div><div class="c-dim">${explain(r.error, this.save.lang)}</div>`;
       if (!html) html = '<div class="c-dim">(nothing printed)</div>';
@@ -1055,6 +1056,10 @@
       this.ed = null;
       this.setFrozen();
       if (this.pendingEffect) { const f = this.pendingEffect; this.pendingEffect = null; f(); }
+      if (this.lastLoop && this.save.foundI && this.game.loopDance) this.game.loopDance(this.lastLoop);
+      this.lastLoop = null;
+      if (this.loopAnim) { cancelAnimationFrame(this.loopAnim.raf); this.loopAnim = null; }
+      $$('.i-stage').forEach(c => c.classList.add('hidden'));
       this.updateHUD();
     }
     globalsFor(ch, test, display) {
@@ -1106,6 +1111,51 @@
       fb.innerHTML = `<b>${escapeHTML(err.type)}</b>: ${explain(err, lang)}`;
       Sound.play('error');
     }
+    // The i friend acts out the first for loop of a run: one hop per pass, holding up the loop variable.
+    playLoop(canvas, loop) {
+      if (this.loopAnim) { cancelAnimationFrame(this.loopAnim.raf); this.loopAnim = null; }
+      $$('.i-stage').forEach(c => c.classList.add('hidden'));
+      if (!loop || !loop.values.length || !this.save || !this.save.foundI) return;
+      canvas.classList.remove('hidden');
+      const c = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+      const vals = loop.values, n = vals.length;
+      const per = Math.max(10, Math.min(26, Math.floor(360 / n)));     // frames per pass: long loops go faster
+      const box = Math.min(56, Math.max(30, Math.floor((W - 120) / Math.min(n, 10))));
+      const show = Math.min(n, Math.floor((W - 120) / box));               // boxes that fit; the row scrolls past the rest
+      const A = { t: 0, raf: 0 };
+      this.loopAnim = A;
+      const total = n * per + 70;
+      const step = () => {
+        if (this.loopAnim !== A) return;
+        A.t++;
+        const k = Math.min(n - 1, Math.floor(A.t / per)), f = (A.t % per) / per, done = A.t >= n * per;
+        const first = Math.max(0, Math.min(n - show, k - show + 2));
+        c.clearRect(0, 0, W, H);
+        c.font = 'bold 12px "JetBrains Mono", monospace'; c.textAlign = 'left'; c.fillStyle = 'rgba(207,213,255,.8)';
+        c.fillText(`for ${loop.name}`, 10, 18);
+        c.fillStyle = 'rgba(207,213,255,.55)'; c.font = '11px "JetBrains Mono", monospace';
+        c.fillText(done ? `${loop.total} pass${loop.total === 1 ? '' : 'es'}${loop.total > n ? ` (showing ${n})` : ''}` : `pass ${k + 1}`, 10, 34);
+        const x0 = 100, gy = H - 14;
+        for (let j = first; j < Math.min(n, first + show); j++) {
+          const x = x0 + (j - first) * box;
+          const lit = j < k || (j === k && !done) || done;
+          c.fillStyle = j === k && !done ? 'rgba(125,249,255,.35)' : lit ? 'rgba(125,249,255,.14)' : 'rgba(255,255,255,.05)';
+          c.strokeStyle = j === k && !done ? '#7df9ff' : 'rgba(125,249,255,.35)'; c.lineWidth = 2;
+          c.beginPath(); c.roundRect ? c.roundRect(x + 3, gy - 16, box - 6, 18, 4) : c.rect(x + 3, gy - 16, box - 6, 18); c.fill(); c.stroke();
+          c.fillStyle = lit ? '#fff' : 'rgba(255,255,255,.35)'; c.textAlign = 'center'; c.font = 'bold 11px "JetBrains Mono", monospace';
+          c.fillText(vals[j].length > 6 ? vals[j].slice(0, 5) + '…' : vals[j], x + box / 2, gy - 3);
+        }
+        // i hops from box to box
+        const from = x0 + (Math.max(k, first) - first) * box + box / 2;
+        let ix = from, iy = gy - 18, hop = 0, label = `${loop.name} = ${vals[k]}`;
+        if (!done) { hop = Math.sin(f * Math.PI) * 18; }
+        else { const d = A.t - n * per; hop = Math.abs(Math.sin(d * 0.25)) * 10; label = d < 40 ? 'done!' : label; }
+        Art.drawI(c, ix, iy, A.t, { hop, label });
+        if (A.t < total) A.raf = requestAnimationFrame(step);
+      };
+      step();
+      Sound.play('click');
+    }
     printOutput(lines, label) {
       const con = $('#console');
       if (label) con.innerHTML += `<div class="c-label">▸ ${escapeHTML(label)}</div>`;
@@ -1126,6 +1176,7 @@
         const t = tests[i];
         const r = await CodeRunner.run(lang, code, { globals: this.globalsFor(ch, t), api, callTests: ch.callTests || [], captureVars: ch.captureVars || [] });
         runs.push(r);
+        if (i === 0) { this.playLoop($('#i-stage'), r.loop); this.lastLoop = r.loop; }
         const label = tests.length > 1 ? `Test ${i + 1}: ${t.label}` : null;
         this.printOutput(r.output, label);
         if (r.error) { this.showError(r.error, label); return; }

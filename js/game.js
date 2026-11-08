@@ -201,6 +201,11 @@
     // ------------------------------------------------------------- effects called by challenges
     // progress record of the chapter being played (Chapter 2 keeps its own)
     prog() { return (this.app && this.app.prog) ? this.app.prog() : this.save; }
+    // after you run a loop, i hops beside you once per pass, calling out the loop variable
+    loopDance(loop) {
+      if (!loop || !loop.values.length) return;
+      this.iDance = { name: loop.name, values: loop.values.slice(0, 20), more: loop.total > 20, k: 0, t: 0 };
+    }
     openGate(g) {
       for (const gate of this.gates) if (gate.g === g && !gate.open) {
         gate.open = true; gate.anim = this.instantMode ? 1 : 0;
@@ -454,6 +459,7 @@
       if (this.mini) this.updateMini();
       this.updateProjectiles();
       this.updateFollowers();
+      if (this.iDance && ++this.iDance.t > this.iDance.values.length * 22 + 50) this.iDance = null;
       this.updateParticles();
       if (this.cannonCooldown > 0) this.cannonCooldown--;
       if (this.cannonQueue > 0 && --this.cannonFireT <= 0) { this.cannonQueue--; this.cannonFireT = 12; this.shootCannon(); }
@@ -1119,6 +1125,11 @@
       if (this.save.foundI) {
         const f = this.followers.i;
         if (this.iHop) Art.drawI(ctx, this.iHop.x, this.iHop.y, t, { hop: Math.abs(Math.sin(t * 0.25)) * 6, label: this.iHop.label });
+        else if (this.iDance) {
+          const d = this.iDance, per = 22, k = Math.floor(d.t / per), fr = (d.t % per) / per;
+          const end = k >= d.values.length;
+          Art.drawI(ctx, f.x + (k % 2 ? 1 : -1) * Math.sin(fr * Math.PI) * 6, f.y, t, { hop: end ? Math.abs(Math.sin(d.t * 0.3)) * 5 : Math.sin(fr * Math.PI) * 16, label: end ? (d.more ? 'and more!' : 'done!') : `${d.name} = ${d.values[k]}` });
+        }
         else Art.drawI(ctx, f.x, f.y, t, { hop: f.moving ? Math.abs(Math.sin(t * 0.25)) * 4 : 0 });
       }
       if (this.save.pet) {

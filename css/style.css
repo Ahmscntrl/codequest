@@ -347,3 +347,6 @@ body.touch .keyhints { display: none; }
 .ls-btn { font: 900 13px var(--ui); color: var(--text); background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; cursor: pointer; }
 .ls-btn.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78,240,255,.15); }
 .map-tabs .lang-switch { margin: 0 0 0 auto; align-self: center; }
+
+.i-stage { display: block; width: 100%; height: 84px; margin: 8px 0 4px; background: linear-gradient(180deg, rgba(125,249,255,.06), rgba(125,249,255,.02)); border: 1px solid var(--line); border-radius: 10px; }
+.i-stage.hidden { display: none; }
