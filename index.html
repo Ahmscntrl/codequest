@@ -18,7 +18,7 @@
       <p class="tagline">A puzzle platformer where your code changes the world.</p>
       <canvas id="title-canvas" width="520" height="110"></canvas>
       <div id="slots" class="slots"></div>
-      <p class="muted foot">Learn Python or JavaScript by building bridges, taming loops, forging weapons with classes, and debugging your way past an army of bugs.</p>
+      <p class="muted foot">Learn Python, JavaScript, C++, C# or Java by building bridges, taming loops, forging weapons with classes, and debugging your way past an army of bugs.</p>
     </div>
   </section>
 
@@ -33,11 +33,8 @@
       <div class="cc-right">
         <label class="cc-label">Name</label>
         <input id="cc-name" maxlength="14" placeholder="Your hero's name" autocomplete="off" spellcheck="false">
-        <label class="cc-label">Choose your language <span class="muted">(you can switch any time)</span></label>
-        <div class="langs">
-          <button class="lang-card" data-lang="python"><span class="lc-icon">Py</span><b>Python</b><small>Clean & readable. Great first language.</small><code>print("Hello")</code></button>
-          <button class="lang-card" data-lang="javascript"><span class="lc-icon">JS</span><b>JavaScript</b><small>The language of the web.</small><code>console.log("Hello")</code></button>
-        </div>
+        <label class="cc-label">Language</label>
+        <div id="cc-lang" class="cc-lang"></div>
         <div class="cc-grid">
           <div><label class="cc-label">Skin</label><div id="cc-skin" class="swatches"></div></div>
           <div><label class="cc-label">Shirt</label><div id="cc-shirt" class="swatches"></div></div>
@@ -60,7 +57,7 @@
       <header class="map-top">
         <div class="map-logo"><span>Code</span>Quest</div>
         <span class="spacer"></span>
-        <button id="map-langbtn" class="btn small ghost" title="Switch language"><span id="map-lang"></span> ⇄</button>
+        <span class="map-langlabel"><span id="map-lang"></span></span>
         <button id="map-title" class="btn small ghost">Save &amp; quit</button>
         <button id="map-back" class="btn small primary hidden">← Back to level</button>
       </header>
@@ -134,10 +131,7 @@
       <main class="ed-main">
         <div class="ed-bar">
           
-          <select id="ed-lang" title="Language">
-            <option value="python">Python</option>
-            <option value="javascript">JavaScript</option>
-          </select>
+          <span id="ed-lang" class="ed-lang"></span>
           <span class="spacer"></span>
           <button id="ed-tut" class="btn small ghost" title="Review this level's tutorial">Tutorial</button>
           <button id="ed-hint" class="btn small ghost">Hint</button>
@@ -161,9 +155,15 @@
   </div>
 
   <script src="js/python.js"></script>
+  <script src="js/clike.js"></script>
+  <script src="js/langs.js"></script>
   <script src="js/runner.js"></script>
   <script src="js/levels.js"></script>
   <script src="js/teach.js"></script>
+  <script src="js/content.js"></script>
+  <script src="js/content/cpp.js"></script>
+  <script src="js/content/csharp.js"></script>
+  <script src="js/content/java.js"></script>
   <script src="js/art.js"></script>
   <script src="js/game.js"></script>
   <script src="js/ui.js"></script>

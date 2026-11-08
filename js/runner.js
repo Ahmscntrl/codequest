@@ -206,10 +206,22 @@
     return Promise.resolve(r);
   }
 
+  function runCLike(lang, code, opts) {
+    const api = {};
+    for (const n of Object.keys(opts.api || {})) api[n] = () => (opts.apiReturns || {})[n];
+    const callTests = (opts.callTests || []).map(t => Object.assign({}, t, { fn: root.Lang ? root.Lang.testName(t.fn, lang) : t.fn }));
+    const r = root.CLike.run(code, { dialect: lang, globals: opts.globals, api, callTests, captureVars: opts.captureVars, maxSteps: opts.maxSteps });
+    return Promise.resolve(r);
+  }
+
   const CodeRunner = {
-    run(lang, code, opts) { return lang === 'javascript' ? runJS(code, opts || {}) : runPython(code, opts || {}); },
+    run(lang, code, opts) {
+      if (lang === 'javascript') return runJS(code, opts || {});
+      if (lang === 'cpp' || lang === 'java' || lang === 'csharp') return runCLike(lang, code, opts || {});
+      return runPython(code, opts || {});
+    },
     camel,
-    fnName(n, lang) { return lang === 'javascript' ? camel(n) : n; },
+    fnName(n, lang) { return root.Lang ? root.Lang.fnName(n, lang) : (lang === 'javascript' ? camel(n) : n); },
   };
   root.CodeRunner = CodeRunner;
 })(typeof window !== 'undefined' ? window : globalThis);
