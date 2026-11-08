@@ -2,8 +2,9 @@
 (function (root) {
   'use strict';
   const TILE = 32, VW = 960, VH = 540;
-  const T = { EMPTY: 0, GROUND: 1, WALL: 2, ONEWAY: 3, SPIKES: 4, LAVA: 5, CLAVA: 6, STONE: 7, GATE: 8, SLOT: 9, BRIDGE: 10, STEP: 11 };
-  const SOLID = new Set([T.GROUND, T.WALL, T.STONE, T.GATE, T.BRIDGE, T.STEP]);
+  const T = { EMPTY: 0, GROUND: 1, WALL: 2, ONEWAY: 3, SPIKES: 4, LAVA: 5, CLAVA: 6, STONE: 7, GATE: 8, SLOT: 9, BRIDGE: 10, STEP: 11, PHANTOM: 12, CODE: 13, RSPIKE: 14, GLAVA: 15 };
+  const SOLID = new Set([T.GROUND, T.WALL, T.STONE, T.GATE, T.BRIDGE, T.STEP, T.CODE]);
+  const DEADLY = new Set([T.LAVA, T.CLAVA, T.GLAVA, T.RSPIKE]);
   const BUG_KINDS = ['syntax', 'name', 'type'];
   const GATE_COLORS = { A: '#4ef0ff', B: '#ff5cf4', C: '#ffd166', D: '#58ff8b', E: '#ff9f43', G: '#b07cff', H: '#ff5470' };
 
@@ -102,12 +103,22 @@
       this.H = rows.length; this.W = Math.max(...rows.map(r => r.length));
       this.tiles = []; this.stepLabel = {};
       for (let y = 0; y < this.H; y++) this.tiles.push(new Array(this.W).fill(0));
-      Object.assign(this, { bossSpawn: null, gates: [], slots: [], terminals: [], pickups: [], signs: [], bugs: [], springs: [], checkpoints: [], portal: null, shrine: null, stairOrigin: null, iFriend: null, cannonPos: null, boss: null, projectiles: [], particles: [], floaters: [], scheduled: [], zaps: [], cannonCooldown: 0, cannonQueue: 0 });
+      Object.assign(this, { bossSpawn: null, gates: [], slots: [], terminals: [], pickups: [], signs: [], bugs: [], springs: [], checkpoints: [], portal: null, shrine: null, stairOrigin: null, iFriend: null, cannonPos: null, boss: null, projectiles: [], particles: [], floaters: [], scheduled: [], zaps: [], cannonCooldown: 0, cannonQueue: 0, groups: {}, tileGroup: {}, movers: [], bits: [] });
       let signI = 0, pickI = 0, bugI = 0;
       let start = { x: 64, y: 64 };
       for (let x = 0; x < this.W; x++) for (let y = 0; y < this.H; y++) {
         const ch = rows[y][x] || '.';
         const set = (v) => { this.tiles[y][x] = v; };
+        const lg = L.legend && L.legend[ch];
+        if (lg) {
+          const add = (kind) => { (this.groups[lg.g] = this.groups[lg.g] || []).push({ x, y, kind }); this.tileGroup[`${x},${y}`] = lg.g; };
+          if (lg.type === 'phantom') { set(T.PHANTOM); add('phantom'); }
+          else if (lg.type === 'rspike') { set(T.RSPIKE); add('rspike'); }
+          else if (lg.type === 'glava') { set(T.GLAVA); add('glava'); }
+          else if (lg.type === 'gspring') this.springs.push({ x, y, active: false, anim: 0, g: lg.g });
+          else if (lg.type === 'mover') this.movers.push({ x: x * TILE, y: y * TILE, x0: x * TILE, y0: y * TILE, w: 3 * TILE, h: 12, range: (lg.range || 4) * TILE, axis: lg.g, t: x * 0.37, dx: 0, dy: 0 });
+          continue;
+        }
         switch (ch) {
           case '#': set(T.GROUND); break;
           case 'W': set(T.WALL); break;
@@ -129,6 +140,7 @@
           case '$': this.shrine = { x, y }; break;
           case 'Z': this.bossSpawn = { x, y }; break;
           case 'c': this.cannonPos = { x, y }; break;
+          case 'o': if (!this.save.taken[`${L.id}:bit:${x},${y}`]) this.bits.push({ x, y }); break;
           default:
             if (/[1-9]/.test(ch)) this.terminals.push({ x, y, ch: L.terminals[+ch - 1], glow: 0 });
         }
@@ -184,6 +196,19 @@
         this.tiles[gate.y][gate.x] = T.EMPTY;
         if (!this.instantMode) this.burst(gate.x * TILE + 16, gate.y * TILE + 16, '#7df9ff', 14);
       }
+      const items = (this.groups[g] || []).slice().sort((a, b) => a.x - b.x || b.y - a.y);
+      const x0 = items.length ? items[0].x : 0;
+      items.forEach((it, k) => {
+        const doIt = () => {
+          if (it.kind === 'phantom') this.tiles[it.y][it.x] = T.CODE;
+          if (it.kind === 'rspike') this.tiles[it.y][it.x] = T.EMPTY;
+          if (it.kind === 'glava') this.tiles[it.y][it.x] = T.STONE;
+          if (!this.instantMode) this.burst(it.x * TILE + 16, it.y * TILE + 16, GATE_COLORS[g] || '#7df9ff', 5);
+        };
+        if (this.instantMode) doIt(); else this.schedule(8 + (it.x - x0) * 6 + k % 2, doIt);
+      });
+      for (const sp of this.springs) if (sp.g === g && !sp.active) { sp.active = true; if (!this.instantMode) this.burst(sp.x * TILE + 16, sp.y * TILE + 24, '#ffe066', 14); }
+      this.groups[g] = [];
       if (!this.instantMode) this.app.sfx('open');
     }
     buildBridge(n) {
@@ -220,7 +245,7 @@
       if (!this.instantMode) this.app.sfx('build');
     }
     firstClavaRow(x) { for (let y = 0; y < this.H; y++) if (this.tiles[y][x] === T.CLAVA || this.tiles[y][x] === T.STONE) return y; return -1; }
-    activateSprings() { for (const s of this.springs) { s.active = true; if (!this.instantMode) this.burst(s.x * TILE + 16, s.y * TILE + 24, '#ffe066', 12); } }
+    activateSprings() { for (const s of this.springs) { if (s.g) continue; s.active = true; if (!this.instantMode) this.burst(s.x * TILE + 16, s.y * TILE + 24, '#ffe066', 12); } }
     setWeapon(w) { this.save.weapon = w; }
     setPet(p) { this.save.pet = p; if (!this.instantMode) this.followers.pet = { x: this.player.x, y: this.player.y + this.player.h, facing: 1 }; }
     coreCount() { return ['gems', 'decoder', 'fib'].filter(id => this.save.solved[id] !== undefined).length; }
@@ -259,6 +284,14 @@
         this.updateParticles();
         return;
       }
+      // -- moving platforms (carry the player)
+      for (const mv of this.movers) {
+        mv.t += 0.012;
+        const off = mv.range * (0.5 - 0.5 * Math.cos(mv.t * Math.PI));
+        const nx = mv.axis === 'v' ? mv.x0 : mv.x0 + off, ny = mv.axis === 'v' ? mv.y0 - off : mv.y0;
+        mv.dx = nx - mv.x; mv.dy = ny - mv.y; mv.x = nx; mv.y = ny;
+      }
+      if (p.plat) { p.x += p.plat.dx; p.y += p.plat.dy; }
       const gl = this.save.glitches || {};
       // -- horizontal movement
       let dir = (this.keys.right ? 1 : 0) - (this.keys.left ? 1 : 0);
@@ -288,6 +321,19 @@
       // -- move & collide
       this.moveBody(p, true);
       if (p.y > this.H * TILE + 60) { this.hurt(1, null, null, true); }
+      // -- data bits
+      for (let i = this.bits.length - 1; i >= 0; i--) {
+        const bt = this.bits[i];
+        if (overlap(p, { x: bt.x * TILE + 8, y: bt.y * TILE + 6, w: 16, h: 20 })) {
+          this.bits.splice(i, 1);
+          this.save.taken[`${this.L.id}:bit:${bt.x},${bt.y}`] = true;
+          this.save.bitsCollected = (this.save.bitsCollected || 0) + 1;
+          this.burst(bt.x * TILE + 16, bt.y * TILE + 16, '#7df9ff', 6, 2);
+          this.floater(bt.x * TILE + 16, bt.y * TILE, '+1 bit', '#7df9ff');
+          this.app.sfx('bit');
+          this.app.onBit();
+        }
+      }
 
       // -- hazards
       const hz = { x: p.x + 4, y: p.y + 6, w: p.w - 8, h: p.h - 6 };
@@ -295,7 +341,8 @@
         for (let tx = Math.floor(hz.x / TILE); tx <= Math.floor((hz.x + hz.w) / TILE); tx++) {
           const tt = this.tileAt(tx, ty);
           if (tt === T.SPIKES && hz.y + hz.h > ty * TILE + 14) this.hurt(1, tx * TILE + 16);
-          if ((tt === T.LAVA || tt === T.CLAVA) && hz.y + hz.h > ty * TILE + 6) this.hurt(1, null, null, true);
+          if (tt === T.RSPIKE && hz.y + hz.h > ty * TILE + 14) this.hurt(1, null, null, true);
+          else if (DEADLY.has(tt) && tt !== T.RSPIKE && hz.y + hz.h > ty * TILE + 6) this.hurt(1, null, null, true);
         }
 
       if (p.inv > 0) p.inv--;
@@ -435,6 +482,14 @@
         const ty = Math.floor(b.y / TILE);
         for (let tx = x1; tx <= x2; tx++) if (this.solidAt(tx, ty)) { b.y = (ty + 1) * TILE; b.vy = 0; break; }
       }
+      if (isPlayer) {
+        b.plat = null;
+        if (b.vy >= 0 && !(this.keys.down)) for (const mv of this.movers) {
+          if (b.x + b.w > mv.x + 2 && b.x < mv.x + mv.w - 2 && prevBottom <= mv.y + 6 && b.y + b.h >= mv.y) {
+            b.y = mv.y - b.h; b.vy = 0; b.onGround = true; b.plat = mv; break;
+          }
+        }
+      }
     }
 
     hurt(dmg, srcX, kind, lava) {
@@ -506,7 +561,7 @@
           }
           if (b.y > this.H * TILE + 40) b.dead = true;
           const tt = this.tileAt(Math.floor((b.x + b.w / 2) / TILE), Math.floor((b.y + b.h - 2) / TILE));
-          if (tt === T.LAVA || tt === T.CLAVA) b.dead = true;
+          if (tt === T.LAVA || tt === T.CLAVA || tt === T.GLAVA) b.dead = true;
         }
         if (p.dead) continue;
         if (overlap(p, b)) {
@@ -839,11 +894,11 @@
             ctx.fillStyle = '#c9d1d9';
             for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.moveTo(px + k * 8, py + TILE); ctx.lineTo(px + k * 8 + 4, py + 14); ctx.lineTo(px + k * 8 + 8, py + TILE); ctx.fill(); }
             break;
-          case T.LAVA: case T.CLAVA: {
+          case T.LAVA: case T.CLAVA: case T.GLAVA: {
             const lg = ctx.createLinearGradient(0, py, 0, py + TILE);
             lg.addColorStop(0, '#ffb000'); lg.addColorStop(1, '#ff3d00');
             ctx.fillStyle = lg;
-            if (above !== T.LAVA && above !== T.CLAVA) {
+            if (above !== T.LAVA && above !== T.CLAVA && above !== T.GLAVA) {
               ctx.beginPath(); ctx.moveTo(px, py + TILE);
               for (let k = 0; k <= 8; k++) ctx.lineTo(px + k * 4, py + 6 + Math.sin(this.t * 0.08 + (px + k * 4) * 0.15) * 3);
               ctx.lineTo(px + TILE, py + TILE); ctx.fill();
@@ -861,6 +916,26 @@
             if (!this.tiles[y + 1] || this.tiles[y + 1][x] !== T.GATE) { ctx.fillStyle = col; ctx.font = 'bold 14px monospace'; ctx.textAlign = 'center'; ctx.fillText('🔒', px + 16, py + 22); }
             break;
           }
+          case T.PHANTOM: {
+            const gc = GATE_COLORS[this.tileGroup[`${x},${y}`]] || '#7df9ff';
+            ctx.strokeStyle = gc; ctx.globalAlpha = 0.35 + 0.15 * Math.sin(this.t * 0.08 + x);
+            ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5; ctx.strokeRect(px + 2, py + 2, TILE - 4, TILE - 4); ctx.setLineDash([]);
+            ctx.globalAlpha = 1;
+            break;
+          }
+          case T.CODE: {
+            const gc = GATE_COLORS[this.tileGroup[`${x},${y}`]] || '#7df9ff';
+            ctx.fillStyle = '#16233f'; ctx.fillRect(px, py, TILE, TILE);
+            ctx.fillStyle = gc; ctx.globalAlpha = 0.9; ctx.fillRect(px, py, TILE, 3); ctx.globalAlpha = 0.25; ctx.fillRect(px + 3, py + 3, TILE - 6, TILE - 6); ctx.globalAlpha = 1;
+            ctx.strokeStyle = gc; ctx.lineWidth = 1; ctx.strokeRect(px + 0.5, py + 0.5, TILE - 1, TILE - 1);
+            ctx.fillStyle = gc; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center'; ctx.fillText((x + y) % 2 ? '{ }' : '01', px + 16, py + 20);
+            break;
+          }
+          case T.RSPIKE:
+            ctx.fillStyle = '#ff6b85';
+            for (let k = 0; k < 4; k++) { ctx.beginPath(); ctx.moveTo(px + k * 8, py + TILE); ctx.lineTo(px + k * 8 + 4, py + 12); ctx.lineTo(px + k * 8 + 8, py + TILE); ctx.fill(); }
+            ctx.fillStyle = '#3a1830'; ctx.fillRect(px, py + TILE - 3, TILE, 3);
+            break;
           case T.SLOT:
             ctx.strokeStyle = 'rgba(255,220,150,0.5)'; ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
             ctx.strokeRect(px + 1.5, py + 1.5, TILE - 3, 9); ctx.setLineDash([]);
@@ -972,6 +1047,24 @@
         ctx.fillStyle = '#7df9ff'; ctx.fillRect(18 - (this.cannonRecoil || 0), -5, 4, 10);
         ctx.restore();
         ctx.fillStyle = '#2d3748'; ctx.beginPath(); ctx.arc(px + 16, py + 22, 10, Math.PI, 0); ctx.fill();
+      }
+      // moving platforms
+      for (const mv of this.movers) {
+        ctx.fillStyle = '#2b3a5c'; Art.rr(ctx, mv.x, mv.y, mv.w, 12, 4); ctx.fill();
+        ctx.fillStyle = '#7df9ff'; ctx.globalAlpha = 0.8; ctx.fillRect(mv.x + 4, mv.y + 2, mv.w - 8, 2); ctx.globalAlpha = 1;
+        ctx.fillStyle = '#7df9ff';
+        for (let k = 0; k < 3; k++) { ctx.globalAlpha = 0.4 + 0.4 * Math.sin(t * 0.15 + k); ctx.fillRect(mv.x + 18 + k * 26, mv.y + 7, 8, 3); }
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = 'rgba(125,249,255,0.18)'; ctx.setLineDash([3, 6]); ctx.beginPath();
+        ctx.moveTo(mv.x0 + mv.w / 2, mv.y0 + 6); ctx.lineTo(mv.x0 + mv.w / 2 + (mv.axis === 'v' ? 0 : mv.range), mv.y0 + 6 - (mv.axis === 'v' ? mv.range : 0)); ctx.stroke(); ctx.setLineDash([]);
+      }
+      // data bits
+      for (const bt of this.bits) {
+        const bx = bt.x * TILE + 16, by = bt.y * TILE + 16 + Math.sin(t * 0.1 + bt.x * 0.7) * 3;
+        ctx.shadowColor = '#7df9ff'; ctx.shadowBlur = 10;
+        ctx.fillStyle = '#7df9ff'; ctx.beginPath(); ctx.moveTo(bx, by - 9); ctx.lineTo(bx + 7, by); ctx.lineTo(bx, by + 9); ctx.lineTo(bx - 7, by); ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = '#04131c'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center'; ctx.fillText((bt.x + bt.y) % 2 ? '1' : '0', bx, by + 3);
       }
       // portal
       if (this.portal) {

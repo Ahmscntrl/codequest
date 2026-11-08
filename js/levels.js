@@ -3,16 +3,91 @@
   'use strict';
 
   // ------------------------------------------------------------ helpers
+  // Map builder. Most tiles are single characters; obstacles that a terminal unlocks are tagged with a
+  // group letter through a per-level legend (e.g. "phantom block of group B").
   function MapBuilder(w, h) {
     const g = Array.from({ length: h }, () => Array(w).fill('.'));
+    const pool = [...'αβγδζηθικλμνξπρστυφχψωΓΔΘΛΞΠΣΦΨΩ'];
+    const keys = {};
     const api = {
-      w, h,
+      w, h, legend: {},
       fill(x1, y1, x2, y2, ch) { for (let y = y1; y <= y2; y++) for (let x = x1; x <= x2; x++) if (g[y] && x >= 0 && x < w) g[y][x] = ch; return api; },
       put(x, y, s) { for (let i = 0; i < s.length; i++) if (g[y] && x + i < w) g[y][x + i] = s[i]; return api; },
+      key(type, grp, extra) {
+        const id = type + ':' + grp + ':' + JSON.stringify(extra || {});
+        if (!keys[id]) { const ch = pool.shift(); keys[id] = ch; api.legend[ch] = Object.assign({ type, g: grp }, extra || {}); }
+        return keys[id];
+      },
+      mark(x1, y1, x2, y2, type, grp, extra) { return api.fill(x1, y1, x2, y2, api.key(type, grp, extra)); },
       rows() { return g.map(r => r.join('')); },
     };
     return api;
   }
+  const mapOf = (m) => Array.isArray(m) ? { map: m } : { map: m.rows(), legend: m.legend };
+
+  // ---- obstacles a terminal unlocks (each returns the x just after it)
+  const OB = {
+    // classic gate in a wall
+    wall(m, x, g) { gate(m, x, g); return x + 1; },
+    // a 6-high cliff; code blocks materialise as a staircase up it
+    climb(m, x, g) {
+      m.mark(x, 13, x, 14, 'phantom', g); m.mark(x + 1, 11, x + 1, 14, 'phantom', g);
+      m.fill(x + 2, 9, x + 5, 14, '#');
+      m.put(x + 3, 8, 'o'); m.put(x + 4, 8, 'o');
+      return x + 6;
+    },
+    // a lava pit; a bridge of code blocks appears
+    bridge(m, x, g) {
+      m.fill(x, 15, x + 5, 15, '.'); m.fill(x, 16, x + 5, 16, '~');
+      m.mark(x, 15, x + 5, 15, 'phantom', g);
+      return x + 6;
+    },
+    // a low tunnel lined with spikes that retract
+    spikes(m, x, g) {
+      m.fill(x, 0, x + 6, 12, 'W');
+      m.mark(x, 14, x + 6, 14, 'rspike', g);
+      return x + 7;
+    },
+    // a powered-down spring in front of a tall cliff
+    spring(m, x, g) {
+      m.mark(x, 14, x, 14, 'gspring', g);
+      m.fill(x + 2, 9, x + 4, 14, '#');
+      m.put(x + 1, 6, 'o'); m.put(x + 3, 5, 'o');
+      return x + 5;
+    },
+    // a lava lake that cools into stone
+    lava(m, x, g) { m.mark(x, 15, x + 7, 16, 'glava', g); return x + 8; },
+  };
+  // ---- fun bits between terminals (never block progress)
+  const TR = {
+    hills(m, x) {
+      m.fill(x + 1, 14, x + 2, 14, '#'); m.fill(x + 4, 13, x + 6, 14, '#'); m.fill(x + 7, 14, x + 7, 14, '#');
+      m.put(x + 2, 12, 'o'); m.put(x + 5, 11, 'o'); m.put(x + 6, 11, 'o');
+      return x + 9;
+    },
+    // lava pit with two wide stepping platforms
+    pit(m, x) {
+      m.fill(x, 15, x + 10, 15, '.'); m.fill(x, 16, x + 10, 16, '~');
+      m.put(x + 2, 13, '---'); m.put(x + 6, 13, '----');
+      m.put(x + 3, 11, 'o'); m.put(x + 5, 10, 'o'); m.put(x + 7, 11, 'o');
+      return x + 11;
+    },
+    // lava pit crossed on a moving platform
+    mover(m, x) {
+      m.fill(x, 15, x + 9, 15, '.'); m.fill(x, 16, x + 9, 16, '~');
+      m.mark(x + 1, 13, x + 1, 13, 'mover', 'h', { range: 5 });
+      m.put(x + 4, 10, 'o'); m.put(x + 5, 10, 'o');
+      return x + 10;
+    },
+    // an optional tower of one-way platforms with bits at the top
+    tower(m, x) {
+      m.put(x, 13, '---'); m.put(x + 3, 11, '---'); m.put(x, 9, '---'); m.put(x + 3, 7, '---');
+      m.put(x + 1, 8, 'o'); m.put(x + 4, 6, 'o'); m.put(x + 5, 6, 'o');
+      return x + 7;
+    },
+  };
+  // room = a terminal on the ground, then its obstacle
+  const room = (m, x, n, kind, g) => { m.put(x + 1, 14, String(n)); return OB[kind](m, x + 4, g) + 2; };
   const isJS = (ctx) => ctx.lang === 'javascript';
   const fn = (n, ctx) => (isJS(ctx) ? CodeRunner.camel(n) : n);
   const c = (s) => `<code>${s}</code>`;
@@ -1150,54 +1225,71 @@
   // ------------------------------------------------------------ levels
   const gate = (m, x, g, top) => { m.fill(x, 0, x, (top || 13) - 1, 'W'); m.fill(x, top || 13, x, (top || 13) + 1, g); };
   function level1() {
-    const m = MapBuilder(86, 17);
-    m.fill(0, 15, 85, 16, '#');
+    const m = MapBuilder(124, 17);
+    m.fill(0, 15, 123, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
-    m.put(11, 13, '---'); m.put(15, 11, '----');
-    m.put(19, 14, '?'); m.put(24, 14, '1'); gate(m, 28, 'A');
-    m.put(33, 14, '2'); gate(m, 37, 'B');
-    m.put(39, 14, '?'); m.put(43, 14, '3'); gate(m, 47, 'C');
-    m.fill(49, 14, 49, 14, '#'); m.put(52, 14, '4'); gate(m, 56, 'D');
-    m.put(58, 13, '---'); m.put(61, 14, '5'); gate(m, 65, 'E');
-    m.put(70, 14, '6'); gate(m, 74, 'G');
-    m.put(80, 14, 'F');
-    return m.rows();
+    m.put(8, 13, '---'); m.put(12, 11, '---'); m.put(13, 10, 'o'); m.put(9, 12, 'o');
+    m.put(15, 14, '?');
+    let x = room(m, 16, 1, 'wall', 'A');
+    x = TR.hills(m, x);
+    x = room(m, x, 2, 'climb', 'B');
+    x = TR.pit(m, x + 1);
+    m.put(x + 1, 14, '?');
+    x = room(m, x + 2, 3, 'bridge', 'C');
+    x = TR.tower(m, x + 1);
+    x = room(m, x, 4, 'spring', 'D');
+    x = room(m, x + 1, 5, 'climb', 'E');
+    x = TR.hills(m, x);
+    x = room(m, x, 6, 'wall', 'G');
+    m.put(x + 3, 14, 'F');
+    return m;
   }
   function level2() {
-    const m = MapBuilder(94, 17);
-    m.fill(0, 15, 93, 16, '#');
+    const m = MapBuilder(132, 17);
+    m.fill(0, 15, 131, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
-    m.put(9, 14, '1'); gate(m, 13, 'A');
-    m.put(18, 14, '2'); gate(m, 22, 'B');
-    m.put(25, 13, '----'); m.put(26, 12, '*');
-    m.put(31, 14, '3'); m.put(32, 14, '?');
-    m.fill(34, 15, 40, 15, '_'); m.fill(34, 16, 40, 16, '~');
-    m.put(45, 14, '4'); gate(m, 49, 'C');
-    m.put(54, 14, '5'); gate(m, 58, 'D');
-    m.put(63, 14, '6'); gate(m, 67, 'E');
-    m.put(70, 13, '---'); m.put(73, 14, '*');
-    m.put(77, 14, '7'); gate(m, 81, 'G');
-    m.put(85, 14, '?'); m.put(90, 14, 'F');
-    return m.rows();
+    let x = room(m, 6, 1, 'wall', 'A');
+    x = TR.hills(m, x);
+    x = room(m, x, 2, 'climb', 'B');
+    // the planks sit on top of a tower
+    m.put(x + 1, 13, '---'); m.put(x + 4, 11, '---'); m.put(x + 1, 9, '---'); m.put(x + 2, 8, '*');
+    x += 8;
+    m.put(x + 1, 14, '3'); m.put(x + 2, 14, '?');
+    m.fill(x + 4, 15, x + 10, 15, '_'); m.fill(x + 4, 16, x + 10, 16, '~');
+    x += 13;
+    x = room(m, x, 4, 'spikes', 'C');
+    x = TR.mover(m, x + 1);
+    x = room(m, x + 1, 5, 'spring', 'D');
+    x = room(m, x + 1, 6, 'lava', 'E');
+    m.put(x + 1, 14, 'K'); m.put(x + 3, 13, '---'); m.put(x + 4, 12, '*');
+    x = room(m, x + 7, 7, 'wall', 'G');
+    m.put(x + 2, 14, '?'); m.put(x + 6, 14, 'F');
+    return m;
   }
   function level3() {
-    const m = MapBuilder(96, 17);
-    m.fill(0, 15, 95, 16, '#');
+    const m = MapBuilder(140, 17);
+    m.fill(0, 15, 139, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
-    m.put(10, 14, '1'); gate(m, 14, 'A');
-    m.put(18, 14, 'e'); m.put(23, 14, '2'); gate(m, 27, 'B');
-    m.put(29, 13, '---'); m.put(33, 14, '3'); gate(m, 37, 'C');
-    m.put(42, 14, '4'); gate(m, 46, 'D');
-    m.put(48, 14, '?'); m.put(50, 14, '5');
-    m.fill(52, 15, 60, 16, '%');
-    m.put(63, 14, 'K'); m.put(65, 14, 'e'); m.put(69, 14, '6'); gate(m, 73, 'E');
-    m.put(78, 14, '7'); gate(m, 82, 'G');
-    m.put(84, 13, '---'); m.put(86, 14, '?'); m.put(91, 14, 'F');
-    return m.rows();
+    let x = room(m, 7, 1, 'climb', 'A');
+    m.put(x + 3, 14, 'e');
+    x = TR.hills(m, x + 1);
+    x = room(m, x, 2, 'bridge', 'B');
+    x = room(m, x + 1, 3, 'wall', 'C');
+    x = TR.pit(m, x + 1);
+    x = room(m, x + 1, 4, 'spikes', 'D');
+    m.put(x + 1, 14, '?'); m.put(x + 3, 14, '5');
+    m.fill(x + 5, 15, x + 13, 16, '%');
+    x += 15;
+    m.put(x + 1, 14, 'K'); m.put(x + 4, 14, 'e');
+    x = TR.mover(m, x + 7);
+    x = room(m, x + 1, 6, 'spring', 'E');
+    x = room(m, x + 1, 7, 'climb', 'G');
+    m.put(x + 2, 14, '?'); m.put(x + 6, 14, 'F');
+    return m;
   }
   function level4() {
-    const m = MapBuilder(102, 17);
-    m.fill(0, 15, 101, 16, '#');
+    const m = MapBuilder(150, 17);
+    m.fill(0, 15, 149, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
     // hidden climb to find i
     m.put(7, 13, '---'); m.put(10, 11, '---'); m.put(6, 9, '---'); m.put(1, 7, '----');
@@ -1210,43 +1302,58 @@
     m.put(34, 8, 'K'); m.put(37, 8, '3'); gate(m, 40, 'B', 7);
     m.put(42, 8, '4'); m.put(44, 8, 's');
     m.fill(47, 3, 48, 14, 'W');
-    m.put(52, 14, 'e'); m.put(57, 14, '5'); gate(m, 61, 'C');
-    m.put(66, 14, '6'); gate(m, 70, 'D');
-    m.put(75, 14, '7'); gate(m, 79, 'E');
-    m.put(81, 13, '---'); m.put(84, 14, '8'); gate(m, 88, 'G');
-    m.put(92, 14, '?'); m.put(98, 14, 'F');
-    return m.rows();
+    m.put(52, 14, 'e');
+    let x = room(m, 54, 5, 'bridge', 'C');
+    x = TR.mover(m, x + 1);
+    x = room(m, x + 1, 6, 'spikes', 'D');
+    x = TR.hills(m, x);
+    x = room(m, x, 7, 'climb', 'E');
+    x = room(m, x + 1, 8, 'lava', 'G');
+    m.put(x + 2, 14, '?'); m.put(x + 6, 14, 'F');
+    m.put(9, 10, 'o'); m.put(2, 5, 'o'); m.put(29, 9, 'o');
+    return m;
+
   }
   function level5() {
-    const m = MapBuilder(107, 17);
-    m.fill(0, 15, 106, 16, '#');
+    const m = MapBuilder(162, 17);
+    m.fill(0, 15, 161, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
-    m.put(9, 14, '1'); gate(m, 13, 'A');
-    m.put(18, 14, '2'); gate(m, 22, 'B');
-    m.put(27, 14, '3');
-    m.fill(30, 15, 37, 15, '_'); m.fill(30, 16, 37, 16, '~');
-    m.put(41, 14, 'e'); m.put(45, 14, '4'); gate(m, 49, 'C');
-    m.put(52, 14, 'K'); m.put(54, 13, '---'); m.put(56, 10, 'w');
-    m.put(60, 14, '5'); gate(m, 64, 'D');
-    m.put(69, 14, '6'); gate(m, 73, 'E');
-    m.put(78, 14, '7'); gate(m, 82, 'G');
-    m.put(87, 14, '8'); gate(m, 91, 'H');
-    m.put(95, 14, 'e'); m.put(97, 14, '?'); m.put(103, 14, 'F');
-    return m.rows();
+    let x = room(m, 6, 1, 'climb', 'A');
+    x = TR.hills(m, x);
+    m.put(x + 1, 14, 'e');
+    x = room(m, x + 3, 2, 'spring', 'B');
+    m.put(x + 2, 14, '3');
+    m.fill(x + 5, 15, x + 12, 15, '_'); m.fill(x + 5, 16, x + 12, 16, '~');
+    x += 15;
+    m.put(x + 2, 14, 'e');
+    x = room(m, x + 4, 4, 'spikes', 'C');
+    m.put(x + 1, 14, 'K');
+    x = TR.tower(m, x + 3); m.put(x - 4, 9, 'w');
+    x = room(m, x, 5, 'wall', 'D');
+    x = TR.mover(m, x + 1);
+    x = room(m, x + 1, 6, 'bridge', 'E');
+    x = room(m, x + 1, 7, 'lava', 'G');
+    x = room(m, x + 1, 8, 'climb', 'H');
+    m.put(x + 2, 14, 'e'); m.put(x + 4, 14, '?'); m.put(x + 8, 14, 'F');
+    return m;
   }
   function level6() {
-    const m = MapBuilder(94, 17);
-    m.fill(0, 15, 93, 16, '#');
+    const m = MapBuilder(140, 17);
+    m.fill(0, 15, 139, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
-    m.put(10, 14, '1'); gate(m, 14, 'A');
-    m.put(19, 14, '2'); gate(m, 23, 'B');
-    m.put(28, 14, '3'); gate(m, 32, 'C');
-    m.put(37, 14, '4'); gate(m, 41, 'D');
-    m.put(44, 14, '?'); m.put(48, 14, '5'); m.put(51, 14, '?'); m.put(55, 14, '6'); gate(m, 60, 'E');
-    m.put(63, 14, '?');
-    m.put(68, 14, 'e'); m.put(72, 13, '----'); m.put(76, 14, 'e'); m.put(79, 10, 'w');
-    m.put(83, 14, '?'); m.put(90, 14, 'F');
-    return m.rows();
+    let x = room(m, 7, 1, 'wall', 'A');
+    x = TR.hills(m, x);
+    x = room(m, x, 2, 'climb', 'B');
+    x = room(m, x + 1, 3, 'spring', 'C');
+    x = TR.pit(m, x + 1);
+    x = room(m, x + 1, 4, 'spikes', 'D');
+    m.put(x + 1, 14, '?'); m.put(x + 4, 14, '5'); m.put(x + 7, 14, '?'); m.put(x + 10, 14, '6');
+    x = OB.climb(m, x + 13, 'E') + 2;
+    m.put(x, 14, '?');
+    m.put(x + 4, 14, 'e'); m.put(x + 8, 13, '----'); m.put(x + 12, 14, 'e'); m.put(x + 15, 10, 'w');
+    x = TR.mover(m, x + 18);
+    m.put(x + 2, 14, '?'); m.put(x + 7, 14, 'F');
+    return m;
   }
   function levelWorld() {
     const W = 176, H = 24;
@@ -1299,7 +1406,7 @@
 
   const LEVELS = [
     {
-      id: 'hello', name: 'Hello, World', theme: 'meadow', map: level1(),
+      id: 'hello', name: 'Hello, World', theme: 'meadow', ...mapOf(level1()),
       intro: {
         title: 'Level 1 — Hello, World',
         python: '<p>Welcome to <b>Syntaxia</b>, a world built from code — and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Every programmer\'s journey starts with the same two words...</p>',
@@ -1309,7 +1416,7 @@
       terminals: ['hello', 'lines', 'textjoin', 'math', 'order', 'sep'],
     },
     {
-      id: 'vars', name: 'Variables', theme: 'meadow', map: level2(),
+      id: 'vars', name: 'Variables', theme: 'meadow', ...mapOf(level2()),
       intro: {
         title: 'Level 2 — Variables',
         python: '<p>A <b>variable</b> is a named box that holds a value:</p><pre>planks = 7\nname = "Ada"</pre><p>In Syntaxia, objects you pick up become variables you can use in your code! Collect the glowing boxes.</p>',
@@ -1320,7 +1427,7 @@
       terminals: ['firstvar', 'types', 'bridge', 'area', 'update', 'combine', 'password'],
     },
     {
-      id: 'ifs', name: 'Conditions', theme: 'cave', map: level3(),
+      id: 'ifs', name: 'Conditions', theme: 'cave', ...mapOf(level3()),
       intro: {
         title: 'Level 3 — Conditions',
         python: '<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if hp < 3:\n    print("Heal!")\nelif hp == 3:\n    print("Okay")\nelse:\n    print("Strong!")</pre><p>Notice the <b>colon</b> and the <b>indent</b> — Python uses them to know what belongs inside the if.</p><p>⚠️ <b>Bugs</b> live here. Jump on them to squash them — if one bites you, it puts an <b>error in your code</b>!</p>',
@@ -1330,7 +1437,7 @@
       terminals: ['compare', 'heal', 'guard', 'even', 'pump', 'bouncer', 'orgate'],
     },
     {
-      id: 'loops', name: 'Loops', theme: 'cave', map: level4(),
+      id: 'loops', name: 'Loops', theme: 'cave', ...mapOf(level4()),
       intro: {
         title: 'Level 4 — Loops',
         python: '<p>A <b>loop</b> repeats code so you don\'t have to:</p><pre>for i in range(3):\n    print(i)   # 0, 1, 2</pre><p>That little <b>i</b> is the loop\'s counter... Legend says a tiny creature named <b>i</b> lives in these caves. Maybe you\'ll find them!</p>',
@@ -1341,7 +1448,7 @@
       springsLocked: true,
     },
     {
-      id: 'funcs', name: 'Functions', theme: 'circuit', map: level5(),
+      id: 'funcs', name: 'Functions', theme: 'circuit', ...mapOf(level5()),
       intro: {
         title: 'Level 5 — Functions',
         python: '<p>A <b>function</b> is a named recipe. Define it once with <code>def</code>, use it as often as you like:</p><pre>def square(x):\n    return x * x\n\nprint(square(4))  # 16</pre><p><code>return</code> sends the answer back to whoever called the function.</p>',
@@ -1351,7 +1458,7 @@
       terminals: ['cheer', 'echo', 'double', 'square', 'greet', 'evenfn', 'total', 'biggest'],
     },
     {
-      id: 'classes', name: 'Classes', theme: 'circuit', map: level6(),
+      id: 'classes', name: 'Classes', theme: 'circuit', ...mapOf(level6()),
       intro: {
         title: 'Level 6 — Classes',
         python: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>attributes</b>) and abilities (<b>methods</b>):</p><pre>class Dog:\n    def __init__(self, name):\n        self.name = name\n    def speak(self):\n        return "Woof!"\n\nrex = Dog("Rex")\nprint(rex.speak())</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b> — or both! Master classes and you\'ll unlock <b>skill points</b> and the <b>open world</b>.</p>',
