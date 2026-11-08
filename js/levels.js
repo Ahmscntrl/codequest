@@ -100,7 +100,7 @@
       python: ['"password" (with quotes) is just text. password (no quotes) is the variable.', 'print(password)'],
       javascript: ['"password" (with quotes) is just text. password (no quotes) is the variable.', 'console.log(password);'],
     },
-    effect: (game) => game.openGate('A'),
+    effect: (game) => game.openGate('D'),
   };
 
   CH.guard = {
@@ -128,7 +128,7 @@
       python: ['Inside the if block, call open_gate(). Inside the else block, call sound_alarm().', 'if visitor == my_name:\n    open_gate()\nelse:\n    sound_alarm()'],
       javascript: ['Inside the if block, call openGate(). Inside the else block, call soundAlarm().', 'if (visitor === myName) {\n  openGate();\n} else {\n  soundAlarm();\n}'],
     },
-    effect: (game) => game.openGate('A'),
+    effect: (game) => game.openGate('C'),
   };
 
   CH.pump = {
@@ -246,7 +246,7 @@
       python: ['"Hello, " + name + "!"', 'def greet(name):\n    return "Hello, " + name + "!"'],
       javascript: ['"Hello, " + name + "!"', 'function greet(name) {\n  return "Hello, " + name + "!";\n}'],
     },
-    effect: (game) => game.openGate('A'),
+    effect: (game) => game.openGate('C'),
   };
 
   CH.total = {
@@ -265,7 +265,7 @@
       python: ['result += n adds n to result.', 'def total(nums):\n    result = 0\n    for n in nums:\n        result += n\n    return result'],
       javascript: ['result += n adds n to result.', 'function total(nums) {\n  let result = 0;\n  for (const n of nums) {\n    result += n;\n  }\n  return result;\n}'],
     },
-    effect: (game) => game.openGate('B'),
+    effect: (game) => game.openGate('D'),
   };
 
   CH.forge = {
@@ -298,7 +298,7 @@
       python: ['ClassName() creates a new object.', 'my_sword = Sword()\nequip(my_sword)'],
       javascript: ['new ClassName() creates a new object.', 'const mySword = new Sword();\nequip(mySword);'],
     },
-    effect: (game, data) => { if (data && data.weapon) game.setWeapon(data.weapon); game.openGate('A'); },
+    effect: (game, data) => { if (data && data.weapon) game.setWeapon(data.weapon); game.openGate('C'); },
   };
 
   CH.den = {
@@ -331,7 +331,7 @@
       python: ['Change what speak returns, e.g. return "Meow!"', 'adopt(buddy)'],
       javascript: ['Change what speak returns, e.g. return "Meow!";', 'adopt(buddy);'],
     },
-    effect: (game, data) => { if (data && data.pet) game.setPet(data.pet); game.openGate('A'); },
+    effect: (game, data) => { if (data && data.pet) game.setPet(data.pet); game.openGate('C'); },
   };
 
   // ---- open world
@@ -453,6 +453,377 @@
     effect: (game, data) => game.fireCannon(data ? data.shots : 1),
   };
 
+  // ================================================================ extra lessons (gradual steps)
+  const lines = (run) => run.output.map(l => l.trim());
+  const lastLine = (run) => { const o = lines(run); return o.length ? o[o.length - 1] : undefined; };
+  const nothing = (v) => v === undefined ? 'nothing' : escapeHTML(v);
+
+  // ---- Level 1: print()
+  CH.lines = {
+    title: 'The Three Bells',
+    desc: (ctx) => `<p>Every ${c(printFn(ctx) + '(...)')} puts its text on a <b>new line</b>. Computers run your code <b>from top to bottom</b>.</p>
+      <p>Ring the bells in order. Print these three lines:</p><pre>Ready\nSet\nCode!</pre>`,
+    starter: { python: '# One print() per line. The first one is done for you:\nprint("Ready")\n', javascript: '// One console.log() per line. The first one is done for you:\nconsole.log("Ready");\n' },
+    api: [],
+    check(runs) {
+      const out = lines(runs[0]);
+      const want = ['ready', 'set', 'code!'];
+      const norm = out.map(l => l.toLowerCase().replace(/^code$/, 'code!'));
+      if (out.length < 3) return { ok: false, msg: `You printed ${out.length} line${out.length === 1 ? '' : 's'} — the bells need 3: <b>Ready</b>, <b>Set</b>, <b>Code!</b>` };
+      for (let i = 0; i < 3; i++) if (norm[i] !== want[i]) return { ok: false, msg: `Line ${i + 1} should be <b>${['Ready', 'Set', 'Code!'][i]}</b> but it was <b>${nothing(out[i])}</b>. Order matters!` };
+      return { ok: true, msg: '🔔🔔🔔 The bells ring in order. <b>Gate open!</b>' };
+    },
+    hints: { python: ['Add two more print lines underneath.', 'print("Ready")\nprint("Set")\nprint("Code!")'], javascript: ['Add two more console.log lines underneath.', 'console.log("Ready");\nconsole.log("Set");\nconsole.log("Code!");'] },
+    effect: (game) => game.openGate('B'),
+  };
+  CH.math = {
+    title: 'The Calculator Door',
+    desc: (ctx) => `<p>Text needs quotes, but <b>numbers don't</b>. Without quotes, the computer does the math for you:</p>
+      <pre>${printFn(ctx)}(2 + 3)    ${isJS(ctx) ? '//' : '#'} shows 5\n${printFn(ctx)}("2 + 3")  ${isJS(ctx) ? '//' : '#'} shows the text 2 + 3</pre>
+      <p>Make the computer calculate <b>7 × 6</b> and <b>100 − 1</b>, printing each answer on its own line. (Use ${c('*')} to multiply and ${c('-')} to subtract — don't type the answers yourself!)</p>`,
+    starter: { python: '# Math works inside print():\nprint(2 + 3)\n', javascript: '// Math works inside console.log():\nconsole.log(2 + 3);\n' },
+    api: [],
+    check(runs, ctx, code) {
+      const out = lines(runs[0]);
+      if (out.some(l => /7\s*\*\s*6|100\s*-\s*1/.test(l))) return { ok: false, msg: 'You printed the math as <i>text</i>. Remove the quotes so the computer calculates it!' };
+      const src = stripComments(code, ctx);
+      if (/\b(42|99)\b/.test(src)) return { ok: false, msg: 'No cheating — let the computer do the math with <code>*</code> and <code>-</code>!' };
+      const i42 = out.indexOf('42'), i99 = out.indexOf('99');
+      if (i42 < 0) return { ok: false, msg: 'I don\'t see the answer to 7 × 6 yet. Try <code>' + printFn(ctx) + '(7 * 6)</code>.' };
+      if (i99 < 0) return { ok: false, msg: 'Now print the answer to 100 − 1.' };
+      if (i99 < i42) return { ok: false, msg: 'Print 7 × 6 first, then 100 − 1.' };
+      return { ok: true, msg: '🧮 42 and 99 — correct! <b>Gate open!</b>' };
+    },
+    hints: { python: ['print(7 * 6)', 'print(7 * 6)\nprint(100 - 1)'], javascript: ['console.log(7 * 6);', 'console.log(7 * 6);\nconsole.log(100 - 1);'] },
+    effect: (game) => game.openGate('C'),
+  };
+
+  // ---- Level 2: variables
+  CH.firstvar = {
+    title: 'The Name Plate',
+    desc: (ctx) => `<p>A <b>variable</b> is a labelled box that stores a value. You make one with ${isJS(ctx) ? c('let') + ' and ' : ''}an equals sign:</p>
+      <pre>${isJS(ctx) ? 'let ' : ''}color = "blue"${isJS(ctx) ? ';' : ''}</pre>
+      <p>Make a variable called ${c('color')} holding your favourite colour (as text), then <b>print the variable</b>.</p>`,
+    starter: { python: '# name = value   (text values need quotes)\n', javascript: '// let name = value;   (text values need quotes)\n' },
+    api: [],
+    captureVars: ['color'],
+    check(runs, ctx, code) {
+      const r = runs[0];
+      const v = r.vars.color;
+      if (v === undefined) return { ok: false, msg: `I can't find a variable called ${c('color')}. Spell it exactly like that (all lowercase).` };
+      if (typeof v !== 'string' || !v.trim()) return { ok: false, msg: `${c('color')} should hold some text, like ${c('"blue"')}.` };
+      if (!new RegExp('\\(\\s*color\\s*\\)').test(stripComments(code, ctx))) return { ok: false, msg: `Now print the <b>variable</b>: ${c(printFn(ctx) + '(color)')} — no quotes around the name.` };
+      if (!lines(r).includes(v.trim())) return { ok: false, msg: `Print the variable so it shows <b>${escapeHTML(v)}</b>.` };
+      return { ok: true, msg: `🎨 The name plate glows <b>${escapeHTML(v)}</b>. <b>Gate open!</b>` };
+    },
+    hints: { python: ['color = "blue"', 'color = "blue"\nprint(color)'], javascript: ['let color = "blue";', 'let color = "blue";\nconsole.log(color);'] },
+    effect: (game) => game.openGate('A'),
+  };
+  CH.area = {
+    title: 'The Measuring Gate',
+    desc: (ctx) => `<p>Variables can hold <b>numbers</b>, and you can do math with them. You have ${c('width')} and ${c('height')} — they're <b>different for every test</b>, so you can't just type the answer.</p>
+      <p>Make a new variable ${c('area')} that equals width times height, then print it.</p>`,
+    starter: { python: '# width and height change for each test!\nprint(width)\nprint(height)\n', javascript: '// width and height change for each test!\nconsole.log(width);\nconsole.log(height);\n' },
+    api: [],
+    tests: () => [[4, 3], [7, 2], [5, 5]].map(([w, h]) => ({ label: `width = ${w}, height = ${h}`, globals: { width: w, height: h }, expect: String(w * h) })),
+    check(runs) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lastLine(runs[i]);
+        if (got !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): the last thing printed should be <b>${t.expect}</b> but it was <b>${nothing(got)}</b>.` };
+      }
+      return { ok: true, msg: '📐 Measured perfectly, every time. <b>Gate open!</b>' };
+    },
+    hints: { python: ['area = width * height', 'area = width * height\nprint(area)'], javascript: ['let area = width * height;', 'let area = width * height;\nconsole.log(area);'] },
+    effect: (game) => game.openGate('B'),
+  };
+  CH.update = {
+    title: 'The Score Keeper',
+    desc: (ctx) => `<p>Variables can <b>change</b>! You can give a variable a new value based on its old one:</p>
+      <pre>score = score + 5    ${isJS(ctx) ? '//' : '#'} or the shortcut:  score += 5</pre>
+      <p>You have a variable ${c('score')} (different each test). <b>Add 5 to it</b>, then print it.${isJS(ctx) ? ' <i>score already exists, so don\'t put <code>let</code> in front of it.</i>' : ''}</p>`,
+    starter: { python: '# score already exists. Add 5 to it, then print it.\n', javascript: '// score already exists. Add 5 to it, then print it.\n' },
+    api: [],
+    tests: () => [10, 0, 95].map(s => ({ label: `score starts at ${s}`, globals: { score: s }, expect: String(s + 5) })),
+    check(runs, ctx, code) {
+      if (!/score\s*(\+=|=\s*score\s*\+)/.test(stripComments(code, ctx))) return { ok: false, msg: `Change the variable itself: ${c('score = score + 5')} or ${c('score += 5')}, then print it.` };
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lastLine(runs[i]);
+        if (got !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected <b>${t.expect}</b> but got <b>${nothing(got)}</b>.` };
+      }
+      return { ok: true, msg: '📈 +5 every time! <b>Gate open!</b>' };
+    },
+    hints: { python: ['score += 5', 'score += 5\nprint(score)'], javascript: ['score += 5;', 'score += 5;\nconsole.log(score);'] },
+    effect: (game) => game.openGate('C'),
+  };
+
+  // ---- Level 3: conditions
+  CH.compare = {
+    title: 'The Truth Detector',
+    desc: (ctx) => `<p>A <b>comparison</b> asks a yes/no question. The answer is a special value: ${c(isJS(ctx) ? 'true' : 'True')} or ${c(isJS(ctx) ? 'false' : 'False')}.</p>
+      <pre>${printFn(ctx)}(5 > 3)   ${isJS(ctx) ? '// true' : '# True'}\n${printFn(ctx)}(2 > 9)   ${isJS(ctx) ? '// false' : '# False'}</pre>
+      <p>Comparisons: ${c('>')} ${c('<')} ${c('>=')} ${c('<=')} ${c(isJS(ctx) ? '===' : '==')} ${c(isJS(ctx) ? '!==' : '!=')}</p>
+      <p>Print whether ${c('hp')} is <b>greater than 50</b>. Tested with 3 values.</p>`,
+    starter: { python: '# Print the answer to: is hp greater than 50?\n', javascript: '// Print the answer to: is hp greater than 50?\n' },
+    api: [],
+    tests: () => [80, 20, 50].map(h => ({ label: `hp = ${h}`, globals: { hp: h }, expect: h > 50 })),
+    check(runs, ctx) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lastLine(runs[i]);
+        const want = isJS(ctx) ? String(t.expect) : (t.expect ? 'True' : 'False');
+        if (!got || got.toLowerCase() !== want.toLowerCase()) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected <b>${want}</b> but got <b>${nothing(got)}</b>.` + (t.globals.hp === 50 ? ' <i>Is 50 greater than 50?</i>' : '') };
+      }
+      return { ok: true, msg: '✅ The detector agrees with you every time. <b>Gate open!</b>' };
+    },
+    hints: { python: ['print(hp > 50)'], javascript: ['console.log(hp > 50);'] },
+    effect: (game) => game.openGate('A'),
+  };
+  CH.heal = {
+    title: 'The Healing Spring',
+    desc: (ctx) => `<p>${c('if')} runs code <b>only when</b> its condition is true:</p>
+      <pre>${isJS(ctx) ? 'if (hp < 30) {\n  // runs only when hp is below 30\n}' : 'if hp < 30:\n    # runs only when hp is below 30'}</pre>
+      <p>If ${c('hp')} is <b>below 30</b>, call ${c(fn('heal', ctx) + '()')}. Otherwise do nothing. Tested with 4 values.</p>`,
+    starter: { python: 'if hp < 30:\n    # what goes here?\n    pass\n', javascript: 'if (hp < 30) {\n  // what goes here?\n}\n' },
+    api: ['heal'],
+    tests: () => [10, 50, 29, 30].map(h => ({ label: `hp = ${h}`, globals: { hp: h }, expect: h < 30 })),
+    check(runs, ctx) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], n = actionsOf(runs[i], 'heal').length;
+        if (t.expect && n === 0) return { ok: false, msg: `Test ${i + 1} (${t.label}): you're hurt but didn't heal! Call ${c(fn('heal', ctx) + '()')} inside the if.` };
+        if (!t.expect && n > 0) return { ok: false, msg: `Test ${i + 1} (${t.label}): you healed when you didn't need to.` + (t.globals.hp === 30 ? ' <i>30 is not <u>below</u> 30.</i>' : ' <i>Is the heal inside the if?</i>') };
+        if (n > 1) return { ok: false, msg: 'Heal only once!' };
+      }
+      return { ok: true, msg: '💧 The spring heals only those who need it. <b>Gate open!</b>' };
+    },
+    hints: { python: ['if hp < 30:\n    heal()'], javascript: ['if (hp < 30) {\n  heal();\n}'] },
+    effect: (game) => game.openGate('B'),
+  };
+  CH.bouncer = {
+    title: 'The Ticket Booth',
+    desc: (ctx) => `<p>Sometimes you need <b>two</b> things to be true. ${isJS(ctx) ? c('&&') + ' means "and"' : c('and')}: both sides must be true.</p>
+      <p>Let the visitor in with ${c(fn('open_gate', ctx) + '()')} only if ${c('age')} is <b>12 or more</b> AND ${c(fn('has_ticket', ctx))} is true. Otherwise call ${c(fn('turn_away', ctx) + '()')}.</p>`,
+    starter: { python: 'if age >= 12 and has_ticket:\n    pass\nelse:\n    pass\n', javascript: 'if (age >= 12 && hasTicket) {\n\n} else {\n\n}\n' },
+    api: ['open_gate', 'turn_away'],
+    tests: () => [[14, true], [14, false], [9, true], [12, true]].map(([a, t]) => ({ label: `age = ${a}, ticket = ${t}`, globals: { age: a, has_ticket: t }, expect: a >= 12 && t ? 'open_gate' : 'turn_away' })),
+    check(runs, ctx) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], did = runs[i].actions.map(a => a.fn);
+        if (did.length !== 1 || did[0] !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected ${c(fn(t.expect, ctx) + '()')} but your code did ${c(did.length ? did.map(d => fn(d, ctx) + '()').join(' and ') : 'nothing')}.` };
+      }
+      return { ok: true, msg: '🎟️ Every visitor handled correctly. <b>Gate open!</b>' };
+    },
+    hints: { python: ['if age >= 12 and has_ticket:\n    open_gate()\nelse:\n    turn_away()'], javascript: ['if (age >= 12 && hasTicket) {\n  openGate();\n} else {\n  turnAway();\n}'] },
+    effect: (game) => game.openGate('D'),
+  };
+
+  // ---- Level 4: loops
+  CH.repeat = {
+    title: 'The Cheer Machine',
+    requires: (ctx) => ctx.save.foundI ? null : 'The machine blinks: <b>"COUNTER NOT FOUND."</b><br>Loops need someone to count for them... Your little friend <b>i</b> is lost somewhere up high in this level. Find them first!',
+    desc: (ctx) => `<p>A <b>loop</b> repeats code. Your friend <b>i</b> counts each time it goes around:</p>
+      <pre>${isJS(ctx) ? 'for (let i = 0; i < 3; i++) {\n  console.log("Hi");\n}' : 'for i in range(3):\n    print("Hi")'}</pre>
+      <p>That prints "Hi" three times. Now make the machine print <b>Hooray!</b> 3 times — using a loop, not 3 prints.</p>`,
+    starter: { python: 'for i in range(3):\n    print("Hi")\n', javascript: 'for (let i = 0; i < 3; i++) {\n  console.log("Hi");\n}\n' },
+    api: [],
+    check(runs, ctx, code) {
+      const out = lines(runs[0]);
+      if (out.length !== 3 || out.some(l => !/^hooray!?$/i.test(l))) return { ok: false, msg: `The machine wants exactly 3 lines of <b>Hooray!</b> — it got: <b>${escapeHTML(out.join(', ') || 'nothing')}</b>` };
+      if (!hasLoop(code, ctx)) return { ok: false, msg: 'Use a loop! i wants to help count.' };
+      return { ok: true, msg: '🎉 Hooray ×3! i bounces happily. <b>Gate open!</b>' };
+    },
+    hints: { python: ['Just change the text inside print.', 'for i in range(3):\n    print("Hooray!")'], javascript: ['Just change the text inside console.log.', 'for (let i = 0; i < 3; i++) {\n  console.log("Hooray!");\n}'] },
+    effect: (game) => game.openGate('A'),
+  };
+  CH.count = {
+    title: 'The Number Line',
+    desc: (ctx) => `<p>The counter ${c('i')} has a value you can use inside the loop! Print the numbers <b>1 to 10</b>, one per line.</p>
+      <p>${isJS(ctx) ? `Start ${c('i')} at 1 and keep going while ${c('i <= 10')}.` : `${c('range(1, 11)')} counts 1, 2, ... 10 — the stop number is <b>not</b> included!`}</p>`,
+    starter: { python: 'for i in range(10):\n    print(i)\n', javascript: 'for (let i = 0; i < 10; i++) {\n  console.log(i);\n}\n' },
+    api: [],
+    check(runs, ctx, code) {
+      const out = lines(runs[0]);
+      const want = Array.from({ length: 10 }, (_, k) => String(k + 1));
+      if (out.join(',') !== want.join(',')) {
+        if (out[0] === '0') return { ok: false, msg: 'Close! You started at <b>0</b>. Computers love counting from 0 — but this line starts at <b>1</b>.' };
+        return { ok: false, msg: `Expected 1 to 10 but got: <b>${escapeHTML(out.slice(0, 12).join(', ') || 'nothing')}</b>` };
+      }
+      if (!hasLoop(code, ctx)) return { ok: false, msg: 'Use a loop, not 10 prints!' };
+      return { ok: true, msg: '🔢 1 to 10, perfectly counted. <b>Gate open!</b>' };
+    },
+    hints: { python: ['for i in range(1, 11):\n    print(i)'], javascript: ['for (let i = 1; i <= 10; i++) {\n  console.log(i);\n}'] },
+    effect: (game) => game.openGate('B'),
+  };
+  CH.charge = {
+    title: 'The Battery',
+    desc: (ctx) => `<p>A ${c('while')} loop keeps going <b>as long as</b> its condition is true — perfect when you don't know how many times you'll need.</p>
+      <p>The battery is at ${c('charge')} percent. While it's below 100: call ${c(fn('charge_up', ctx) + '()')} and add 10 to ${c('charge')}.${isJS(ctx) ? ' <i>(charge already exists — no <code>let</code>.)</i>' : ''}</p>
+      <p>⚠️ If you forget to change ${c('charge')}, the loop never ends!</p>`,
+    starter: { python: 'while charge < 100:\n    charge_up()\n    # don\'t forget to add 10 to charge!\n', javascript: 'while (charge < 100) {\n  chargeUp();\n  // don\'t forget to add 10 to charge!\n}\n' },
+    api: ['charge_up'],
+    tests: () => [0, 50, 95, 100].map(cv => ({ label: `charge = ${cv}`, globals: { charge: cv }, expect: Math.max(0, Math.ceil((100 - cv) / 10)) })),
+    check(runs, ctx, code) {
+      if (!/\bwhile\b/.test(stripComments(code, ctx))) return { ok: false, msg: `This battery only works with a ${c('while')} loop.` };
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], n = actionsOf(runs[i], 'charge_up').length;
+        if (n !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): ${c(fn('charge_up', ctx) + '()')} should be called <b>${t.expect}</b> time${t.expect === 1 ? '' : 's'}, but it was called <b>${n}</b>.` };
+      }
+      return { ok: true, msg: '🔋 Fully charged, every time. <b>Gate open!</b>' };
+    },
+    hints: { python: ['charge += 10', 'while charge < 100:\n    charge_up()\n    charge += 10'], javascript: ['charge += 10;', 'while (charge < 100) {\n  chargeUp();\n  charge += 10;\n}'] },
+    effect: (game) => game.openGate('C'),
+  };
+  CH.sumloop = {
+    title: 'The Gem Counter',
+    desc: (ctx) => `<p>Loops can <b>build up</b> an answer. Start a total at 0 and add to it each time around.</p>
+      <p>Add up all the numbers from 1 to ${c('n')} (1 + 2 + ... + n) and print the total. Tested with n = 5, 10 and 1.</p>`,
+    starter: { python: 'total = 0\nfor i in range(1, n + 1):\n    pass  # add i to total\nprint(total)\n', javascript: 'let total = 0;\nfor (let i = 1; i <= n; i++) {\n  // add i to total\n}\nconsole.log(total);\n' },
+    api: [],
+    tests: () => [5, 10, 1].map(n => ({ label: `n = ${n}`, globals: { n }, expect: String(n * (n + 1) / 2) })),
+    check(runs, ctx, code) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lastLine(runs[i]);
+        if (got !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): the total should be <b>${t.expect}</b> but you printed <b>${nothing(got)}</b>.` };
+      }
+      if (!hasLoop(code, ctx)) return { ok: false, msg: 'Use a loop to add them up!' };
+      return { ok: true, msg: '💎 Counted every gem. <b>Gate open!</b>' };
+    },
+    hints: { python: ['total += i', 'total = 0\nfor i in range(1, n + 1):\n    total += i\nprint(total)'], javascript: ['total += i;', 'let total = 0;\nfor (let i = 1; i <= n; i++) {\n  total += i;\n}\nconsole.log(total);'] },
+    effect: (game) => game.openGate('D'),
+  };
+
+  // ---- Level 5: functions
+  CH.cheer = {
+    title: 'The Cheer Function',
+    desc: (ctx) => `<p>A <b>function</b> is a named block of code. <b>Defining</b> it doesn't run it — you have to <b>call</b> it by writing its name with ${c('()')}.</p>
+      <p>The function ${c('cheer')} is already defined for you. <b>Call it twice</b>.</p>`,
+    starter: { python: 'def cheer():\n    print("Go team!")\n\n# Call it twice below:\n', javascript: 'function cheer() {\n  console.log("Go team!");\n}\n\n// Call it twice below:\n' },
+    api: [],
+    check(runs) {
+      const out = lines(runs[0]);
+      if (!out.length) return { ok: false, msg: 'Nothing happened — defining a function doesn\'t run it. Write <code>cheer()</code> to call it!' };
+      if (out.length !== 2 || out.some(l => l !== 'Go team!')) return { ok: false, msg: `Expected "Go team!" exactly twice, but got: <b>${escapeHTML(out.join(', '))}</b>` };
+      return { ok: true, msg: '📣 Go team! Go team! <b>Gate open!</b>' };
+    },
+    hints: { python: ['cheer()\ncheer()'], javascript: ['cheer();\ncheer();'] },
+    effect: (game) => game.openGate('A'),
+  };
+  CH.echo = {
+    title: 'The Echo Chamber',
+    desc: (ctx) => `<p>Functions can take <b>inputs</b> called <b>parameters</b>. Inside the function, the parameter works like a variable.</p>
+      <pre>${isJS(ctx) ? 'function hello(name) {\n  console.log("Hi " + name);\n}\nhello("Ada");   // Hi Ada' : 'def hello(name):\n    print("Hi " + name)\n\nhello("Ada")   # Hi Ada'}</pre>
+      <p>Write a function ${c('echo')} that takes a ${c('word')} and prints it <b>twice</b> (on two lines). The chamber will test it with different words.</p>`,
+    starter: { python: 'def echo(word):\n    # print word two times\n    pass\n\necho("hello")\n', javascript: 'function echo(word) {\n  // print word two times\n}\n\necho("hello");\n' },
+    api: [],
+    callTests: [{ fn: 'echo', args: ['hello'] }, { fn: 'echo', args: ['Syntaxia'] }],
+    check(runs, ctx) {
+      for (let i = 0; i < this.callTests.length; i++) {
+        const call = runs[0].calls[i], w = this.callTests[i].args[0];
+        if (!call || call.error) return { ok: false, msg: call && !/not defined/.test(call.error) ? `${c('echo(' + show(w) + ')')} crashed: <b>${escapeHTML(call.error)}</b>` : `I can't find a function called ${c('echo')}.` };
+        const got = (call.printed || '').split('\n').map(s => s.trim()).filter(Boolean);
+        if (got.length !== 2 || got.some(x => x !== w)) return { ok: false, msg: `${c('echo(' + show(w) + ')')} should print <b>${escapeHTML(w)}</b> twice, but it printed: <b>${escapeHTML(got.join(', ') || 'nothing')}</b>` + (got.includes('word') ? ' <i>(Don\'t put quotes around word!)</i>' : '') };
+      }
+      return { ok: true, msg: '🗣️ hello... hello... <b>Gate open!</b>' };
+    },
+    hints: { python: ['def echo(word):\n    print(word)\n    print(word)'], javascript: ['function echo(word) {\n  console.log(word);\n  console.log(word);\n}'] },
+    effect: (game) => game.openGate('B'),
+  };
+  CH.biggest = {
+    title: 'The Judge',
+    desc: (ctx) => `<p>Functions can use everything you've learned — including ${c('if')}. Write a function ${c('biggest')} that takes two numbers ${c('a')} and ${c('b')} and <b>returns</b> the larger one.</p>
+      <pre>biggest(3, 9)   →  9\nbiggest(10, 2)  →  10</pre>`,
+    starter: { python: 'def biggest(a, b):\n    if a > b:\n        return a\n    # what if a is not bigger?\n', javascript: 'function biggest(a, b) {\n  if (a > b) {\n    return a;\n  }\n  // what if a is not bigger?\n}\n' },
+    api: [],
+    callTests: [{ fn: 'biggest', args: [3, 9] }, { fn: 'biggest', args: [10, 2] }, { fn: 'biggest', args: [-1, -5] }, { fn: 'biggest', args: [4, 4] }],
+    check(runs, ctx) { return checkCalls(runs[0], this.callTests, [9, 10, -1, 4], ctx, 'biggest'); },
+    hints: { python: ['def biggest(a, b):\n    if a > b:\n        return a\n    return b'], javascript: ['function biggest(a, b) {\n  if (a > b) {\n    return a;\n  }\n  return b;\n}'] },
+    effect: (game) => game.openGate('E'),
+  };
+
+  // ---- Level 6: classes
+  CH.crate = {
+    title: 'The Mystery Crate',
+    desc: (ctx) => `<p>A <b>class</b> is a blueprint. Making something from the blueprint gives you an <b>object</b>, and objects carry data called <b>attributes</b>.</p>
+      <p>The ${c('Crate')} blueprint is written for you. Create a crate object, then print its ${c('contents')} attribute using a dot: ${c(isJS(ctx) ? 'myCrate.contents' : 'my_crate.contents')}.</p>`,
+    starter: {
+      python: 'class Crate:\n    def __init__(self):\n        self.contents = "golden key"\n\n# 1. Make an object:   my_crate = Crate()\n# 2. Print its contents\n',
+      javascript: 'class Crate {\n  constructor() {\n    this.contents = "golden key";\n  }\n}\n\n// 1. Make an object:   const myCrate = new Crate();\n// 2. Print its contents\n',
+    },
+    api: [],
+    check(runs, ctx, code) {
+      const src = stripComments(code, ctx);
+      if (!(isJS(ctx) ? /new\s+Crate\s*\(/ : /Crate\s*\(\s*\)/).test(src)) return { ok: false, msg: `First create an object from the blueprint: ${c(isJS(ctx) ? 'new Crate()' : 'Crate()')}.` };
+      if (!lines(runs[0]).includes('golden key')) return { ok: false, msg: `Now print the object's ${c('contents')} attribute.` };
+      if (!/\.contents/.test(src)) return { ok: false, msg: 'Read it from the object with <code>.contents</code> — don\'t just type it!' };
+      return { ok: true, msg: '📦 The crate creaks open: a <b>golden key</b>! <b>Gate open!</b>' };
+    },
+    hints: { python: ['my_crate = Crate()\nprint(my_crate.contents)'], javascript: ['const myCrate = new Crate();\nconsole.log(myCrate.contents);'] },
+    effect: (game) => game.openGate('A'),
+  };
+  CH.potion = {
+    title: 'The Potion Brewery',
+    desc: (ctx) => `<p>The real power of classes: <b>one blueprint, many different objects</b>. ${isJS(ctx) ? c('constructor') : c('__init__')} can take inputs so each object gets its own values, and <b>methods</b> are functions that belong to the object.</p>
+      <p>Finish the ${c('Potion')} class: store ${c('power')} on the object, and make ${c('describe()')} return text like <b>Potion of power 3</b>.</p>
+      <p>Then ${c(fn('brew', ctx))} <b>two</b> potions with <b>different</b> powers.</p>`,
+    starter: {
+      python: 'class Potion:\n    def __init__(self, power):\n        self.power = power\n\n    def describe(self):\n        return "..."   # use self.power here\n\nbrew(Potion(3))\n# brew a second, stronger potion\n',
+      javascript: 'class Potion {\n  constructor(power) {\n    this.power = power;\n  }\n\n  describe() {\n    return "...";   // use this.power here\n  }\n}\n\nbrew(new Potion(3));\n// brew a second, stronger potion\n',
+    },
+    api: ['brew'],
+    check(runs, ctx) {
+      const pots = actionsOf(runs[0], 'brew').map(a => a.args[0]);
+      if (pots.length < 2) return { ok: false, msg: `Brew <b>two</b> potions — you brewed ${pots.length}.` };
+      for (const p of pots) {
+        if (!p || !p.__obj) return { ok: false, msg: 'You can only brew Potion <b>objects</b>.' };
+        if (typeof p.props.power !== 'number') return { ok: false, msg: `Each potion needs a number ${c('power')}.` };
+        const d = p.methods.describe;
+        if (!d || d.error) return { ok: false, msg: `${c('describe()')} ${d && d.error ? 'crashed: <b>' + escapeHTML(d.error) + '</b>' : 'is missing'}.` };
+        if (d.value !== `Potion of power ${p.props.power}`) return { ok: false, msg: `For a potion with power ${p.props.power}, ${c('describe()')} should return <b>Potion of power ${p.props.power}</b> but returned <b>${escapeHTML(show(d.value))}</b>.` };
+      }
+      if (new Set(pots.map(p => p.props.power)).size < 2) return { ok: false, msg: 'Give your two potions <b>different</b> powers!' };
+      return { ok: true, msg: `⚗️ Brewed: ${pots.map(p => '<b>' + escapeHTML(p.methods.describe.value) + '</b>').join(' and ')}. <b>Gate open!</b>` };
+    },
+    hints: { python: ['return "Potion of power " + str(self.power)', 'class Potion:\n    def __init__(self, power):\n        self.power = power\n\n    def describe(self):\n        return f"Potion of power {self.power}"\n\nbrew(Potion(3))\nbrew(Potion(8))'], javascript: ['return "Potion of power " + this.power;', 'class Potion {\n  constructor(power) {\n    this.power = power;\n  }\n  describe() {\n    return `Potion of power ${this.power}`;\n  }\n}\n\nbrew(new Potion(3));\nbrew(new Potion(8));'] },
+    effect: (game) => game.openGate('B'),
+  };
+
+  // ---- Open world: list & string warm-ups
+  CH.backpack = {
+    title: 'Side Quest — The Backpack',
+    desc: (ctx) => `<p>A <b>list</b> holds many values in order. Each item has a position called an <b>index</b>, starting at <b>0</b>:</p>
+      <pre>items = ["sword", "map", "apple"]\nitems[0]          → "sword"\n${isJS(ctx) ? 'items[items.length - 1]' : 'items[-1]        '} → "apple"\n${isJS(ctx) ? 'items.length' : 'len(items)'}       → 3</pre>
+      <p>Print 3 lines about ${c('inventory')}: the <b>first</b> item, the <b>last</b> item, and <b>how many</b> items there are.</p>`,
+    starter: { python: '# inventory is a list, e.g. ["sword", "map", "apple"]\nprint(inventory)\n', javascript: '// inventory is an array, e.g. ["sword", "map", "apple"]\nconsole.log(inventory);\n' },
+    api: [],
+    tests: () => [['sword', 'map', 'apple'], ['key', 'rope'], ['gem']].map(a => ({ label: `inventory = ${show(a)}`, globals: { inventory: a }, expect: [a[0], a[a.length - 1], String(a.length)] })),
+    check(runs) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], out = lines(runs[i]).map(s => s.replace(/^['"]|['"]$/g, ''));
+        const got = out.slice(-3);
+        if (got.join('|') !== t.expect.join('|')) return { ok: false, msg: `Test ${i + 1} (${escapeHTML(t.label)}): your last 3 lines should be <b>${escapeHTML(t.expect.join(', '))}</b> but were <b>${escapeHTML(got.join(', ') || 'nothing')}</b>.` };
+      }
+      return { ok: true, msg: '🎒 Backpack sorted! <b>+1 skill point!</b>' };
+    },
+    hints: { python: ['print(inventory[0])\nprint(inventory[-1])\nprint(len(inventory))'], javascript: ['console.log(inventory[0]);\nconsole.log(inventory[inventory.length - 1]);\nconsole.log(inventory.length);'] },
+    effect: (game, data, instant) => game.gainSideQuest('backpack', instant),
+  };
+  CH.crier = {
+    title: 'Side Quest — The Town Crier',
+    desc: (ctx) => `<p>Strings (text) come with built-in <b>methods</b> — tools you call with a dot:</p>
+      <pre>${isJS(ctx) ? '"hi".toUpperCase()   → "HI"\n"HI".toLowerCase()   → "hi"' : '"hi".upper()   → "HI"\n"HI".lower()   → "hi"'}</pre>
+      <p>The crier shouts every ${c('message')}: print it in <b>UPPERCASE</b> with an ${c('!')} on the end. ${c('"hello"')} → <b>HELLO!</b></p>`,
+    starter: { python: '# message changes for each test\nprint(message)\n', javascript: '// message changes for each test\nconsole.log(message);\n' },
+    api: [],
+    tests: () => ['hello', 'bugs ahead', 'the gate is open'].map(m => ({ label: `message = ${show(m)}`, globals: { message: m }, expect: m.toUpperCase() + '!' })),
+    check(runs) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lastLine(runs[i]);
+        if (got !== t.expect) return { ok: false, msg: `Test ${i + 1} (${escapeHTML(t.label)}): expected <b>${escapeHTML(t.expect)}</b> but got <b>${nothing(got)}</b>.` };
+      }
+      return { ok: true, msg: '📢 HEAR YE, HEAR YE! <b>+1 skill point!</b>' };
+    },
+    hints: { python: ['print(message.upper() + "!")'], javascript: ['console.log(message.toUpperCase() + "!");'] },
+    effect: (game, data, instant) => game.gainSideQuest('crier', instant),
+  };
+
   function checkCalls(run, tests, expected, ctx, name) {
     for (let i = 0; i < tests.length; i++) {
       const call = run.calls[i];
@@ -464,7 +835,7 @@
       }
       if (show(call.value) !== show(expected[i])) {
         const none = call.value === null ? ` <i>(${isJS(ctx) ? 'undefined' : 'None'} means nothing was <b>returned</b> — did you forget ${c('return')}?)</i>` : '';
-        return { ok: false, msg: `${c(name + '(' + escapeHTML(args) + ')')} returned ${c(escapeHTML(show(call.value)))} but should return ${c(escapeHTML(show(expected[i])))}.${none}` };
+        return { ok: false, msg: `${c(name + '(' + escapeHTML(args) + ')')} returned ${c(call.value === null ? (isJS(ctx) ? 'undefined' : 'None') : escapeHTML(show(call.value)))} but should return ${c(escapeHTML(show(expected[i])))}.${none}` };
       }
     }
     return { ok: true, msg: `All ${tests.length} tests pass! ✔ Your function ${c(name)} works.` };
@@ -524,91 +895,91 @@
   };
 
   // ------------------------------------------------------------ levels
+  const gate = (m, x, g, top) => { m.fill(x, 0, x, (top || 13) - 1, 'W'); m.fill(x, top || 13, x, (top || 13) + 1, g); };
   function level1() {
-    const m = MapBuilder(42, 17);
-    m.fill(0, 15, 41, 16, '#');
+    const m = MapBuilder(62, 17);
+    m.fill(0, 15, 61, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
     m.put(11, 13, '---'); m.put(15, 11, '----');
-    m.put(19, 14, '?');
-    m.fill(22, 14, 23, 14, '#');
-    m.put(26, 14, '1');
-    m.fill(31, 0, 31, 12, 'W'); m.fill(31, 13, 31, 14, 'A');
-    m.put(37, 14, 'F');
+    m.put(19, 14, '?'); m.put(24, 14, '1'); gate(m, 28, 'A');
+    m.put(31, 14, '?'); m.fill(33, 14, 33, 14, '#'); m.put(36, 14, '2'); gate(m, 40, 'B');
+    m.put(42, 13, '---'); m.put(46, 14, '3'); gate(m, 50, 'C');
+    m.put(56, 14, 'F');
     return m.rows();
   }
   function level2() {
-    const m = MapBuilder(52, 17);
-    m.fill(0, 15, 51, 16, '#');
+    const m = MapBuilder(82, 17);
+    m.fill(0, 15, 81, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
-    m.put(7, 13, '----'); m.put(8, 12, '*');
-    m.put(13, 14, '1'); m.put(14, 14, '?');
-    m.fill(16, 15, 22, 15, '_'); m.fill(16, 16, 22, 16, '~');
-    m.put(27, 14, '*');
-    m.put(30, 13, '---');
-    m.put(33, 14, '2');
-    m.fill(37, 0, 37, 12, 'W'); m.fill(37, 13, 37, 14, 'A');
-    m.put(41, 14, '?');
-    m.put(46, 14, 'F');
+    m.put(9, 14, '1'); gate(m, 13, 'A');
+    m.put(16, 13, '----'); m.put(17, 12, '*');
+    m.put(22, 14, '2'); m.put(23, 14, '?');
+    m.fill(25, 15, 31, 15, '_'); m.fill(25, 16, 31, 16, '~');
+    m.put(36, 14, '3'); gate(m, 40, 'B');
+    m.put(43, 13, '---'); m.put(46, 14, '4'); gate(m, 50, 'C');
+    m.put(54, 13, '---'); m.put(57, 14, '*');
+    m.put(62, 14, '5'); gate(m, 66, 'D');
+    m.put(70, 14, '?'); m.put(76, 14, 'F');
     return m.rows();
   }
   function level3() {
-    const m = MapBuilder(60, 17);
-    m.fill(0, 15, 59, 16, '#');
+    const m = MapBuilder(82, 17);
+    m.fill(0, 15, 81, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
-    m.put(9, 13, '---'); m.put(13, 14, 'e');
-    m.put(18, 14, '1');
-    m.fill(22, 0, 22, 12, 'W'); m.fill(22, 13, 22, 14, 'A');
-    m.put(26, 14, '2'); m.put(24, 14, '?');
-    m.fill(28, 15, 36, 16, '%');
-    m.put(40, 14, 'e'); m.put(44, 13, '----'); m.put(46, 14, 'K');
-    m.put(50, 14, '?');
-    m.put(55, 14, 'F');
+    m.put(10, 14, '1'); gate(m, 14, 'A');
+    m.put(18, 14, 'e'); m.put(23, 14, '2'); gate(m, 27, 'B');
+    m.put(29, 13, '---'); m.put(33, 14, '3'); gate(m, 37, 'C');
+    m.put(39, 14, '?'); m.put(41, 14, '4');
+    m.fill(43, 15, 51, 16, '%');
+    m.put(54, 14, 'K'); m.put(56, 14, 'e'); m.put(60, 14, '5'); gate(m, 64, 'D');
+    m.put(68, 13, '---'); m.put(70, 14, '?'); m.put(75, 14, 'F');
     return m.rows();
   }
   function level4() {
-    const m = MapBuilder(62, 17);
-    m.fill(0, 15, 61, 16, '#');
+    const m = MapBuilder(86, 17);
+    m.fill(0, 15, 85, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
     // hidden climb to find i
     m.put(7, 13, '---'); m.put(10, 11, '---'); m.put(6, 9, '---'); m.put(1, 7, '----');
     m.put(2, 6, '@');
     m.put(14, 14, '?');
-    m.put(18, 14, '1');
-    m.put(21, 14, 'S');
+    m.put(17, 14, '1'); gate(m, 20, 'A');
+    m.put(23, 14, '2'); m.put(26, 14, 'S');
     // the cliff
-    m.fill(27, 9, 41, 16, '#');
-    m.put(30, 8, 'K'); m.put(34, 8, '2'); m.put(39, 8, 's');
-    m.fill(42, 3, 43, 14, 'W');
-    m.put(47, 14, 'e'); m.put(52, 14, '?');
-    m.put(57, 14, 'F');
+    m.fill(32, 9, 46, 16, '#');
+    m.put(34, 8, 'K'); m.put(37, 8, '3'); gate(m, 40, 'B', 7);
+    m.put(42, 8, '4'); m.put(44, 8, 's');
+    m.fill(47, 3, 48, 14, 'W');
+    m.put(52, 14, 'e'); m.put(57, 14, '5'); gate(m, 61, 'C');
+    m.put(66, 14, '6'); gate(m, 70, 'D');
+    m.put(74, 14, '?'); m.put(80, 14, 'F');
     return m.rows();
   }
   function level5() {
-    const m = MapBuilder(62, 17);
-    m.fill(0, 15, 61, 16, '#');
+    const m = MapBuilder(90, 17);
+    m.fill(0, 15, 89, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
-    m.put(9, 14, '1');
-    m.fill(12, 15, 19, 15, '_'); m.fill(12, 16, 19, 16, '~');
-    m.put(23, 14, 'e');
-    m.put(26, 14, '2');
-    m.fill(30, 0, 30, 12, 'W'); m.fill(30, 13, 30, 14, 'A');
-    m.put(33, 14, 'K'); m.put(35, 13, '---'); m.put(37, 10, 'w');
-    m.put(40, 14, '3');
-    m.fill(44, 0, 44, 12, 'W'); m.fill(44, 13, 44, 14, 'B');
-    m.put(48, 14, 'e'); m.put(50, 14, '?');
-    m.put(56, 14, 'F');
+    m.put(9, 14, '1'); gate(m, 13, 'A');
+    m.put(18, 14, '2'); gate(m, 22, 'B');
+    m.put(27, 14, '3');
+    m.fill(30, 15, 37, 15, '_'); m.fill(30, 16, 37, 16, '~');
+    m.put(41, 14, 'e'); m.put(45, 14, '4'); gate(m, 49, 'C');
+    m.put(52, 14, 'K'); m.put(54, 13, '---'); m.put(56, 10, 'w');
+    m.put(60, 14, '5'); gate(m, 64, 'D');
+    m.put(69, 14, '6'); gate(m, 73, 'E');
+    m.put(77, 14, 'e'); m.put(79, 14, '?'); m.put(85, 14, 'F');
     return m.rows();
   }
   function level6() {
-    const m = MapBuilder(60, 17);
-    m.fill(0, 15, 59, 16, '#');
+    const m = MapBuilder(78, 17);
+    m.fill(0, 15, 77, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
-    m.put(10, 14, '1'); m.put(13, 14, '?'); m.put(17, 14, '2');
-    m.fill(24, 0, 24, 12, 'W'); m.fill(24, 13, 24, 14, 'A');
-    m.put(27, 14, '?');
-    m.put(32, 14, 'e'); m.put(36, 13, '----'); m.put(40, 14, 'e'); m.put(43, 10, 'w');
-    m.put(47, 14, '?');
-    m.put(54, 14, 'F');
+    m.put(10, 14, '1'); gate(m, 14, 'A');
+    m.put(19, 14, '2'); gate(m, 23, 'B');
+    m.put(26, 14, '?'); m.put(30, 14, '3'); m.put(33, 14, '?'); m.put(37, 14, '4'); gate(m, 42, 'C');
+    m.put(45, 14, '?');
+    m.put(50, 14, 'e'); m.put(54, 13, '----'); m.put(58, 14, 'e'); m.put(61, 10, 'w');
+    m.put(65, 14, '?'); m.put(72, 14, 'F');
     return m.rows();
   }
   function levelWorld() {
@@ -617,7 +988,7 @@
     m.fill(0, 22, W - 1, 23, '#');
     m.fill(0, 0, 0, 21, 'W');
     // --- hub
-    m.put(3, 21, 'P'); m.put(6, 21, 'K'); m.put(10, 21, '$'); m.put(14, 21, '?');
+    m.put(3, 21, 'P'); m.put(6, 21, 'K'); m.put(10, 21, '$'); m.put(13, 21, '?'); m.put(15, 21, '6'); m.put(22, 21, '7');
     m.put(17, 20, '---'); m.put(21, 18, '---');
     // --- section 1: hills + gem sorter
     m.fill(24, 20, 34, 21, '#'); m.fill(27, 18, 31, 19, '#');
@@ -668,11 +1039,8 @@
         python: '<p>Welcome to <b>Syntaxia</b>, a world built from code — and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Every programmer\'s journey starts with the same two words...</p>',
         javascript: '<p>Welcome to <b>Syntaxia</b>, a world built from code — and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Every programmer\'s journey starts with the same two words...</p>',
       },
-      signs: [
-        'Move with ← → (or A / D).  Jump with Space, W or ↑.',
-        'See that terminal? Walk up to it and press E to write code. Press Esc to pause.',
-      ],
-      terminals: ['hello'],
+      signs: ['Move with ← → (or A / D).  Jump with Space, W or ↑.', 'See that terminal? Walk up to it and press E to write code. Press Esc to pause.', 'Each terminal teaches one small new thing. Read the left panel, then try it!'],
+      terminals: ['hello', 'lines', 'math'],
     },
     {
       id: 'vars', name: 'Variables', theme: 'meadow', map: level2(),
@@ -683,7 +1051,7 @@
       },
       signs: ['Glowing boxes are VARIABLES. Walk into one to collect it — it shows up in your Variables panel (top right).', 'Lava ahead. Better build a bridge...', 'Well done! The exit portal is just ahead.'],
       pickups: [{ name: 'planks', value: 7 }, { name: 'password', value: randomWord }],
-      terminals: ['bridge', 'password'],
+      terminals: ['firstvar', 'bridge', 'area', 'update', 'password'],
     },
     {
       id: 'ifs', name: 'Conditions', theme: 'cave', map: level3(),
@@ -693,7 +1061,7 @@
         javascript: '<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if (hp < 3) {\n  console.log("Heal!");\n} else if (hp === 3) {\n  console.log("Okay");\n} else {\n  console.log("Strong!");\n}</pre><p>The <b>{ curly braces }</b> hold the code that belongs inside the if.</p><p>⚠️ <b>Bugs</b> live here. Jump on them to squash them — if one bites you, it puts an <b>error in your code</b>!</p>',
       },
       signs: ['BUGS! Jump on top to squash them. If one bites you, you get a GLITCH (an error in your code). Press Q to open the debugger and fix it!', 'Lava! The pump terminal could turn it into stone...', 'Checkpoints (flags) save your progress.'],
-      terminals: ['guard', 'pump'],
+      terminals: ['compare', 'heal', 'guard', 'pump', 'bouncer'],
     },
     {
       id: 'loops', name: 'Loops', theme: 'cave', map: level4(),
@@ -702,8 +1070,8 @@
         python: '<p>A <b>loop</b> repeats code so you don\'t have to:</p><pre>for i in range(3):\n    print(i)   # 0, 1, 2</pre><p>That little <b>i</b> is the loop\'s counter... Legend says a tiny creature named <b>i</b> lives in these caves. Maybe you\'ll find them!</p>',
         javascript: '<p>A <b>loop</b> repeats code so you don\'t have to:</p><pre>for (let i = 0; i < 3; i++) {\n  console.log(i); // 0, 1, 2\n}</pre><p>That little <b>i</b> is the loop\'s counter... Legend says a tiny creature named <b>i</b> lives in these caves. Maybe you\'ll find them!</p>',
       },
-      signs: ['A tiny voice echoes from somewhere above: "...i\'m up here..."', 'The Staircase Engine needs a loop counter to work.', 'Almost there! Watch out for bugs.'],
-      terminals: ['stairs', 'countdown'],
+      signs: ['A tiny voice echoes from somewhere above: "...i\'m up here..."', 'Every loop machine in this cave needs a counter to work.', 'Almost there! Watch out for bugs.'],
+      terminals: ['repeat', 'stairs', 'count', 'countdown', 'charge', 'sumloop'],
       springsLocked: true,
     },
     {
@@ -713,8 +1081,8 @@
         python: '<p>A <b>function</b> is a named recipe. Define it once with <code>def</code>, use it as often as you like:</p><pre>def square(x):\n    return x * x\n\nprint(square(4))  # 16</pre><p><code>return</code> sends the answer back to whoever called the function.</p>',
         javascript: '<p>A <b>function</b> is a named recipe. Define it once, use it as often as you like:</p><pre>function square(x) {\n  return x * x;\n}\n\nconsole.log(square(4)); // 16</pre><p><code>return</code> sends the answer back to whoever called the function.</p>',
       },
-      signs: ['Each terminal here TESTS your function with different inputs. Make sure it works for all of them!', 'Nearly there. Classes await...'],
-      terminals: ['double', 'greet', 'total'],
+      signs: ['Each terminal here builds on the last one: call a function, give it inputs, get answers back.', 'Nearly there. Classes await...'],
+      terminals: ['cheer', 'echo', 'double', 'greet', 'total', 'biggest'],
     },
     {
       id: 'classes', name: 'Classes', theme: 'circuit', map: level6(),
@@ -723,8 +1091,8 @@
         python: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>attributes</b>) and abilities (<b>methods</b>):</p><pre>class Dog:\n    def __init__(self, name):\n        self.name = name\n    def speak(self):\n        return "Woof!"\n\nrex = Dog("Rex")\nprint(rex.speak())</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b> — or both! Master classes and you\'ll unlock <b>skill points</b> and the <b>open world</b>.</p>',
         javascript: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>properties</b>) and abilities (<b>methods</b>):</p><pre>class Dog {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    return "Woof!";\n  }\n}\n\nconst rex = new Dog("Rex");\nconsole.log(rex.speak());</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b> — or both! Master classes and you\'ll unlock <b>skill points</b> and the <b>open world</b>.</p>',
       },
-      signs: ['Two terminals: the Forge (weapons) and the Den (pets). Either one opens the gate — but why not both?', 'Want a pet too? The Den is right there!', 'Weapons: press X or J to attack. Pets follow you around and cheer you on.', 'Beyond the portal lies the open world. Skill points await!'],
-      terminals: ['forge', 'den'],
+      signs: ['First learn what an object is, then build your own classes. The last two terminals are the Forge (weapons) and the Den (pets) — either one opens the gate, but why not both?', 'The Forge: design a weapon class.', 'Want a pet too? The Den is right here!', 'Weapons: press X or J to attack. Pets follow you around and cheer you on.', 'Beyond the portal lies the open world. Skill points await!'],
+      terminals: ['crate', 'potion', 'forge', 'den'],
       gateAnyOf: true,
       grantsSkills: true,
     },
@@ -735,8 +1103,8 @@
         python: '<p>You\'ve mastered the basics. Now Syntaxia is yours to explore!</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> 🔷 (or press K).</li></ul>',
         javascript: '<p>You\'ve mastered the basics. Now Syntaxia is yours to explore!</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> 🔷 (or press K).</li></ul>',
       },
-      signs: ['THE WILDS. Three Core terminals are hidden out east. Bring all three cores to the Great Gate. Skill Shrine is right behind you!', 'The Mirror Cipher is just ahead. Strings can be sliced and reversed...', 'The Dictionary Merchant — "Prices, prices! Who\'s buying?"', 'The Great Gate. It opens only for one who carries 3 Core fragments.'],
-      terminals: ['gems', 'decoder', 'fib', 'fizz', 'merchant'],
+      signs: ['THE WILDS. Warm up with the Backpack (lists) and Town Crier (strings) quests here, then find the three Core terminals out east. Skill Shrine is right behind you!', 'The Mirror Cipher is just ahead. Strings can be sliced and reversed...', 'The Dictionary Merchant — "Prices, prices! Who\'s buying?"', 'The Great Gate. It opens only for one who carries 3 Core fragments.'],
+      terminals: ['gems', 'decoder', 'fib', 'fizz', 'merchant', 'backpack', 'crier'],
     },
     {
       id: 'boss', name: 'Segfault\'s Lair', theme: 'lair', map: levelBoss(), boss: true,
@@ -750,20 +1118,18 @@
     },
   ];
 
-  // Chapter info for the Quest Map: the topic each level teaches, a short description and its badge.
+  // Map info: the topic each level teaches and a short description.
   const CHAPTERS = {
-    hello: { topic: 'print()', blurb: 'Write your very first line of code and make the computer talk.', badge: ['👋', 'First Words'] },
-    vars: { topic: 'Variables', blurb: 'Store values in named boxes. Objects you collect in the world become variables in your code.', badge: ['📦', 'Box Collector'] },
-    ifs: { topic: 'Conditions', blurb: 'Make decisions with if / else. Your code is tested against several different cases.', badge: ['🔀', 'Decision Maker'] },
-    loops: { topic: 'Loops', blurb: 'Repeat code with for and while loops — and find your little friend i.', badge: ['🔁', 'Loop Legend'] },
-    funcs: { topic: 'Functions', blurb: 'Package code into reusable functions that take inputs and return answers.', badge: ['🧩', 'Function Smith'] },
-    classes: { topic: 'Classes & Objects', blurb: 'Design blueprints with attributes and methods. Forge a weapon or adopt a pet.', badge: ['🏛️', 'Architect'] },
-    world: { topic: 'Lists, Strings & Dictionaries', blurb: 'Explore the open world, earn skill points, and recover the 3 Core fragments.', badge: ['🗺️', 'Explorer'] },
-    boss: { topic: 'Final Boss', blurb: 'Debug under pressure and defeat Segfault with looped cannon fire.', badge: ['👑', 'Bug Slayer'] },
+    hello: { topic: 'print()', blurb: 'Write your very first line of code and make the computer talk.' },
+    vars: { topic: 'Variables', blurb: 'Store values in named boxes. Objects you collect in the world become variables in your code.' },
+    ifs: { topic: 'Conditions', blurb: 'Make decisions with if / else. Your code is tested against several different cases.' },
+    loops: { topic: 'Loops', blurb: 'Repeat code with for and while loops — and find your little friend i.' },
+    funcs: { topic: 'Functions', blurb: 'Package code into reusable functions that take inputs and return answers.' },
+    classes: { topic: 'Classes & Objects', blurb: 'Design blueprints with attributes and methods. Forge a weapon or adopt a pet.' },
+    world: { topic: 'Lists, Strings & Dictionaries', blurb: 'Explore the open world, earn skill points, and recover the 3 Core fragments.' },
+    boss: { topic: 'Final Boss', blurb: 'Debug under pressure and defeat Segfault with looped cannon fire.' },
   };
   LEVELS.forEach(l => Object.assign(l, CHAPTERS[l.id]));
-  const XP = { hello: 20, bridge: 30, password: 30, guard: 40, pump: 40, stairs: 50, countdown: 50, double: 50, greet: 50, total: 60, forge: 70, den: 70, gems: 80, decoder: 80, fib: 100, fizz: 60, merchant: 60 };
-  const BOSS_XP = 200;
 
   const SKILLS = [
     { id: 'double_jump', name: 'Double Jump', icon: '🦘', cost: 2, max: 1, desc: 'Jump again in mid-air.' },
@@ -775,5 +1141,5 @@
     { id: 'overclock', name: 'Overclock', icon: '⏱️', cost: 1, max: 2, desc: 'Compiler Cannon recharges faster & hits harder.' },
   ];
 
-  root.GameData = { LEVELS, XP, BOSS_XP, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML, stripComments };
+  root.GameData = { LEVELS, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML, stripComments };
 })(typeof window !== 'undefined' ? window : globalThis);

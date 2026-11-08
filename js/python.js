@@ -1108,7 +1108,7 @@
         const hostArgs = args.map(a => toHost(a));
         if (Object.keys(kw).length) hostArgs.push(Object.fromEntries(Object.entries(kw).map(([k, v]) => [k, toHost(v)])));
         result.actions.push({ fn: name, args: hostArgs, line: curLine });
-        if (result.actions.length > 5000) throw E('RuntimeError', 'too many actions — slow down!');
+        if (result.actions.length > 5000) throw E('RuntimeError', 'your code called a function thousands of times — is a loop stuck going forever?');
         return fromHost(api[name](...hostArgs));
       });
     }

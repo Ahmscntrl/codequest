@@ -54,25 +54,18 @@
     </div>
   </section>
 
-  <!-- ============ QUEST MAP ============ -->
+  <!-- ============ LEVEL MAP ============ -->
   <section id="screen-map" class="screen hidden">
     <div class="map">
       <header class="map-top">
         <div class="map-logo"><span>Code</span>Quest</div>
-        <span class="map-sub">Quest Map</span>
         <span class="spacer"></span>
         <button id="map-langbtn" class="btn small ghost" title="Switch language"><span id="map-lang"></span> ⇄</button>
         <button id="map-title" class="btn small ghost">Save &amp; quit</button>
         <button id="map-back" class="btn small primary hidden">← Back to level</button>
       </header>
-      <div class="map-grid">
-        <div>
-          <div id="map-continue" class="map-continue"></div>
-          <h2 class="map-h">Course chapters</h2>
-          <div id="chapters" class="chapters"></div>
-        </div>
-        <aside id="map-side" class="map-side"></aside>
-      </div>
+      <div id="map-board" class="map-board"></div>
+      <div id="map-panel" class="map-panel"></div>
     </div>
   </section>
 
