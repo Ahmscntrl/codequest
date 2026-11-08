@@ -208,20 +208,20 @@
     sfx(n) { Sound.play(n); }
     inputBlocked() { return this.screen !== 'game' || this.modalOpen || this.editorOpen || this.tutOpen; }
     setFrozen() { this.game.frozen = this.inputBlocked(); if (this.game.frozen) this.game.clearKeys(); }
-    chapter() { return (this.save && this.save.chapter === 2 && GameData.CHAPTER2[this.save.lang]) ? 2 : 1; }
-    levels() { return GameData.levelsFor(this.chapter(), this.save.lang); }
+    chapter() { return (this.save && !this.save.course && this.save.chapter === 2 && GameData.CHAPTER2[this.save.lang]) ? 2 : 1; }
+    levels() { return GameData.levelsFor(this.chapter(), this.save.lang, this.save.course); }
     // progress for the chapter being played: level, maxLevel, completed, checkpoints
     prog() {
       if (this.chapter() === 2) { const c = this.save.ch2 || (this.save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} }); if (!c.checkpoints) c.checkpoints = {}; return c; }
       return this.save;
     }
-    levelsOf(ch) { return GameData.levelsFor(ch, this.save.lang); }
+    levelsOf(ch) { return GameData.levelsFor(ch, this.save.lang, this.save.course); }
     progOf(ch) {
       if (ch !== 2) return this.save;
       const c = this.save.ch2 || (this.save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} }); if (!c.checkpoints) c.checkpoints = {}; return c;
     }
     chUnlocked(ch) { return ch === 1 || this.ch2Unlocked(); }
-    ch2Unlocked() { return !!(this.save && this.save.completed && GameData.CHAPTER2[this.save.lang]); }
+    ch2Unlocked() { return !!(this.save && !this.save.course && this.save.completed && GameData.CHAPTER2[this.save.lang]); }
     ctx() { return { lang: this.save.lang, save: this.save, vars: this.save.vars, name: this.save.hero.name, game: this.game }; }
 
     // ------------------------------------------------------------ persistence
@@ -242,10 +242,10 @@
     persist() {
       if (!this.save) return;
       this.save.updated = Date.now();
-      try { localStorage.setItem(KEY(this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
+      try { localStorage.setItem(KEY(this.slot || this.save.course || this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
     }
-    newSave(hero, lang) {
-      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false, minis: {} };
+    newSave(hero, lang, course) {
+      return { v: 1, course: course || null, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false, minis: {}, ...(course ? { spUnlocked: true } : {}) };
     }
 
     // ------------------------------------------------------------ screens
@@ -262,21 +262,23 @@
       this.migrateOldSlots();
       const wrap = $('#slots');
       wrap.innerHTML = '';
-      for (const lang of Lang.ORDER) {
-        const L = LANGS[lang];
+      const COURSE = GameData.COURSES && GameData.COURSES.dsa && GameData.COURSES.dsa.levels.length ? GameData.COURSES.dsa : null;
+      for (const lang of Lang.ORDER.concat(COURSE ? ['dsa'] : [])) {
+        const isCourse = lang === 'dsa';
+        const L = isCourse ? { badge: 'DSA', label: COURSE.title, blurb: COURSE.blurb, hello: 'binary_search(items, target)' } : LANGS[lang];
         const s = this.readSlot(lang);
-        const ready = GameData.hasContent(lang);
+        const ready = isCourse || GameData.hasContent(lang);
         const card = document.createElement('div');
-        card.className = 'slot lang-slot' + (s ? '' : ' empty');
+        card.className = 'slot lang-slot' + (isCourse ? ' course-slot' : '') + (s ? '' : ' empty');
         const head = `<div class="slot-lang"><span class="lang-badge">${L.badge}</span><b>${L.label}</b></div>`;
         if (s) {
           const inCh2 = s.chapter === 2 && GameData.CHAPTER2[lang] && s.ch2;
-          const lvls = inCh2 ? GameData.CHAPTER2[lang].levels : LEVELS;
+          const lvls = isCourse ? COURSE.levels : inCh2 ? GameData.CHAPTER2[lang].levels : LEVELS;
           const lvl = lvls[inCh2 ? s.ch2.level : s.level] || lvls[0];
           const mins = Math.floor((s.playtime || 0) / 60);
           card.innerHTML = `${head}<canvas width="80" height="90"></canvas>
             <div class="slot-info"><div class="slot-name">${escapeHTML(s.hero.name)}</div>
-            <div class="slot-meta">${inCh2 ? 'Chapter 2 · ' : ''}Level ${(inCh2 ? s.ch2.level : s.level) + 1}: ${escapeHTML(lvl.topic)}${s.completed && !inCh2 ? ' · Chapter 1 complete' : ''}</div>
+            <div class="slot-meta">${inCh2 ? 'Chapter 2 · ' : ''}Level ${(inCh2 ? s.ch2.level : s.level) + 1}: ${escapeHTML(lvl.topic)}${isCourse ? ` · in ${LANGS[s.lang].label}` : s.completed && !inCh2 ? ' · Chapter 1 complete' : ''}</div>
             <div class="slot-meta">${mins} min · ${s.bugs || 0} bugs fixed</div></div>
             <div class="slot-btns"><button class="btn primary" data-act="play">Continue</button><button class="btn ghost small" data-act="del">Delete</button></div>`;
           this.drawMini($('canvas', card), s.hero);
@@ -351,7 +353,14 @@
       build();
       $('#cc-name').value = '';
       $('#cc-name').oninput = (e) => { look.name = e.target.value; };
-      $('#cc-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> <b>${LANGS[lang].label}</b> <span class="muted">(this save file learns ${LANGS[lang].label})</span>`;
+      const isCourse = lang === 'dsa';
+      look.lang = isCourse ? 'python' : lang;
+      const langPick = () => {
+        $('#cc-lang').innerHTML = `<div class="lang-switch">${this.dsaLangs().map(l => `<button class="ls-btn ${l === look.lang ? 'on' : ''}" data-lang="${l}">${LANGS[l].badge} ${LANGS[l].label}</button>`).join('')}</div><span class="muted">Data Structures &amp; Algorithms works in every language. Pick one to start; you can switch later.</span>`;
+        $$('#cc-lang .ls-btn').forEach(b => b.onclick = () => { look.lang = b.dataset.lang; Sound.play('click'); langPick(); });
+      };
+      if (isCourse) langPick();
+      else $('#cc-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> <b>${LANGS[lang].label}</b> <span class="muted">(this save file learns ${LANGS[lang].label})</span>`;
       $('#cc-random').onclick = () => {
         const pick = (a) => a[Math.floor(Math.random() * a.length)];
         Object.assign(look, { skin: pick(Art.SKIN), shirt: pick(Art.CLOTH), pants: pick(Art.CLOTH), hat: pick(Art.HATS), hatColor: pick(Art.CLOTH), eyes: pick(Art.EYES) });
@@ -362,7 +371,7 @@
         const name = (look.name || '').trim().slice(0, 14);
         if (!name) { $('#cc-name').focus(); $('#cc-name').classList.add('shake'); setTimeout(() => $('#cc-name').classList.remove('shake'), 500); return; }
         const hero = { name, skin: look.skin, shirt: look.shirt, pants: look.pants, hat: look.hat, hatColor: look.hatColor, eyes: look.eyes };
-        const save = this.newSave(hero, lang);
+        const save = this.newSave(hero, look.lang, isCourse ? 'dsa' : null);
         this.slot = lang; this.save = save; this.persist();
         Sound.play('success');
         this.startGame(lang, save);
@@ -391,7 +400,7 @@
       this.slot = slot; this.save = save;
       this.mapSel = null;
       // migrate older/partial saves
-      const fresh = this.newSave(save.hero, save.lang);
+      const fresh = this.newSave(save.hero, save.lang, save.course);
       for (const k of Object.keys(fresh)) if (save[k] === undefined) save[k] = fresh[k];
       save.maxLevel = Math.max(save.maxLevel || 0, save.level || 0);
       if (!save.ch2) save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} };
@@ -421,7 +430,7 @@
       const L = LV[P.level];
       const next = P.level + 1;
       Sound.play('success');
-      if (this.chapter() === 2 && next >= LV.length) { this.chapter2Complete(); return; }
+      if ((this.chapter() === 2 || this.save.course) && next >= LV.length) { this.chapter2Complete(); return; }
       let extra = '';
       if (L.grantsSkills && !this.save.spUnlocked) {
         this.save.spUnlocked = true; this.save.sp += 2;
@@ -437,14 +446,14 @@
         [{ label: 'Map', fn: () => this.showMap(false) }, { label: 'Next level ▶', cls: 'primary', fn: () => this.loadLevel(P.level) }], { noClose: true });
     }
     chapter2Complete() {
-      const P = this.prog(), def = GameData.CHAPTER2[this.save.lang];
+      const P = this.prog(), def = this.save.course ? GameData.COURSES[this.save.course] : GameData.CHAPTER2[this.save.lang];
       const first = !P.completed;
       P.completed = true;
       delete P.checkpoints[P.level];
       if (first) this.save.sp += 3;
       this.persist();
       Sound.play('victory');
-      this.dialog(`${escapeHTML(def.title)} complete!`, `<p class="big-check">✔</p><p>You finished <b>Chapter 2</b> of ${LANGS[this.save.lang].label}: ${def.levels.map(l => '<b>' + escapeHTML(l.topic) + '</b>').join(', ')}.</p>${def.outro ? `<p>${def.outro}</p>` : ''}<p class="muted">${first ? '+3 SP bonus. ' : ''}You can replay any level from the map.</p>`,
+      this.dialog(`${escapeHTML(def.title)} complete!`, `<p class="big-check">✔</p><p>You finished ${this.save.course ? `<b>${escapeHTML(def.title)}</b>` : `<b>Chapter 2</b> of ${LANGS[this.save.lang].label}`}: ${def.levels.map(l => '<b>' + escapeHTML(l.topic) + '</b>').join(', ')}.</p>${def.outro ? `<p>${def.outro}</p>` : ''}<p class="muted">${first ? '+3 SP bonus. ' : ''}You can replay any level from the map.</p>`,
         [{ label: 'Title screen', fn: () => this.showTitle() }, { label: 'Map', cls: 'primary', fn: () => this.showMap(false) }], { noClose: true, wide: true });
     }
     victory() {
@@ -480,13 +489,13 @@
     frontier(ch) {
       ch = ch || this.chapter();
       const LV = this.levelsOf(ch), P = this.progOf(ch);
-      if (ch === 2) return P.completed ? LV.length - 1 : Math.min(P.maxLevel || 0, LV.length - 1);
+      if (ch === 2 || this.save.course) return P.completed ? LV.length - 1 : Math.min(P.maxLevel || 0, LV.length - 1);
       return this.save.completed ? WORLD_INDEX : Math.min(this.save.maxLevel || 0, LEVELS.length - 1);
     }
     levelDone(i, ch) {
       ch = ch || this.chapter();
       const LV = this.levelsOf(ch), P = this.progOf(ch);
-      if (ch === 2) return !!P.completed || i < (P.maxLevel || 0);
+      if (ch === 2 || this.save.course) return !!P.completed || i < (P.maxLevel || 0);
       return LV[i].boss ? !!this.save.completed : i < (this.save.maxLevel || 0);
     }
     showMap(fromGame) {
@@ -509,8 +518,10 @@
       $('#map-lang').textContent = LANGS[s.lang].label;
       // chapter tabs: every chapter can be opened; locked ones are a preview
       const def2 = GameData.CHAPTER2[s.lang];
-      $('#map-tabs').innerHTML = `<button class="map-tab ${ch === 1 ? 'on' : ''}" data-ch="1">Chapter 1<small>${escapeHTML(LANGS[s.lang].label)} basics</small></button>` +
+      const course = s.course && GameData.COURSES[s.course];
+      $('#map-tabs').innerHTML = course ? `<button class="map-tab on" data-ch="1">${escapeHTML(course.title)}<small>Any language</small></button>${this.langSwitchHTML()}` : `<button class="map-tab ${ch === 1 ? 'on' : ''}" data-ch="1">Chapter 1<small>${escapeHTML(LANGS[s.lang].label)} basics</small></button>` +
         (def2 ? `<button class="map-tab ${ch === 2 ? 'on' : ''} ${this.ch2Unlocked() ? '' : 'locked'}" data-ch="2">Chapter 2<small>${escapeHTML(def2.title)}</small></button>` : '');
+      this.bindLangSwitch($('#map-tabs'), () => this.renderMap());
       $$('#map-tabs .map-tab').forEach(b => b.onclick = () => {
         const want = +b.dataset.ch;
         Sound.play('click');
@@ -520,7 +531,7 @@
         this.renderMap();
       });
       // this language's board for this chapter: its own scenery, colours and route
-      const board = MapArt.board(s.lang, ch, LV.length);
+      const board = MapArt.board(s.course || s.lang, ch, LV.length);
       const pts = board.pts;
       const brd = $('#map-board');
       brd.className = 'map-board' + (open ? '' : ' preview');
@@ -560,7 +571,7 @@
         return `<span class="mp-term ${solved ? 'solved' : ''}">${solved ? '✔ ' : ''}${escapeHTML(t.title.replace(/^Side Quest — /, ''))}</span>`;
       }).join('');
       $('#map-panel').innerHTML = `
-        <div><div class="mp-kicker">Chapter ${ch} · Level ${i + 1}${locked ? ' · locked' : done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
+        <div><div class="mp-kicker">${course ? '' : `Chapter ${ch} · `}Level ${i + 1}${locked ? ' · locked' : done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
         <div class="mp-title">${escapeHTML(L.topic)}</div>
         <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ': ' : ''}${escapeHTML(L.blurb)}</div>
         <div class="mp-terms">${terms}</div>
@@ -696,11 +707,37 @@
       if (opt.onOpen) opt.onOpen($('#modal-body'));
     }
 
+    // languages a course save can switch between: the game's playable languages that the course has content for
+    dsaLangs() {
+      const course = GameData.COURSES[(this.save && this.save.course) || 'dsa'];
+      const has = (l) => !course || course.levels.every(L => L.terminals.every(id => GameData.CH[id].starter[l]));
+      return Lang.ORDER.filter(l => GameData.hasContent(l) && has(l));
+    }
+    langSwitchHTML() {
+      const s = this.save;
+      return `<div class="lang-switch">${this.dsaLangs().map(l => `<button class="ls-btn ${l === s.lang ? 'on' : ''}" data-lang="${l}" title="Code in ${LANGS[l].label}">${LANGS[l].badge}</button>`).join('')}</div>`;
+    }
+    bindLangSwitch(root, after) {
+      $$('.lang-switch .ls-btn', root).forEach(b => b.onclick = (e) => { e.stopPropagation(); this.switchLanguage(b.dataset.lang); if (after) after(); });
+    }
+    // only course saves (DSA) can change language; code is stored per language
+    switchLanguage(lang) {
+      const s = this.save;
+      if (!s || !s.course || !this.dsaLangs().includes(lang) || lang === s.lang) return;
+      if (this.editorOpen) this.closeEditor();
+      s.lang = lang;
+      s.glitches = {};
+      this.persist();
+      Sound.play('click');
+      this.toast(`Now coding in <b>${LANGS[lang].label}</b>.`, 'info');
+      if ($('#map-lang')) $('#map-lang').textContent = LANGS[lang].label;
+      this.updateHUD();
+    }
     pause() {
       const s = this.save;
       this.dialog('Paused', `
         <div class="pause-grid">
-          <div><h4>Language</h4><p><span class="lang-badge">${LANGS[s.lang].badge}</span> <b>${LANGS[s.lang].label}</b></p><p class="muted">Each save file learns one language. To try another, pick its save file on the title screen.</p></div>
+          <div><h4>Language</h4>${s.course ? `<p class="muted">This course works in every language. Switch any time; your code is kept for each one.</p>${this.langSwitchHTML()}` : `<p><span class="lang-badge">${LANGS[s.lang].badge}</span> <b>${LANGS[s.lang].label}</b></p><p class="muted">Each save file learns one language. To try another, pick its save file on the title screen.</p>`}</div>
           <div><h4>Controls</h4><table class="keys">
             <tr><td><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd></td><td>Move</td></tr>
             <tr><td><kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd></td><td>Jump</td></tr>
@@ -718,6 +755,7 @@
           { label: 'Map', fn: () => this.showMap(true) },
           { label: 'Resume ▶', cls: 'primary', fn: () => this.persist() }],
         { wide: true });
+      if (s.course) this.bindLangSwitch($('#modal'), () => { this.closeModal ? this.closeModal() : null; this.pause(); });
     }
 
     openSkills(fromShrine) {

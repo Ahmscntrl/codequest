@@ -340,3 +340,10 @@ body.touch .keyhints { display: none; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; filter: grayscale(.6); }
 .mn-mini { position: absolute; top: -10px; right: -16px; font: 900 9px var(--ui); letter-spacing: .5px; background: #ff5470; color: #fff; padding: 2px 5px; border-radius: 6px; box-shadow: 0 2px 0 rgba(0,0,0,.4); }
 .mp-mini { margin-top: 8px; font-size: 13px; color: #ffb3c0; }
+.course-slot { grid-column: 1 / -1; border-style: solid; border-color: rgba(79,208,160,.55); background: linear-gradient(135deg, rgba(79,208,160,.10), rgba(78,140,255,.10)), var(--panel); }
+.course-slot.empty { flex-direction: row; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+.course-slot .lang-badge { background: #1f5a4a; color: #a8f0d0; }
+.lang-switch { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0; }
+.ls-btn { font: 900 13px var(--ui); color: var(--text); background: var(--panel); border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; cursor: pointer; }
+.ls-btn.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78,240,255,.15); }
+.map-tabs .lang-switch { margin: 0 0 0 auto; align-self: center; }
