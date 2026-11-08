@@ -100,7 +100,7 @@
       python: ['"password" (with quotes) is just text. password (no quotes) is the variable.', 'print(password)'],
       javascript: ['"password" (with quotes) is just text. password (no quotes) is the variable.', 'console.log(password);'],
     },
-    effect: (game) => game.openGate('D'),
+    effect: (game) => game.openGate('G'),
   };
 
   CH.guard = {
@@ -246,7 +246,7 @@
       python: ['"Hello, " + name + "!"', 'def greet(name):\n    return "Hello, " + name + "!"'],
       javascript: ['"Hello, " + name + "!"', 'function greet(name) {\n  return "Hello, " + name + "!";\n}'],
     },
-    effect: (game) => game.openGate('C'),
+    effect: (game) => game.openGate('D'),
   };
 
   CH.total = {
@@ -265,7 +265,7 @@
       python: ['result += n adds n to result.', 'def total(nums):\n    result = 0\n    for n in nums:\n        result += n\n    return result'],
       javascript: ['result += n adds n to result.', 'function total(nums) {\n  let result = 0;\n  for (const n of nums) {\n    result += n;\n  }\n  return result;\n}'],
     },
-    effect: (game) => game.openGate('D'),
+    effect: (game) => game.openGate('G'),
   };
 
   CH.forge = {
@@ -298,7 +298,7 @@
       python: ['ClassName() creates a new object.', 'my_sword = Sword()\nequip(my_sword)'],
       javascript: ['new ClassName() creates a new object.', 'const mySword = new Sword();\nequip(mySword);'],
     },
-    effect: (game, data) => { if (data && data.weapon) game.setWeapon(data.weapon); game.openGate('C'); },
+    effect: (game, data) => { if (data && data.weapon) game.setWeapon(data.weapon); game.openGate('E'); },
   };
 
   CH.den = {
@@ -331,7 +331,7 @@
       python: ['Change what speak returns, e.g. return "Meow!"', 'adopt(buddy)'],
       javascript: ['Change what speak returns, e.g. return "Meow!";', 'adopt(buddy);'],
     },
-    effect: (game, data) => { if (data && data.pet) game.setPet(data.pet); game.openGate('C'); },
+    effect: (game, data) => { if (data && data.pet) game.setPet(data.pet); game.openGate('E'); },
   };
 
   // ---- open world
@@ -495,7 +495,7 @@
       return { ok: true, msg: '🧮 42 and 99 — correct! <b>Gate open!</b>' };
     },
     hints: { python: ['print(7 * 6)', 'print(7 * 6)\nprint(100 - 1)'], javascript: ['console.log(7 * 6);', 'console.log(7 * 6);\nconsole.log(100 - 1);'] },
-    effect: (game) => game.openGate('C'),
+    effect: (game) => game.openGate('D'),
   };
 
   // ---- Level 2: variables
@@ -534,7 +534,7 @@
       return { ok: true, msg: '📐 Measured perfectly, every time. <b>Gate open!</b>' };
     },
     hints: { python: ['area = width * height', 'area = width * height\nprint(area)'], javascript: ['let area = width * height;', 'let area = width * height;\nconsole.log(area);'] },
-    effect: (game) => game.openGate('B'),
+    effect: (game) => game.openGate('C'),
   };
   CH.update = {
     title: 'The Score Keeper',
@@ -553,7 +553,7 @@
       return { ok: true, msg: '📈 +5 every time! <b>Gate open!</b>' };
     },
     hints: { python: ['score += 5', 'score += 5\nprint(score)'], javascript: ['score += 5;', 'score += 5;\nconsole.log(score);'] },
-    effect: (game) => game.openGate('C'),
+    effect: (game) => game.openGate('D'),
   };
 
   // ---- Level 3: conditions
@@ -612,7 +612,7 @@
       return { ok: true, msg: '🎟️ Every visitor handled correctly. <b>Gate open!</b>' };
     },
     hints: { python: ['if age >= 12 and has_ticket:\n    open_gate()\nelse:\n    turn_away()'], javascript: ['if (age >= 12 && hasTicket) {\n  openGate();\n} else {\n  turnAway();\n}'] },
-    effect: (game) => game.openGate('D'),
+    effect: (game) => game.openGate('E'),
   };
 
   // ---- Level 4: loops
@@ -669,7 +669,7 @@
       return { ok: true, msg: '🔋 Fully charged, every time. <b>Gate open!</b>' };
     },
     hints: { python: ['charge += 10', 'while charge < 100:\n    charge_up()\n    charge += 10'], javascript: ['charge += 10;', 'while (charge < 100) {\n  chargeUp();\n  charge += 10;\n}'] },
-    effect: (game) => game.openGate('C'),
+    effect: (game) => game.openGate('D'),
   };
   CH.sumloop = {
     title: 'The Gem Counter',
@@ -687,7 +687,7 @@
       return { ok: true, msg: '💎 Counted every gem. <b>Gate open!</b>' };
     },
     hints: { python: ['total += i', 'total = 0\nfor i in range(1, n + 1):\n    total += i\nprint(total)'], javascript: ['total += i;', 'let total = 0;\nfor (let i = 1; i <= n; i++) {\n  total += i;\n}\nconsole.log(total);'] },
-    effect: (game) => game.openGate('D'),
+    effect: (game) => game.openGate('E'),
   };
 
   // ---- Level 5: functions
@@ -735,7 +735,7 @@
     callTests: [{ fn: 'biggest', args: [3, 9] }, { fn: 'biggest', args: [10, 2] }, { fn: 'biggest', args: [-1, -5] }, { fn: 'biggest', args: [4, 4] }],
     check(runs, ctx) { return checkCalls(runs[0], this.callTests, [9, 10, -1, 4], ctx, 'biggest'); },
     hints: { python: ['def biggest(a, b):\n    if a > b:\n        return a\n    return b'], javascript: ['function biggest(a, b) {\n  if (a > b) {\n    return a;\n  }\n  return b;\n}'] },
-    effect: (game) => game.openGate('E'),
+    effect: (game) => game.openGate('H'),
   };
 
   // ---- Level 6: classes
@@ -824,6 +824,259 @@
     effect: (game, data, instant) => game.gainSideQuest('crier', instant),
   };
 
+  // ================================================================ deeper lessons (longer levels)
+  // ---- Level 1: print()
+  CH.textjoin = {
+    title: 'The Name Smith',
+    desc: (ctx) => `<p>The ${c('+')} sign <b>glues text together</b>. It doesn't add a space — you get exactly what you glue.</p>
+      <p>The smith needs the name <b>SuperCoder</b>, made by joining the text ${c('"Super"')} and ${c('"Coder"')} with ${c('+')}.</p>`,
+    starter: { python: '# Glue two pieces of text with +\nprint("Super")\n', javascript: '// Glue two pieces of text with +\nconsole.log("Super");\n' },
+    api: [],
+    check(runs, ctx, code) {
+      const src = stripComments(code, ctx);
+      const out = lines(runs[0]);
+      if (/SuperCoder/.test(src)) return { ok: false, msg: 'Don\'t type <b>SuperCoder</b> as one word — make the computer glue <code>"Super"</code> and <code>"Coder"</code> with <code>+</code>.' };
+      if (out.includes('Super Coder')) return { ok: false, msg: 'There\'s a space in there! <code>+</code> adds nothing between the pieces — check your quotes for extra spaces.' };
+      if (!out.includes('SuperCoder')) return { ok: false, msg: `The smith needs to see <b>SuperCoder</b> printed. You printed <b>${escapeHTML(out.join(' / ') || 'nothing')}</b>.` };
+      if (!/["'`]\s*\+\s*["'`]/.test(src)) return { ok: false, msg: 'Join the two texts with <code>+</code>.' };
+      return { ok: true, msg: '🔨 <b>SuperCoder</b>, forged from two pieces. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('C'),
+  };
+  CH.order = {
+    title: 'The Bracket Bridge',
+    desc: (ctx) => `<p>Just like in maths class, the computer does ${c('*')} and ${c('/')} <b>before</b> ${c('+')} and ${c('-')}. Brackets ${c('( )')} go first of all.</p>
+      <p>Print the answer to <b>(10 + 5) × 2</b>, then on the next line the answer to <b>10 + 5 × 2</b>. Notice how different they are!</p>`,
+    starter: { python: '# Brackets are calculated first\n', javascript: '// Brackets are calculated first\n' },
+    api: [],
+    check(runs, ctx, code) {
+      const src = stripComments(code, ctx), out = lines(runs[0]);
+      if (/\b(30|20)\b/.test(src)) return { ok: false, msg: 'Let the computer work it out — don\'t type the answers!' };
+      if (!/\(\s*10\s*\+\s*5\s*\)\s*\*\s*2/.test(src)) return { ok: false, msg: 'For the first one, put brackets around <code>10 + 5</code> so it happens first.' };
+      const a = out.indexOf('30'), b = out.indexOf('20');
+      if (a < 0) return { ok: false, msg: 'I don\'t see the answer to (10 + 5) × 2 yet.' };
+      if (b < 0) return { ok: false, msg: 'Now print 10 + 5 × 2 without brackets.' };
+      if (b < a) return { ok: false, msg: 'Print the bracket version first.' };
+      return { ok: true, msg: '🌉 30 and 20 — brackets change everything! <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('E'),
+  };
+  CH.sep = {
+    title: 'The Scoreboard',
+    desc: (ctx) => `<p>You can give ${c(printFn(ctx))} <b>several things at once</b>, separated by commas. It puts a space between them — and they can be different kinds of values!</p>
+      <pre>${printFn(ctx)}("Level", 3)   ${isJS(ctx) ? '//' : '#'} Level 3</pre>
+      <p>Print <b>Score: 100</b> using a comma between the text ${c('"Score:"')} and the calculation ${c('25 * 4')}.</p>`,
+    starter: { python: '# print can take several values, separated by commas\n', javascript: '// console.log can take several values, separated by commas\n' },
+    api: [],
+    check(runs, ctx, code) {
+      const src = stripComments(code, ctx), out = lines(runs[0]);
+      if (/100/.test(src)) return { ok: false, msg: 'Let the computer calculate <code>25 * 4</code>.' };
+      if (!/["'`]Score:\s*["'`]\s*,\s*25\s*\*\s*4/.test(src)) return { ok: false, msg: `Put a <b>comma</b> between the text and the calculation: ${c(printFn(ctx) + '("Score:", 25 * 4)')}… well, almost — try it!` };
+      if (!out.includes('Score: 100')) return { ok: false, msg: `The scoreboard should show <b>Score: 100</b> but shows <b>${escapeHTML(out.join(' / ') || 'nothing')}</b>.` };
+      return { ok: true, msg: '🏆 <b>Score: 100</b> lights up the board. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('G'),
+  };
+
+  // ---- Level 2: variables
+  CH.types = {
+    title: 'The Type Scanner',
+    desc: (ctx) => `<p>Variables can hold different <b>types</b> of value:</p>
+      <ul><li><b>text</b> (a string) — in quotes: ${c('"Ada"')}</li><li><b>numbers</b> — no quotes: ${c('7')}</li><li><b>true/false</b> (a boolean): ${c(isJS(ctx) ? 'true' : 'True')} or ${c(isJS(ctx) ? 'false' : 'False')}</li></ul>
+      <p>Make three variables: ${c('name')} holding <b>text</b>, ${c('level')} holding a <b>number</b>, and ${c('alive')} holding ${c(isJS(ctx) ? 'true' : 'True')}.</p>`,
+    starter: { python: '# text, number, and True/False\n', javascript: '// text, number, and true/false\n' },
+    api: [],
+    captureVars: ['name', 'level', 'alive'],
+    check(runs, ctx) {
+      const v = runs[0].vars;
+      const T = isJS(ctx) ? 'true' : 'True';
+      if (v.name === undefined) return { ok: false, msg: `Make a variable called ${c('name')}.` };
+      if (typeof v.name !== 'string') return { ok: false, msg: `${c('name')} should hold <b>text</b> — put it in quotes.` };
+      if (v.level === undefined) return { ok: false, msg: `Make a variable called ${c('level')}.` };
+      if (typeof v.level !== 'number') return { ok: false, msg: `${c('level')} should be a <b>number</b>. ${typeof v.level === 'string' ? 'Remove the quotes — <code>"5"</code> is text that looks like a number!' : ''}` };
+      if (v.alive === undefined) return { ok: false, msg: `Make a variable called ${c('alive')}.` };
+      if (v.alive !== true) return { ok: false, msg: `${c('alive')} should be ${c(T)}${typeof v.alive === 'string' ? ' — without quotes, and' : ''} spelled exactly like that${isJS(ctx) ? '' : ' (capital T)'}.` };
+      return { ok: true, msg: '🔍 Scanner reads: text ✔ number ✔ boolean ✔. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('B'),
+  };
+  CH.combine = {
+    title: 'The Name Badge',
+    desc: (ctx) => `<p>Let's build a sentence out of variables. The badge machine has ${c('hero')} (text) and ${c('coins')} (a number) — different for each test.</p>
+      <p>Print a sentence like <b>Ada has 5 coins</b>.</p>
+      <p>${isJS(ctx) ? `Tip: ${c('+')} can glue text and numbers in JavaScript, or use a template string: ${c('`${hero} has ...`')}` : `Careful: ${c('+')} can't glue text to a number! Turn the number into text with ${c('str(coins)')}, or use an f-string: ${c('f"{hero} has ..."')}`}</p>`,
+    starter: { python: 'print(hero)\nprint(coins)\n', javascript: 'console.log(hero);\nconsole.log(coins);\n' },
+    api: [],
+    tests: () => [['Ada', 5], ['Linus', 120], ['Grace', 0]].map(([h, n]) => ({ label: `hero = ${show(h)}, coins = ${n}`, globals: { hero: h, coins: n }, expect: `${h} has ${n} coins` })),
+    check(runs) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lastLine(runs[i]);
+        if (got !== t.expect) return { ok: false, msg: `Test ${i + 1} (${escapeHTML(t.label)}): expected <b>${escapeHTML(t.expect)}</b> but got <b>${nothing(got)}</b>. Watch the spaces!` };
+      }
+      return { ok: true, msg: '🪪 Badges printed for everyone. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('E'),
+  };
+
+  // ---- Level 3: conditions
+  CH.even = {
+    title: 'The Even Door',
+    desc: (ctx) => `<p>The ${c('%')} operator gives the <b>remainder</b> after dividing: ${c('7 % 2')} is <b>1</b>, ${c('8 % 2')} is <b>0</b>.</p>
+      <p>A number is <b>even</b> when ${c('number % 2')} is 0. Print <b>even</b> or <b>odd</b> for ${c('number')}. Tested with 4 numbers.</p>`,
+    starter: { python: 'print(number % 2)\n', javascript: 'console.log(number % 2);\n' },
+    api: [],
+    tests: () => [4, 7, 0, 13].map(n => ({ label: `number = ${n}`, globals: { number: n }, expect: n % 2 === 0 ? 'even' : 'odd' })),
+    check(runs) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lastLine(runs[i]);
+        if (got !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected <b>${t.expect}</b> but got <b>${nothing(got)}</b>.` + (t.globals.number === 0 ? ' <i>0 counts as even!</i>' : '') };
+      }
+      return { ok: true, msg: '🚪 The door knows its evens from its odds. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('D'),
+  };
+  CH.orgate = {
+    title: 'The Weather Vane',
+    desc: (ctx) => `<p>${isJS(ctx) ? c('||') + ' means "or"' : c('or')}: the condition is true if <b>either</b> side is true.</p>
+      <p>If ${c('weather')} is ${c('"rain"')} <b>or</b> ${c('"snow"')}, call ${c(fn('umbrella', ctx) + '()')}. For any other weather, call ${c(fn('sunglasses', ctx) + '()')}.</p>`,
+    starter: { python: 'if weather == "rain":\n    umbrella()\nelse:\n    sunglasses()\n', javascript: 'if (weather === "rain") {\n  umbrella();\n} else {\n  sunglasses();\n}\n' },
+    api: ['umbrella', 'sunglasses'],
+    tests: () => ['rain', 'snow', 'sun', 'wind'].map(w => ({ label: `weather = "${w}"`, globals: { weather: w }, expect: w === 'rain' || w === 'snow' ? 'umbrella' : 'sunglasses' })),
+    check(runs, ctx) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], did = runs[i].actions.map(a => a.fn);
+        if (did.length !== 1 || did[0] !== t.expect) return { ok: false, msg: `Test ${i + 1} (${t.label}): expected ${c(fn(t.expect, ctx) + '()')} but your code did ${c(did.length ? did.map(d => fn(d, ctx) + '()').join(' and ') : 'nothing')}.` + (t.globals.weather === 'snow' ? ` <i>Each side of ${isJS(ctx) ? '||' : 'or'} needs its own full comparison: <code>weather ${isJS(ctx) ? '===' : '=='} "snow"</code>.</i>` : '') };
+      }
+      return { ok: true, msg: '🌦️ Ready for any weather. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('G'),
+  };
+
+  // ---- Level 4: loops
+  CH.listloop = {
+    title: 'The Loot Parade',
+    desc: (ctx) => `<p>Loops can walk through a <b>list</b> of things, one item at a time:</p>
+      <pre>${isJS(ctx) ? 'for (const fruit of ["apple", "pear"]) {\n  console.log(fruit);\n}' : 'for fruit in ["apple", "pear"]:\n    print(fruit)'}</pre>
+      <p>Print every item in ${c('loot')}, one per line. The list changes for each test — it might even be empty!</p>`,
+    starter: { python: '# loot is a list, e.g. ["coin", "gem", "key"]\nprint(loot)\n', javascript: '// loot is a list, e.g. ["coin", "gem", "key"]\nconsole.log(loot);\n' },
+    api: [],
+    tests: () => [['coin', 'gem', 'key'], ['map'], []].map(l => ({ label: `loot = ${show(l)}`, globals: { loot: l }, expect: l })),
+    check(runs, ctx, code) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], out = lines(runs[i]);
+        if (out.join('|') !== t.expect.join('|')) return { ok: false, msg: `Test ${i + 1} (${escapeHTML(t.label)}): expected ${t.expect.length ? '<b>' + escapeHTML(t.expect.join(', ')) + '</b> on separate lines' : '<b>nothing</b> (the list is empty)'} but got <b>${escapeHTML(out.join(', ') || 'nothing')}</b>.` };
+      }
+      if (!hasLoop(code, ctx)) return { ok: false, msg: 'Use a loop to walk through the list.' };
+      return { ok: true, msg: '🎺 The loot marches past, one by one. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('C'),
+  };
+  CH.breakloop = {
+    title: 'The Mine Cart',
+    desc: (ctx) => `<p>${c('break')} jumps <b>out</b> of a loop early — handy when you find what you're looking for (or hit danger!).</p>
+      <p>Ride along ${c('rails')}: print each piece of track. If you reach a ${c('"gap"')}, print <b>Stop!</b> and ${c('break')} out of the loop straight away.</p>`,
+    starter: { python: 'for piece in rails:\n    print(piece)\n', javascript: 'for (const piece of rails) {\n  console.log(piece);\n}\n' },
+    api: [],
+    tests: () => [['track', 'track', 'gap', 'track'], ['gap', 'track'], ['track', 'track']].map(r => {
+      const exp = []; for (const p of r) { if (p === 'gap') { exp.push('Stop!'); break; } exp.push(p); }
+      return { label: `rails = ${show(r)}`, globals: { rails: r }, expect: exp };
+    }),
+    check(runs, ctx, code) {
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], out = lines(runs[i]);
+        if (out.join('|') !== t.expect.join('|')) return { ok: false, msg: `Test ${i + 1} (${escapeHTML(t.label)}): expected <b>${escapeHTML(t.expect.join(', '))}</b> but got <b>${escapeHTML(out.join(', ') || 'nothing')}</b>.` };
+      }
+      if (!/\bbreak\b/.test(stripComments(code, ctx))) return { ok: false, msg: 'Use <code>break</code> to stop the cart.' };
+      return { ok: true, msg: '🛤️ Stopped right at the edge! <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('G'),
+  };
+
+  // ---- Level 5: functions
+  CH.square = {
+    title: 'The Square Garden',
+    desc: (ctx) => `<p>A returned value can be <b>used</b> like any other value — stored, printed, or even added to another returned value!</p>
+      <p>Write ${c('square')} that returns ${c('n * n')}. Then print ${c('square(3) + square(4)')} (it should show 25).</p>`,
+    starter: { python: 'def square(n):\n    pass  # return n times n\n', javascript: 'function square(n) {\n  // return n times n\n}\n' },
+    api: [],
+    callTests: [{ fn: 'square', args: [5] }, { fn: 'square', args: [0] }, { fn: 'square', args: [-3] }],
+    check(runs, ctx, code) {
+      const r = checkCalls(runs[0], this.callTests, [25, 0, 9], ctx, 'square');
+      if (!r.ok) return r;
+      if (!/square\(\s*3\s*\)\s*\+\s*square\(\s*4\s*\)/.test(stripComments(code, ctx))) return { ok: false, msg: `Your function works! Now print ${c('square(3) + square(4)')}.` };
+      if (!lines(runs[0]).includes('25')) return { ok: false, msg: 'Print the result of <code>square(3) + square(4)</code>.' };
+      return { ok: true, msg: '🌱 9 + 16 = 25 — returned values add up! <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('C'),
+  };
+  CH.evenfn = {
+    title: 'The Even Oracle',
+    desc: (ctx) => `<p>Functions can return ${c(isJS(ctx) ? 'true' : 'True')} or ${c(isJS(ctx) ? 'false' : 'False')} — then you can use them in an ${c('if')}!</p>
+      <p>Write ${c('even')} that takes a number ${c('n')} and returns ${c(isJS(ctx) ? 'true' : 'True')} if it's even, ${c(isJS(ctx) ? 'false' : 'False')} if it's odd. (Remember ${c('%')} from the Conditions level?)</p>`,
+    starter: { python: 'def even(n):\n    pass\n\nprint(even(4))\n', javascript: 'function even(n) {\n\n}\n\nconsole.log(even(4));\n' },
+    api: [],
+    callTests: [{ fn: 'even', args: [4] }, { fn: 'even', args: [7] }, { fn: 'even', args: [0] }, { fn: 'even', args: [11] }],
+    check(runs, ctx) {
+      const calls = runs[0].calls;
+      if (calls.some(cl => typeof cl.value === 'string')) return { ok: false, msg: `Return the value ${c(isJS(ctx) ? 'true' : 'True')} itself, not the text ${c(isJS(ctx) ? '"true"' : '"True"')} in quotes.` };
+      return checkCalls(runs[0], this.callTests, [true, false, true, false], ctx, 'even');
+    },
+    effect: (game) => game.openGate('E'),
+  };
+
+  // ---- Level 6: classes
+  CH.lamp = {
+    title: 'The Magic Lamp',
+    desc: (ctx) => `<p>Methods can <b>change</b> an object's attributes. The ${c('Lamp')} class is almost done — the ${c('toggle')} method should flip ${c(isJS(ctx) ? 'this.on' : 'self.on')} from off to on, or on to off.</p>
+      <p>${isJS(ctx) ? c('!') + ' flips true/false: ' + c('!true') + ' is false.' : c('not') + ' flips True/False: ' + c('not True') + ' is False.'} The code at the bottom already tests it.</p>`,
+    starter: {
+      python: 'class Lamp:\n    def __init__(self):\n        self.on = False\n\n    def status(self):\n        return "on" if self.on else "off"\n\n    def toggle(self):\n        pass  # flip self.on\n\nlamp = Lamp()\nprint(lamp.status())\nlamp.toggle()\nprint(lamp.status())\nlamp.toggle()\nprint(lamp.status())\n',
+      javascript: 'class Lamp {\n  constructor() {\n    this.on = false;\n  }\n\n  status() {\n    return this.on ? "on" : "off";\n  }\n\n  toggle() {\n    // flip this.on\n  }\n}\n\nconst lamp = new Lamp();\nconsole.log(lamp.status());\nlamp.toggle();\nconsole.log(lamp.status());\nlamp.toggle();\nconsole.log(lamp.status());\n',
+    },
+    api: [],
+    check(runs) {
+      const out = lines(runs[0]);
+      if (out.join(',') !== 'off,on,off') return { ok: false, msg: `The lamp should go <b>off → on → off</b>, but it went <b>${escapeHTML(out.join(' → ') || 'nowhere')}</b>.` };
+      return { ok: true, msg: '💡 Click, click! The lamp obeys. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('C'),
+  };
+  CH.wallet = {
+    title: 'The Coin Purse',
+    desc: (ctx) => `<p>Methods can take <b>inputs</b> too. Finish the ${c('add')} method so it increases ${c(isJS(ctx) ? 'this.coins' : 'self.coins')} by ${c('amount')}.</p>
+      <p>Notice the test code makes <b>two</b> purses — each object keeps its <b>own</b> coins.</p>`,
+    starter: {
+      python: 'class Wallet:\n    def __init__(self):\n        self.coins = 0\n\n    def add(self, amount):\n        pass  # increase self.coins by amount\n\nmine = Wallet()\nmine.add(5)\nmine.add(10)\nprint(mine.coins)\n\nyours = Wallet()\nyours.add(3)\nprint(yours.coins)\n',
+      javascript: 'class Wallet {\n  constructor() {\n    this.coins = 0;\n  }\n\n  add(amount) {\n    // increase this.coins by amount\n  }\n}\n\nconst mine = new Wallet();\nmine.add(5);\nmine.add(10);\nconsole.log(mine.coins);\n\nconst yours = new Wallet();\nyours.add(3);\nconsole.log(yours.coins);\n',
+    },
+    api: [],
+    check(runs) {
+      const out = lines(runs[0]);
+      if (out.join(',') !== '15,3') return { ok: false, msg: `Expected <b>15</b> then <b>3</b>, but got <b>${escapeHTML(out.join(', ') || 'nothing')}</b>.` + (out[1] === '18' ? ' <i>Did you store coins somewhere shared instead of on the object?</i>' : '') };
+      return { ok: true, msg: '👛 15 coins in yours, 3 in theirs — every object has its own data. <b>Gate open!</b>' };
+    },
+    effect: (game) => game.openGate('D'),
+  };
+
+  // ---- Open world
+  CH.bag = {
+    title: 'Side Quest — The Supply Bag',
+    desc: (ctx) => `<p>Lists can <b>grow</b>! ${c(isJS(ctx) ? 'list.push(x)' : 'list.append(x)')} adds ${c('x')} to the end.</p>
+      <p>Add ${c('"potion"')} to ${c('bag')}, then print how many items it holds, and then its last item.</p>`,
+    starter: { python: '# bag is a list, e.g. ["rope", "torch"]\nprint(bag)\n', javascript: '// bag is a list, e.g. ["rope", "torch"]\nconsole.log(bag);\n' },
+    api: [],
+    tests: () => [['rope', 'torch'], [], ['map', 'key', 'coin']].map(b => ({ label: `bag = ${show(b)}`, globals: { bag: b }, expect: [String(b.length + 1), 'potion'] })),
+    check(runs, ctx, code) {
+      if (!(isJS(ctx) ? /\.push\s*\(/ : /\.append\s*\(/).test(stripComments(code, ctx))) return { ok: false, msg: `Add to the list with ${c(isJS(ctx) ? 'bag.push(...)' : 'bag.append(...)')}.` };
+      for (let i = 0; i < runs.length; i++) {
+        const t = runs.tests[i], got = lines(runs[i]).slice(-2).map(s => s.replace(/^['"]|['"]$/g, ''));
+        if (got.join('|') !== t.expect.join('|')) return { ok: false, msg: `Test ${i + 1} (${escapeHTML(t.label)}): your last two lines should be <b>${t.expect.join(', ')}</b> but were <b>${escapeHTML(got.join(', ') || 'nothing')}</b>.` };
+      }
+      return { ok: true, msg: '🧪 Bag packed. <b>+1 skill point!</b>' };
+    },
+    effect: (game, data, instant) => game.gainSideQuest('bag', instant),
+  };
+
   function checkCalls(run, tests, expected, ctx, name) {
     for (let i = 0; i < tests.length; i++) {
       const call = run.calls[i];
@@ -897,47 +1150,54 @@
   // ------------------------------------------------------------ levels
   const gate = (m, x, g, top) => { m.fill(x, 0, x, (top || 13) - 1, 'W'); m.fill(x, top || 13, x, (top || 13) + 1, g); };
   function level1() {
-    const m = MapBuilder(62, 17);
-    m.fill(0, 15, 61, 16, '#');
+    const m = MapBuilder(86, 17);
+    m.fill(0, 15, 85, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
     m.put(11, 13, '---'); m.put(15, 11, '----');
     m.put(19, 14, '?'); m.put(24, 14, '1'); gate(m, 28, 'A');
-    m.put(31, 14, '?'); m.fill(33, 14, 33, 14, '#'); m.put(36, 14, '2'); gate(m, 40, 'B');
-    m.put(42, 13, '---'); m.put(46, 14, '3'); gate(m, 50, 'C');
-    m.put(56, 14, 'F');
+    m.put(33, 14, '2'); gate(m, 37, 'B');
+    m.put(39, 14, '?'); m.put(43, 14, '3'); gate(m, 47, 'C');
+    m.fill(49, 14, 49, 14, '#'); m.put(52, 14, '4'); gate(m, 56, 'D');
+    m.put(58, 13, '---'); m.put(61, 14, '5'); gate(m, 65, 'E');
+    m.put(70, 14, '6'); gate(m, 74, 'G');
+    m.put(80, 14, 'F');
     return m.rows();
   }
   function level2() {
-    const m = MapBuilder(82, 17);
-    m.fill(0, 15, 81, 16, '#');
+    const m = MapBuilder(94, 17);
+    m.fill(0, 15, 93, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
     m.put(9, 14, '1'); gate(m, 13, 'A');
-    m.put(16, 13, '----'); m.put(17, 12, '*');
-    m.put(22, 14, '2'); m.put(23, 14, '?');
-    m.fill(25, 15, 31, 15, '_'); m.fill(25, 16, 31, 16, '~');
-    m.put(36, 14, '3'); gate(m, 40, 'B');
-    m.put(43, 13, '---'); m.put(46, 14, '4'); gate(m, 50, 'C');
-    m.put(54, 13, '---'); m.put(57, 14, '*');
-    m.put(62, 14, '5'); gate(m, 66, 'D');
-    m.put(70, 14, '?'); m.put(76, 14, 'F');
+    m.put(18, 14, '2'); gate(m, 22, 'B');
+    m.put(25, 13, '----'); m.put(26, 12, '*');
+    m.put(31, 14, '3'); m.put(32, 14, '?');
+    m.fill(34, 15, 40, 15, '_'); m.fill(34, 16, 40, 16, '~');
+    m.put(45, 14, '4'); gate(m, 49, 'C');
+    m.put(54, 14, '5'); gate(m, 58, 'D');
+    m.put(63, 14, '6'); gate(m, 67, 'E');
+    m.put(70, 13, '---'); m.put(73, 14, '*');
+    m.put(77, 14, '7'); gate(m, 81, 'G');
+    m.put(85, 14, '?'); m.put(90, 14, 'F');
     return m.rows();
   }
   function level3() {
-    const m = MapBuilder(82, 17);
-    m.fill(0, 15, 81, 16, '#');
+    const m = MapBuilder(96, 17);
+    m.fill(0, 15, 95, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
     m.put(10, 14, '1'); gate(m, 14, 'A');
     m.put(18, 14, 'e'); m.put(23, 14, '2'); gate(m, 27, 'B');
     m.put(29, 13, '---'); m.put(33, 14, '3'); gate(m, 37, 'C');
-    m.put(39, 14, '?'); m.put(41, 14, '4');
-    m.fill(43, 15, 51, 16, '%');
-    m.put(54, 14, 'K'); m.put(56, 14, 'e'); m.put(60, 14, '5'); gate(m, 64, 'D');
-    m.put(68, 13, '---'); m.put(70, 14, '?'); m.put(75, 14, 'F');
+    m.put(42, 14, '4'); gate(m, 46, 'D');
+    m.put(48, 14, '?'); m.put(50, 14, '5');
+    m.fill(52, 15, 60, 16, '%');
+    m.put(63, 14, 'K'); m.put(65, 14, 'e'); m.put(69, 14, '6'); gate(m, 73, 'E');
+    m.put(78, 14, '7'); gate(m, 82, 'G');
+    m.put(84, 13, '---'); m.put(86, 14, '?'); m.put(91, 14, 'F');
     return m.rows();
   }
   function level4() {
-    const m = MapBuilder(86, 17);
-    m.fill(0, 15, 85, 16, '#');
+    const m = MapBuilder(102, 17);
+    m.fill(0, 15, 101, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
     // hidden climb to find i
     m.put(7, 13, '---'); m.put(10, 11, '---'); m.put(6, 9, '---'); m.put(1, 7, '----');
@@ -952,12 +1212,14 @@
     m.fill(47, 3, 48, 14, 'W');
     m.put(52, 14, 'e'); m.put(57, 14, '5'); gate(m, 61, 'C');
     m.put(66, 14, '6'); gate(m, 70, 'D');
-    m.put(74, 14, '?'); m.put(80, 14, 'F');
+    m.put(75, 14, '7'); gate(m, 79, 'E');
+    m.put(81, 13, '---'); m.put(84, 14, '8'); gate(m, 88, 'G');
+    m.put(92, 14, '?'); m.put(98, 14, 'F');
     return m.rows();
   }
   function level5() {
-    const m = MapBuilder(90, 17);
-    m.fill(0, 15, 89, 16, '#');
+    const m = MapBuilder(107, 17);
+    m.fill(0, 15, 106, 16, '#');
     m.put(2, 14, 'P'); m.put(4, 14, '?');
     m.put(9, 14, '1'); gate(m, 13, 'A');
     m.put(18, 14, '2'); gate(m, 22, 'B');
@@ -967,19 +1229,23 @@
     m.put(52, 14, 'K'); m.put(54, 13, '---'); m.put(56, 10, 'w');
     m.put(60, 14, '5'); gate(m, 64, 'D');
     m.put(69, 14, '6'); gate(m, 73, 'E');
-    m.put(77, 14, 'e'); m.put(79, 14, '?'); m.put(85, 14, 'F');
+    m.put(78, 14, '7'); gate(m, 82, 'G');
+    m.put(87, 14, '8'); gate(m, 91, 'H');
+    m.put(95, 14, 'e'); m.put(97, 14, '?'); m.put(103, 14, 'F');
     return m.rows();
   }
   function level6() {
-    const m = MapBuilder(78, 17);
-    m.fill(0, 15, 77, 16, '#');
+    const m = MapBuilder(94, 17);
+    m.fill(0, 15, 93, 16, '#');
     m.put(2, 14, 'P'); m.put(5, 14, '?');
     m.put(10, 14, '1'); gate(m, 14, 'A');
     m.put(19, 14, '2'); gate(m, 23, 'B');
-    m.put(26, 14, '?'); m.put(30, 14, '3'); m.put(33, 14, '?'); m.put(37, 14, '4'); gate(m, 42, 'C');
-    m.put(45, 14, '?');
-    m.put(50, 14, 'e'); m.put(54, 13, '----'); m.put(58, 14, 'e'); m.put(61, 10, 'w');
-    m.put(65, 14, '?'); m.put(72, 14, 'F');
+    m.put(28, 14, '3'); gate(m, 32, 'C');
+    m.put(37, 14, '4'); gate(m, 41, 'D');
+    m.put(44, 14, '?'); m.put(48, 14, '5'); m.put(51, 14, '?'); m.put(55, 14, '6'); gate(m, 60, 'E');
+    m.put(63, 14, '?');
+    m.put(68, 14, 'e'); m.put(72, 13, '----'); m.put(76, 14, 'e'); m.put(79, 10, 'w');
+    m.put(83, 14, '?'); m.put(90, 14, 'F');
     return m.rows();
   }
   function levelWorld() {
@@ -988,7 +1254,7 @@
     m.fill(0, 22, W - 1, 23, '#');
     m.fill(0, 0, 0, 21, 'W');
     // --- hub
-    m.put(3, 21, 'P'); m.put(6, 21, 'K'); m.put(10, 21, '$'); m.put(13, 21, '?'); m.put(15, 21, '6'); m.put(22, 21, '7');
+    m.put(3, 21, 'P'); m.put(6, 21, 'K'); m.put(10, 21, '$'); m.put(13, 21, '?'); m.put(15, 21, '6'); m.put(20, 21, '8'); m.put(22, 21, '7');
     m.put(17, 20, '---'); m.put(21, 18, '---');
     // --- section 1: hills + gem sorter
     m.fill(24, 20, 34, 21, '#'); m.fill(27, 18, 31, 19, '#');
@@ -1040,7 +1306,7 @@
         javascript: '<p>Welcome to <b>Syntaxia</b>, a world built from code — and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Every programmer\'s journey starts with the same two words...</p>',
       },
       signs: ['Move with ← → (or A / D).  Jump with Space, W or ↑.', 'See that terminal? Walk up to it and press E to write code. Press Esc to pause.', 'Each terminal teaches one small new thing. Read the left panel, then try it!'],
-      terminals: ['hello', 'lines', 'math'],
+      terminals: ['hello', 'lines', 'textjoin', 'math', 'order', 'sep'],
     },
     {
       id: 'vars', name: 'Variables', theme: 'meadow', map: level2(),
@@ -1051,7 +1317,7 @@
       },
       signs: ['Glowing boxes are VARIABLES. Walk into one to collect it — it shows up in your Variables panel (top right).', 'Lava ahead. Better build a bridge...', 'Well done! The exit portal is just ahead.'],
       pickups: [{ name: 'planks', value: 7 }, { name: 'password', value: randomWord }],
-      terminals: ['firstvar', 'bridge', 'area', 'update', 'password'],
+      terminals: ['firstvar', 'types', 'bridge', 'area', 'update', 'combine', 'password'],
     },
     {
       id: 'ifs', name: 'Conditions', theme: 'cave', map: level3(),
@@ -1061,7 +1327,7 @@
         javascript: '<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if (hp < 3) {\n  console.log("Heal!");\n} else if (hp === 3) {\n  console.log("Okay");\n} else {\n  console.log("Strong!");\n}</pre><p>The <b>{ curly braces }</b> hold the code that belongs inside the if.</p><p>⚠️ <b>Bugs</b> live here. Jump on them to squash them — if one bites you, it puts an <b>error in your code</b>!</p>',
       },
       signs: ['BUGS! Jump on top to squash them. If one bites you, you get a GLITCH (an error in your code). Press Q to open the debugger and fix it!', 'Lava! The pump terminal could turn it into stone...', 'Checkpoints (flags) save your progress.'],
-      terminals: ['compare', 'heal', 'guard', 'pump', 'bouncer'],
+      terminals: ['compare', 'heal', 'guard', 'even', 'pump', 'bouncer', 'orgate'],
     },
     {
       id: 'loops', name: 'Loops', theme: 'cave', map: level4(),
@@ -1071,7 +1337,7 @@
         javascript: '<p>A <b>loop</b> repeats code so you don\'t have to:</p><pre>for (let i = 0; i < 3; i++) {\n  console.log(i); // 0, 1, 2\n}</pre><p>That little <b>i</b> is the loop\'s counter... Legend says a tiny creature named <b>i</b> lives in these caves. Maybe you\'ll find them!</p>',
       },
       signs: ['A tiny voice echoes from somewhere above: "...i\'m up here..."', 'Every loop machine in this cave needs a counter to work.', 'Almost there! Watch out for bugs.'],
-      terminals: ['repeat', 'stairs', 'count', 'countdown', 'charge', 'sumloop'],
+      terminals: ['repeat', 'stairs', 'count', 'countdown', 'listloop', 'charge', 'sumloop', 'breakloop'],
       springsLocked: true,
     },
     {
@@ -1082,7 +1348,7 @@
         javascript: '<p>A <b>function</b> is a named recipe. Define it once, use it as often as you like:</p><pre>function square(x) {\n  return x * x;\n}\n\nconsole.log(square(4)); // 16</pre><p><code>return</code> sends the answer back to whoever called the function.</p>',
       },
       signs: ['Each terminal here builds on the last one: call a function, give it inputs, get answers back.', 'Nearly there. Classes await...'],
-      terminals: ['cheer', 'echo', 'double', 'greet', 'total', 'biggest'],
+      terminals: ['cheer', 'echo', 'double', 'square', 'greet', 'evenfn', 'total', 'biggest'],
     },
     {
       id: 'classes', name: 'Classes', theme: 'circuit', map: level6(),
@@ -1092,7 +1358,7 @@
         javascript: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>properties</b>) and abilities (<b>methods</b>):</p><pre>class Dog {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    return "Woof!";\n  }\n}\n\nconst rex = new Dog("Rex");\nconsole.log(rex.speak());</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b> — or both! Master classes and you\'ll unlock <b>skill points</b> and the <b>open world</b>.</p>',
       },
       signs: ['First learn what an object is, then build your own classes. The last two terminals are the Forge (weapons) and the Den (pets) — either one opens the gate, but why not both?', 'The Forge: design a weapon class.', 'Want a pet too? The Den is right here!', 'Weapons: press X or J to attack. Pets follow you around and cheer you on.', 'Beyond the portal lies the open world. Skill points await!'],
-      terminals: ['crate', 'potion', 'forge', 'den'],
+      terminals: ['crate', 'potion', 'lamp', 'wallet', 'forge', 'den'],
       gateAnyOf: true,
       grantsSkills: true,
     },
@@ -1104,7 +1370,7 @@
         javascript: '<p>You\'ve mastered the basics. Now Syntaxia is yours to explore!</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> 🔷 (or press K).</li></ul>',
       },
       signs: ['THE WILDS. Warm up with the Backpack (lists) and Town Crier (strings) quests here, then find the three Core terminals out east. Skill Shrine is right behind you!', 'The Mirror Cipher is just ahead. Strings can be sliced and reversed...', 'The Dictionary Merchant — "Prices, prices! Who\'s buying?"', 'The Great Gate. It opens only for one who carries 3 Core fragments.'],
-      terminals: ['gems', 'decoder', 'fib', 'fizz', 'merchant', 'backpack', 'crier'],
+      terminals: ['gems', 'decoder', 'fib', 'fizz', 'merchant', 'backpack', 'crier', 'bag'],
     },
     {
       id: 'boss', name: 'Segfault\'s Lair', theme: 'lair', map: levelBoss(), boss: true,
