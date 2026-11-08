@@ -432,7 +432,7 @@ class Tea extends Drink {
 }`;
   ch.java2_menu = {
     title: 'The Menu Board',
-    desc: `<p>Here is the real power of inheritance: a ${code('List<Drink>')} can hold <b>any</b> kind of Drink. Loop over it, and each object uses <b>its own</b> overridden methods. This is called <b>polymorphism</b>.</p>
+    desc: `<p>This is where inheritance pays off: a ${code('List<Drink>')} can hold <b>any</b> kind of Drink. Loop over it, and each object uses <b>its own</b> overridden methods. This is called <b>polymorphism</b>.</p>
       <p>Put a new ${code('Espresso')}, a ${code('Latte')} and a ${code('Tea')} into ${code('menu')} (in that order). Then loop over the menu with ${code('for (Drink d : menu)')}: print each drink, and add up ${code('d.price()')}. Finally print the total:</p>${pre('Espresso $2.5\nLatte $3.5\nTea $1.75\nTotal: $7.75')}`,
     starter: J(MENU, 'List<Drink> menu = new ArrayList<>();\n// 1. add an Espresso, a Latte and a Tea\n\n// 2. print each drink and add up the prices\ndouble total = 0;\n\nSystem.out.println("Total: $" + total);', { imports: LIST }),
     hints: ['menu.add(new Espresso()); puts one drink on the menu.', 'Inside the loop: print d, then total += d.price();'],
@@ -848,7 +848,7 @@ System.out.println("Best seller: " + "");`, { imports: STREAMS }),
   ch.java2_badorder = {
     title: 'Throw Back the Bad Order',
     desc: `<p>You can throw exceptions too! ${code('throw new IllegalArgumentException("message")')} stops the method at once and hands the problem to whoever called it.</p>
-      <p>This pairs perfectly with encapsulation: a setter that refuses bad values <b>loudly</b>. Make ${code('setCups')} throw an ${code('IllegalArgumentException')} when the cups are below 1 or above 10, with the message ${code('cups must be 1 to 10, got 12')} (using the real number).</p>${pre('Order for 2 cups\nRejected: cups must be 1 to 10, got 0\nRejected: cups must be 1 to 10, got 12\nOrder for 5 cups')}`,
+      <p>This goes well with encapsulation: a setter that refuses bad values <b>loudly</b>. Make ${code('setCups')} throw an ${code('IllegalArgumentException')} when the cups are below 1 or above 10, with the message ${code('cups must be 1 to 10, got 12')} (using the real number).</p>${pre('Order for 2 cups\nRejected: cups must be 1 to 10, got 0\nRejected: cups must be 1 to 10, got 12\nOrder for 5 cups')}`,
     starter: J(`
 class Order {
     private int cups;
@@ -1034,7 +1034,7 @@ System.out.println("Served: " + CoffeeMachine.getCupsServed() + " cups, " + mach
       `<p>To let the outside world use a private field <b>safely</b>, a class offers public methods:</p><ul><li>a <b>getter</b> like <code>getBeans()</code> returns the value</li><li>a <b>setter</b> like <code>setBeans(int b)</code> changes it, and can <b>check</b> the new value first</li></ul><p>Hiding fields and offering methods like this is called <b>encapsulation</b>. The class is in charge of its own data.</p>`,
       J('class Jar {\n    private int beans = 5;\n\n    public int getBeans() {\n        return beans;\n    }\n\n    public void setBeans(int beans) {\n        if (beans >= 0) {\n            this.beans = beans;\n        } else {\n            System.out.println("No negative beans!");\n        }\n    }\n}', 'Jar j = new Jar();\nj.setBeans(-5);\nj.setBeans(12);\nSystem.out.println(j.getBeans());')),
     page('static: one for the whole class',
-      `<p>A normal field: every object has its <b>own</b> copy. A <code>static</code> field belongs to the <b>class</b>: one copy, shared by all objects. Perfect for counting how many objects were made.</p><p>A <code>static</code> method is called on the class name, like <code>Cup.getMade()</code>, without any object.</p>`,
+      `<p>A normal field: every object has its <b>own</b> copy. A <code>static</code> field belongs to the <b>class</b>: one copy, shared by all objects. Use one to count how many objects were made.</p><p>A <code>static</code> method is called on the class name, like <code>Cup.getMade()</code>, without any object.</p>`,
       J('class Cup {\n    private static int made = 0;\n\n    public Cup() {\n        made++;\n    }\n\n    public static int getMade() {\n        return made;\n    }\n}', 'new Cup();\nnew Cup();\nnew Cup();\nSystem.out.println("Cups: " + Cup.getMade());')),
     page('static final: constants',
       `<p><code>final</code> means "can't be changed after it's set". Together, <code>static final</code> makes a <b>constant</b>: one shared value that never changes. Java programmers write constants in CAPITALS.</p><p>You have used static methods all along: <code>Math.max</code> and <code>Integer.parseInt</code> are called on the class, never on an object.</p>`,
@@ -1162,7 +1162,7 @@ System.out.println("Served: " + CoffeeMachine.getCupsServed() + " cups, " + mach
     title: 'The Coffee Works',
     blurb: 'Deep in the hills stands the Coffee Works, a great steaming factory of Java machines, and the bugs have jammed every one of them.',
     outro: `<p>The boilers hiss, the grinders spin, and the smell of fresh coffee drifts over Syntaxia again. <b>The Coffee Works is running!</b></p>
-      <p>You now know the heart of Java: <b>encapsulation</b>, <b>static</b> members, <b>inheritance</b>, <b>interfaces</b> and <b>abstract classes</b>, <b>collections</b> with <b>lambdas</b> and <b>streams</b>, and <b>exceptions</b>. That's what real Java programs are made of, from Android apps to giant servers.</p>
+      <p>You now know the heart of Java: <b>encapsulation</b>, <b>static</b> members, <b>inheritance</b>, <b>interfaces</b> and <b>abstract classes</b>, <b>collections</b> with <b>lambdas</b> and <b>streams</b>, and <b>exceptions</b>. Android apps and giant servers are built from these same pieces.</p>
       <p>Pour yourself a cup. You've earned it.</p>`,
     theme: 'coffee',
     challenges: ch,
@@ -1264,7 +1264,7 @@ System.out.println("Served: " + CoffeeMachine.getCupsServed() + " cups, " + mach
       },
       {
         id: 'java2_market', name: 'The Bean Market', topic: 'Lambdas & Streams',
-        blurb: 'Handle lists and maps like a pro with lambdas, removeIf, comparators and streams.',
+        blurb: 'Handle lists and maps with lambdas, removeIf, comparators and streams.',
         intro: `<p>The <b>Bean Market</b> is chaos: bags to sort, stale beans to toss, orders to count and a report due by sunset.</p>
           <p>Modern Java has a sharp tool for this: the <b>lambda</b>, a tiny method you write right where you need it.</p>
           <pre>orders.sort((a, b) -&gt; a.getPrice() - b.getPrice());\nbeans.removeIf(age -&gt; age &gt; 14);</pre>
@@ -1299,7 +1299,7 @@ System.out.println("Served: " + CoffeeMachine.getCupsServed() + " cups, " + mach
         intro: `<p>At the heart of the Coffee Works sits the <b>Pressure Boiler</b>. Things go wrong down here: empty hoppers, bad orders, dangerous temperatures. And when they do, the bugs make sure everything crashes.</p>
           <p>Java's answer is <b>exceptions</b>. Code can <code>throw</code> a problem, and other code can <code>catch</code> it and recover:</p>
           <pre>try {\n    boiler.heat(50);\n} catch (OverheatException e) {\n    System.out.println("ALARM: " + e.getMessage());\n}</pre>
-          <p>Master them, then fire up the <b>Grand Brew</b>: the machine that needs everything you've learned in this chapter.</p>`,
+          <p>Learn them, then fire up the <b>Grand Brew</b>: the machine that needs everything you've learned in this chapter.</p>`,
         tutorial: T5,
         signs: ['The Pressure Boiler. Exceptions are thrown when things go wrong, and caught to recover.', 'Checked exceptions (extends Exception) must be declared with throws and caught.', 'The Grand Brew awaits: interfaces, private fields, static, lists, streams and exceptions, all at once!'],
         terminals: ['java2_spill', 'java2_valve', 'java2_badorder', 'java2_alarm', 'java2_kinds', 'java2_grand'],

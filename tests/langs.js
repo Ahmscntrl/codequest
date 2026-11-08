@@ -18,6 +18,11 @@ for (const lang of ['python', 'javascript', 'cpp', 'csharp', 'java']) {
   const f = path.join(__dirname, '../js/chapter2', lang + '.js');
   if (fs.existsSync(f)) require(f);
 }
+// the Data Structures & Algorithms course (every language)
+for (const f of ['course.js', 'part1.js', 'part2.js']) {
+  const p = path.join(__dirname, '../js/dsa', f);
+  if (fs.existsSync(p)) require(p);
+}
 const only = process.env.LANGS ? process.env.LANGS.split(',') : null;
 const SOL = require('./solutions.js');
 for (const lang of ['cpp', 'csharp', 'java']) {
@@ -31,8 +36,19 @@ for (const lang of ['python', 'javascript', 'cpp', 'csharp', 'java']) {
   if (!fs.existsSync(f)) continue;
   for (const [id, code] of Object.entries(require(f))) { SOL[id] = SOL[id] || {}; SOL[id][lang] = code; }
 }
-// the levels to test in a language: Chapter 1, then that language's Chapter 2
-const levelsOf = (lang) => globalThis.GameData.LEVELS.concat(globalThis.GameData.CHAPTER2[lang] ? globalThis.GameData.CHAPTER2[lang].levels : []);
+for (const lang of ['python', 'javascript', 'cpp', 'csharp', 'java']) {
+  const f = path.join(__dirname, 'solutions', 'dsa', lang + '.js');
+  if (!fs.existsSync(f)) continue;
+  for (const [id, code] of Object.entries(require(f))) { SOL[id] = SOL[id] || {}; SOL[id][lang] = code; }
+}
+// the levels to test in a language: Chapter 1, that language's Chapter 2, and the DSA course
+const levelsOf = (lang) => {
+  const GD = globalThis.GameData;
+  let out = GD.LEVELS.concat(GD.CHAPTER2[lang] ? GD.CHAPTER2[lang].levels : []);
+  if (process.env.ONLY_DSA) out = [];
+  if (GD.COURSES && GD.COURSES.dsa) out = out.concat(GD.COURSES.dsa.levels);
+  return out;
+};
 // game-provided variables use each language's naming style (my_name -> myName ...)
 function globalsFor(id, lang, testGlobals, vars) {
   const g = {};

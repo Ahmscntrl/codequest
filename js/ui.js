@@ -562,7 +562,7 @@
       $('#map-panel').innerHTML = `
         <div><div class="mp-kicker">Chapter ${ch} · Level ${i + 1}${locked ? ' · locked' : done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
         <div class="mp-title">${escapeHTML(L.topic)}</div>
-        <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div>
+        <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ': ' : ''}${escapeHTML(L.blurb)}</div>
         <div class="mp-terms">${terms}</div>
         ${MiniBoss.has(L.id) ? `<div class="mp-mini">Miniboss at the end: <b>${escapeHTML(MiniBoss.DEFS[L.id].name)}</b>${s.minis && s.minis[L.id] ? ' (beaten)' : ''}</div>` : ''}
         ${locked ? `<div class="mp-why">${escapeHTML(why)}. You can still read the tutorial.</div>` : ''}</div>

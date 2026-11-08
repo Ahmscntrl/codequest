@@ -7,7 +7,7 @@
 
   const LANGS = {
     python: {
-      id: 'python', label: 'Python', badge: 'Py', blurb: 'Clean and readable. A great first language.', hello: 'print("Hello")',
+      id: 'python', label: 'Python', badge: 'Py', blurb: 'Easy to read, and a good first language.', hello: 'print("Hello")',
       fnCase: snake, varCase: snake, comment: '#', True: 'True', False: 'False', none: 'None',
       print: (x) => `print(${x})`, printName: 'print', loop: /\b(for|while)\b/, family: 'python',
       append: 'append', listAdd: (l, x) => `${l}.append(${x})`, self: 'self',
@@ -19,21 +19,21 @@
       append: 'push', listAdd: (l, x) => `${l}.push(${x});`, self: 'this',
     },
     cpp: {
-      id: 'cpp', label: 'C++', badge: 'C++', blurb: 'Fast and powerful. Used for games and engines.', hello: 'cout << "Hello";',
+      id: 'cpp', label: 'C++', badge: 'C++', blurb: 'Fast and strict. Used for games and game engines.', hello: 'cout << "Hello";',
       fnCase: snake, varCase: snake, comment: '//', True: 'true', False: 'false', none: 'nothing',
       print: (x) => `cout << ${x} << endl;`, printName: 'cout', loop: /\b(for|while)\s*\(/, family: 'c',
       append: 'push_back', listAdd: (l, x) => `${l}.push_back(${x});`, self: 'this',
       testNames: { double: 'double_it' },
     },
     csharp: {
-      id: 'csharp', label: 'C#', badge: 'C#', blurb: 'Clean and modern. Used for apps and Unity games.', hello: 'Console.WriteLine("Hello");',
+      id: 'csharp', label: 'C#', badge: 'C#', blurb: 'Used for Windows apps and Unity games.', hello: 'Console.WriteLine("Hello");',
       fnCase: pascal, varCase: camel, comment: '//', True: 'True', False: 'False', none: 'nothing',
       print: (x) => `Console.WriteLine(${x});`, printName: 'Console.WriteLine', loop: /\b(for|while|foreach)\s*\(/, family: 'c',
       append: 'Add', listAdd: (l, x) => `${l}.Add(${x});`, self: 'this',
       testNames: { double: 'DoubleIt' },
     },
     java: {
-      id: 'java', label: 'Java', badge: 'Java', blurb: 'Everywhere: Android, servers and big apps.', hello: 'System.out.println("Hello");',
+      id: 'java', label: 'Java', badge: 'Java', blurb: 'Runs Android apps, servers and big business software.', hello: 'System.out.println("Hello");',
       fnCase: camel, varCase: camel, comment: '//', True: 'true', False: 'false', none: 'nothing',
       print: (x) => `System.out.println(${x});`, printName: 'System.out.println', loop: /\b(for|while)\s*\(/, family: 'c',
       append: 'add', listAdd: (l, x) => `${l}.add(${x});`, self: 'this',

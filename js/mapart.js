@@ -107,6 +107,22 @@
     },
   };
 
+  // the Data Structures & Algorithms course: a night-time archive of glowing stacks, trees and graphs
+  DESIGNS.dsa = {
+    1: { name: 'The Algorithm Archive', layout: 'snake', bg: 'radial-gradient(ellipse at 50% 45%, #1d3a4a 0%, #10202e 55%, #070d16 100%)', path: '#a8f0d0', walked: '#ffe066', regions: ['#2a5a5e', '#24485e', '#2e4f6e'],
+      scene: (r, pts) => {
+        let s = S.stars(r, 40, '#d8fff0');
+        // a binary tree in the sky
+        const tree = [[500, 60], [380, 110], [620, 110], [320, 160], [440, 160], [560, 160], [680, 160]];
+        [[0, 1], [0, 2], [1, 3], [1, 4], [2, 5], [2, 6]].forEach(([a, b]) => { s += `<line x1="${tree[a][0]}" y1="${tree[a][1]}" x2="${tree[b][0]}" y2="${tree[b][1]}" stroke="#4fd0a0" stroke-opacity=".25" stroke-width="3"/>`; });
+        tree.forEach(([x, y]) => { s += `<circle cx="${x}" cy="${y}" r="9" fill="#4fd0a0" opacity=".3"/>`; });
+        // stacks of blocks and little graphs on the ground
+        s += scatter(r, pts, 7, (x, y, r) => { let t = ''; const n = 2 + Math.floor(r() * 3); for (let k = 0; k < n; k++) t += `<rect x="${x - 16}" y="${y - 12 - k * 14}" width="32" height="12" rx="3" fill="${['#3a7a8a', '#4a6aa0', '#5a8a6a'][k % 3]}" opacity=".75"/>`; return t; }, 110);
+        s += scatter(r, pts, 5, (x, y) => `<line x1="${x - 20}" y1="${y}" x2="${x + 18}" y2="${y - 16}" stroke="#ffd166" stroke-opacity=".35" stroke-width="2"/><line x1="${x + 18}" y1="${y - 16}" x2="${x + 22}" y2="${y + 14}" stroke="#ffd166" stroke-opacity=".35" stroke-width="2"/><circle cx="${x - 20}" cy="${y}" r="5" fill="#ffd166" opacity=".5"/><circle cx="${x + 18}" cy="${y - 16}" r="5" fill="#ffd166" opacity=".5"/><circle cx="${x + 22}" cy="${y + 14}" r="5" fill="#ffd166" opacity=".5"/>`, 110);
+        return s;
+      } },
+  };
+
   const MapArt = {
     DESIGNS,
     board(lang, ch, n) {

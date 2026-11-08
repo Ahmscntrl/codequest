@@ -411,7 +411,7 @@ console.log(defaults.volume);
       starter: 'function cityOf(user) {\n  return user.address.city;\n}\n',
       callTests: [{ name: 'Ada', address: { city: 'Neon City' } }, { name: 'Bo' }, null, { name: 'Cy', address: {} }, { address: { city: 'Glowtown' } }].map(u => ({ fn: 'cityOf', args: [u] })),
       expectCalls: ['Neon City', 'unknown', 'unknown', 'unknown', 'Glowtown'],
-      check: calls((cs) => crashed(cs, /Cannot read/i) ? 'That is the classic "reading a property of undefined" crash. Use <code>?.</code> instead of <code>.</code> where something might be missing.' : (cs[1] && !cs[1].error && cs[1].value === null) ? 'Now it returns <code>undefined</code> instead of crashing. Use <code>?? "unknown"</code> to swap that for a real answer.' : null),
+      check: calls((cs) => crashed(cs, /Cannot read/i) ? 'That is the common "reading a property of undefined" crash. Use <code>?.</code> instead of <code>.</code> where something might be missing.' : (cs[1] && !cs[1].error && cs[1].value === null) ? 'Now it returns <code>undefined</code> instead of crashing. Use <code>?? "unknown"</code> to swap that for a real answer.' : null),
       require: [[/\?\./, `Use optional chaining, ${c('?.')}, where a part might be missing.`], [/\?\?/, `Use ${c('??')} to give ${c('"unknown"')} when the city is missing.`]],
       hints: ['a?.b gives undefined instead of crashing when a is null or undefined.', 'x ?? "unknown" uses "unknown" only when x is null or undefined.'],
       similar: { task: 'The first tag of a post, or "untagged"', code: 'function firstTag(post) {\n  return post?.tags?.[0] ?? "untagged";\n}\nconsole.log(firstTag({ tags: ["neon"] }));\nconsole.log(firstTag(null));' },
@@ -600,7 +600,7 @@ console.log(defaults.volume);
     js2_mymap: [['[10, 20, 30]', '["A", "B"]', '[]'], {
       forbid: [[/\.map\s*\(/, `No ${c('.map')} here: build it yourself with a loop and ${c('push')}.`]],
       tip: (got, i) => i === 0 && got[0] === '[]' ? 'The result is still empty. Push <code>fn(item)</code> into it inside a loop.' : null,
-      success: 'Your loom weaves exactly like the real <code>map</code>. Now you know its secret! <b>The lava cools.</b>',
+      success: 'Your loom weaves exactly like the real <code>map</code>. Now you know how it works. <b>The lava cools.</b>',
     }],
     js2_booster: [['60', '11', '51'], { success: 'Each booster remembers its own amount. That is a closure! <b>The spring powers up!</b>' }],
     js2_counter: [['1', '2', '1', '3'], {
@@ -860,8 +860,8 @@ console.log(defaults.volume);
 
   GD.addChapter2('javascript', {
     title: 'The Neon Grid',
-    blurb: 'Race through a glowing city of data and master modern JavaScript: array methods, destructuring, JSON, closures and class families.',
-    outro: '<p>The last light-lane flickers back on. With a final crackle, The Undefined shrinks into one tiny, harmless <code>undefined</code>, and Lumen sweeps it into the recycle bin.</p><p>"Look at you," Lumen beeps. "Arrow functions, <code>map</code>, <code>filter</code> and <code>reduce</code>. Destructuring and spread. JSON. Closures. Class families with <code>super</code>, getters and statics. That is how real JavaScript is written, out there in the real world."</p><p><b>The Neon Grid is saved.</b> Its lights will keep shining for you, any time you want to come back.</p>',
+    blurb: 'Race through a glowing city of data and learn modern JavaScript: array methods, destructuring, JSON, closures and class families.',
+    outro: '<p>The last light-lane flickers back on. With a final crackle, The Undefined shrinks into one tiny, harmless <code>undefined</code>, and Lumen sweeps it into the recycle bin.</p><p>"Look at you," Lumen beeps. "Arrow functions, <code>map</code>, <code>filter</code> and <code>reduce</code>. Destructuring and spread. JSON. Closures. Class families with <code>super</code>, getters and statics. Not bad for one chapter."</p><p><b>The Neon Grid is saved.</b> Its lights will keep shining for you, any time you want to come back.</p>',
     theme: 'neon',
     challenges,
     levels,

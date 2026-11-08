@@ -23,6 +23,9 @@
     cs2_exc: { name: 'The Null Wraith', hp: 12, color: '#b59cff', kind: 'name', speed: 1.8, spits: true, horns: true },
     java2_brewline: { name: 'NullPointer Moth', hp: 9, color: '#e8dccb', kind: 'name', speed: 1.7, spits: true },
     java2_boiler: { name: 'The Unchecked Exception', hp: 12, color: '#ff6a3c', kind: 'type', speed: 1.6, spits: true, horns: true },
+    // Data Structures & Algorithms
+    dsa_stack: { name: 'Stack Overflow', hp: 10, color: '#ffa94d', kind: 'syntax', speed: 1.7, spits: true },
+    dsa_graph: { name: 'The Big O', hp: 14, color: '#4fd0a0', kind: 'type', speed: 1.8, spits: true, horns: true },
   };
 
   // Add the arena to the end of a level's map: checkpoint, a few platforms, the miniboss, then the portal.

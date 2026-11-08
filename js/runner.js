@@ -216,7 +216,11 @@
 
   const CodeRunner = {
     run(lang, code, opts) {
-      if (lang === 'javascript') return runJS(code, opts || {});
+      if (lang === 'javascript') {
+        opts = opts || {};
+        if (opts.callTests && root.Lang) opts = Object.assign({}, opts, { callTests: opts.callTests.map(t => Object.assign({}, t, { fn: root.Lang.testName(t.fn, 'javascript') })) });
+        return runJS(code, opts);
+      }
       if (lang === 'cpp' || lang === 'java' || lang === 'csharp') return runCLike(lang, code, opts || {});
       return runPython(code, opts || {});
     },

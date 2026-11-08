@@ -683,7 +683,7 @@
     },
     {
       id: 'py2_slice', name: 'Slice Shoals', topic: 'Slicing & f-strings',
-      blurb: 'Cut strings and lists into pieces with slices, and format text like a pro with f-strings.',
+      blurb: 'Cut strings and lists into pieces with slices, and line up text neatly with f-strings.',
       intro: `<p>The Slice Shoals are a maze of sandbanks. The locals cut paths through them with <b>slices</b>, and they write their signs with beautifully lined-up <b>f-strings</b>.</p>
         <p>"Squawk! A slice cuts out a piece," says Pip. "And f-strings can do much more than glue text together. They can round numbers and line things up in columns!"</p>
         <pre>word = "lighthouse"\nprint(word[:5])         # light\nprint(f"{3.14159:.2f}")  # 3.14</pre>`,
@@ -737,7 +737,7 @@
         <pre>name, gold = ("Ada", 12)\nprint(name, "has", gold)</pre>`,
       tutorial: [
         { title: 'Tuples',
-          body: '<p>A <b>tuple</b> is like a list with round brackets: <code>(3, 8)</code>. The big difference: a tuple <b>can\'t be changed</b> once made. That makes it perfect for things that belong together, like a position or a name and score.</p><p>Run this: reading works, but the last line causes an error.</p>',
+          body: '<p>A <b>tuple</b> is like a list with round brackets: <code>(3, 8)</code>. The big difference: a tuple <b>can\'t be changed</b> once made. That makes it a good fit for things that belong together, like a position or a name and score.</p><p>Run this: reading works, but the last line causes an error.</p>',
           code: `point = (3, 8)\nprint(point[0], point[1], len(point))\npoint[0] = 5`, expectError: true },
         { title: 'Unpacking',
           body: '<p><b>Unpacking</b> puts each value of a tuple (or list) into its own variable in one line. It even swaps two variables without a helper!</p><p>A <b>star</b> collects "all the rest" into a list.</p>',
@@ -749,7 +749,7 @@
           body: '<p><code>d.items()</code> gives each <b>(key, value)</b> pair of a dict, ready to unpack.</p><p><code>d[key]</code> crashes if the key is missing, but <code>d.get(key, default)</code> calmly gives you the default instead.</p>',
           code: `gold = {"Ada": 12, "Bo": 9}\nfor name, amount in gold.items():\n    print(f"{name} has {amount}")\nprint(gold.get("Ada", 0))\nprint(gold.get("Zed", 0))` },
         { title: 'Counting with a dict',
-          body: '<p>The classic counting trick: for each thing, store its <b>old count plus one</b>. <code>.get(thing, 0)</code> makes it work even the first time you see something.</p>',
+          body: '<p>A common counting trick: for each thing, store its <b>old count plus one</b>. <code>.get(thing, 0)</code> makes it work even the first time you see something.</p>',
           code: `counts = {}\nfor bird in ["gull", "crab", "gull", "tern", "gull"]:\n    counts[bird] = counts.get(bird, 0) + 1\nprint(counts)` },
         { title: 'Sorting by a key',
           body: '<p><code>sorted(..., key=...)</code> lets you choose <b>what</b> to compare. A <code>lambda</code> is a tiny one-line function: <code>lambda w: len(w)</code> means "given w, use len(w)".</p><p><code>reverse=True</code> puts the biggest first.</p>',
@@ -891,9 +891,9 @@
 
   GD.addChapter2('python', {
     title: 'The Pythonic Isles',
-    blurb: 'Sail to five islands and learn the tricks that make code truly Pythonic: comprehensions, slices, f-strings, tuples, exceptions and inheritance.',
+    blurb: 'Sail to five islands and learn the tricks that make code Pythonic: comprehensions, slices, f-strings, tuples, exceptions and inheritance.',
     outro: `<p>The <b>Boilerplate Fog</b> rolls back out to sea, and the Pythonic Isles shine again. Islanders cheer from every dock.</p>
-      <p>"Squawk! You write Python like a native now," says Pip. "Comprehensions, slices, f-strings, tuples, dicts, exceptions, inheritance. That's the real stuff!"</p>
+      <p>"Squawk! You write Python like a native now," says Pip. "Comprehensions, slices, f-strings, tuples, dicts, exceptions, inheritance. Not bad at all!"</p>
       <p>You've finished <b>Chapter 2</b>. Try the Isles again for every data bit, or explore another language's Chapter 2.</p>`,
     theme: 'isle',
     challenges,

@@ -766,7 +766,7 @@ public:
   GD.addChapter2('cpp', {
     title: 'The Iron Forge',
     blurb: 'Deep in the Iron Forge, learn what makes C++ C++: references, guarded classes, the STL with lambdas, overloading and virtual inheritance.',
-    outro: '<p>The last golem marches out of the <b>Iron Forge</b>, and the furnaces glow brighter than ever.</p><p>You learned to pass the real thing with <b>references</b>, to guard your data with <b>private</b> members and constructors, to let the <b>STL</b> and <b>lambdas</b> do the looping, to <b>overload</b> functions, and to command a whole army through one <b>virtual</b> base class. That is real, modern C++.</p><p>The smiths salute you, Master of the Forge!</p>',
+    outro: '<p>The last golem marches out of the <b>Iron Forge</b>, and the furnaces glow brighter than ever.</p><p>You learned to pass the real thing with <b>references</b>, to guard your data with <b>private</b> members and constructors, to let the <b>STL</b> and <b>lambdas</b> do the looping, to <b>overload</b> functions, and to command a whole army through one <b>virtual</b> base class.</p><p>The smiths salute you, Master of the Forge!</p>',
     theme: 'forge',
     challenges,
     levels,

@@ -29,7 +29,7 @@
 
   // ---------------------------------------------------------------- level intros (the story page)
   const intro = {
-    hello: '<p>Welcome to <b>Syntaxia</b>, a world built from code, and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>programs</b>. You chose <b>C++</b>, the language many game engines are built with. It is fast and strict: it wants every line written just right, and it will tell you exactly when something is off.</p><p>Every programmer\'s journey starts with the same two words...</p>',
+    hello: '<p>Welcome to <b>Syntaxia</b>, a world built from code, and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>programs</b>. You chose <b>C++</b>, the language many game engines are built with. It is fast and strict: it wants every line written just right, and it will tell you exactly when something is off.</p><p>Your first program is only two words long...</p>',
     vars: '<p>A <b>variable</b> is a named box that holds a value. In C++ every box also has a <b>type</b> that says what kind of value fits inside:</p>' +
       block('int planks = 7;\nstring name = "Ada";') +
       '<p>In Syntaxia, objects you pick up become variables you can use in your code! Collect the glowing boxes.</p>',
@@ -44,9 +44,9 @@
       '<p>The ' + c('int') + ' in front says what type of answer the function gives back, and ' + c('return') + ' sends that answer back to whoever called the function.</p>',
     classes: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>attributes</b>) and abilities (<b>methods</b>):</p>' +
       block('class Dog {\npublic:\n    string name;\n    Dog(string n) {\n        name = n;\n    }\n    string speak() {\n        return "Woof!";\n    }\n};\n\nDog rex("Rex");\ncout << rex.speak() << endl;') +
-      '<p>Forge a <b>weapon</b> or adopt a <b>pet</b>, or both! Master classes and you\'ll unlock <b>skill points</b> and the <b>open world</b>.</p>',
-    world: '<p>You\'ve mastered the basics. Now Syntaxia is yours to explore!</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul><p>Out here the game hands you <b>vectors</b> (lists), <b>strings</b> and a <b>map</b>. The tutorial shows the tools for each.</p>',
-    boss: '<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. Stay calm and debug!</p>',
+      '<p>Forge a <b>weapon</b> or adopt a <b>pet</b>, or both. Finish this level to unlock <b>skill points</b> and the <b>open world</b>.</p>',
+    world: '<p>You know the basics now, and the whole map is open.</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul><p>Out here the game hands you <b>vectors</b> (lists), <b>strings</b> and a <b>map</b>. The tutorial shows the tools for each.</p>',
+    boss: '<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. When that happens, read the error and fix it.</p>',
   };
 
   // ---------------------------------------------------------------- tutorials (pages after the story)
@@ -413,7 +413,7 @@
       'Print each colour in a vector of colours.',
       P('vector<string> colours = {"red", "blue"};\nfor (string c : colours) {\n    cout << c << endl;\n}')),
     charge: T(
-      '<p>A ' + c('while') + ' loop keeps going <b>as long as</b> its condition is true, which is perfect when you don\'t know how many times you\'ll need.</p><p>The battery is at ' + c('charge') + ' percent. While it\'s below 100: call ' + c('charge_up();') + ' and add 10 to ' + c('charge') + '. <i>(charge already exists, so no ' + c('int') + '.)</i></p><p>If you forget to change ' + c('charge') + ', the loop never ends!</p>',
+      '<p>A ' + c('while') + ' loop keeps going <b>as long as</b> its condition is true. Use it when you don\'t know how many times you\'ll need.</p><p>The battery is at ' + c('charge') + ' percent. While it\'s below 100: call ' + c('charge_up();') + ' and add 10 to ' + c('charge') + '. <i>(charge already exists, so no ' + c('int') + '.)</i></p><p>If you forget to change ' + c('charge') + ', the loop never ends!</p>',
       P('while (charge < 100) {\n    charge_up();\n    // don\'t forget to add 10 to charge!\n}\n'),
       ['Inside the loop, charge has to go up, or the loop never ends.', 'charge += 10; adds 10.'],
       'While water is below 50, print "pour" and add 20 to water.',
