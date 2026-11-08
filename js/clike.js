@@ -207,7 +207,7 @@
           } catch (e) { p = save; return { name, args: [], arr: 0 }; }
         }
         if (isOp('>')) next();
-        else if (isOp('>>')) { toks[p] = Object.assign({}, toks[p], { v: '>' }); }
+        else if (isOp('>>')) { toks.splice(p, 1, Object.assign({}, toks[p], { v: '>' }), Object.assign({}, toks[p], { v: '>' })); next(); }   // split for good, so a re-parse sees '> >'
         else if (isOp('>>=')) { toks[p] = Object.assign({}, toks[p], { v: '>=' }); }
         else { p = save; return { name, args: [], arr: 0, bad: true }; }
       }
@@ -980,7 +980,7 @@
       if (v instanceof CSB) return v.s;
       if (v instanceof CList) {
         if (id === 'java') return v.kind === 'array' ? `[${v.elem === 'int' ? 'I' : 'L' + (v.elem || 'Object')}@1b6d3586` : '[' + v.a.map(x => str(x, true)).join(', ') + ']';
-        if (id === 'csharp') return v.kind === 'array' ? `System.${v.elem === 'int' ? 'Int32' : v.elem === 'string' ? 'String' : 'Object'}[]` : `System.Collections.Generic.List\`1[System.${v.elem === 'int' ? 'Int32' : v.elem === 'string' ? 'String' : 'Object'}]`;
+        if (id === 'csharp') return v.kind === 'array' ? `System.${v.elem === 'int' ? 'Int32' : v.elem === 'string' ? 'String' : 'Object'}[]` : `System.Collections.Generic.${/^(Stack|Queue)$/.test(v.kind) ? v.kind : 'List'}\`1[System.${v.elem === 'int' ? 'Int32' : v.elem === 'string' ? 'String' : 'Object'}]`;
         throw E('TypeError', D.msg.operands('<<', 'std::ostream', 'std::vector'));
       }
       if (v instanceof CMap) {
@@ -1040,6 +1040,7 @@
         if (v instanceof CSB) fail();
         fail();
       }
+      if (id === 'cpp' && v instanceof CMap && ty.args && ty.args[1]) v.vty = ty.args[1];   // map<string, vector<int>>: m[k] on a new key starts as an empty vector
       return v;
     }
     function defaultFor(ty) {
@@ -1052,9 +1053,10 @@
       if (t === 'char') return new Chr('\0');
       if (STR_T.has(t)) return id === 'cpp' ? '' : null;
       if (id === 'cpp') {
+        if (/^(stack|queue)$/.test(t)) return new CList(t, [], ty.args[0] && ty.args[0].name);
         if (/^(vector|list|deque|set)$/.test(t)) return new CList('vector', [], ty.args[0] && ty.args[0].name);
         if (/^(map|unordered_map)$/.test(t)) return new CMap('map');
-        if (classes.has(t)) return construct(classes.get(t), []);
+        if (classes.has(t) && !ty.ref) return construct(classes.get(t), []);   // a Node* field starts out empty, not as a new Node
       }
       return null;
     }
@@ -1105,7 +1107,7 @@
     function clone(v) {
       if (id !== 'cpp') return v;
       if (v instanceof CList) return new CList(v.kind, v.a.map(clone), v.elem);
-      if (v instanceof CMap) return new CMap(v.kind, new Map([...v.m].map(([k, x]) => [k, clone(x)])));
+      if (v instanceof CMap) return Object.assign(new CMap(v.kind, new Map([...v.m].map(([k, x]) => [k, clone(x)]))), v.vty ? { vty: v.vty } : {}, v.charKeys ? { charKeys: true } : {});
       if (v instanceof CObj) { const o = new CObj(v.cls); for (const [k, x] of v.f) o.f.set(k, clone(x)); return o; }
       return v;
     }
@@ -1114,7 +1116,9 @@
       if (a instanceof Chr && typeof b === 'string') return a.c === b;
       return a === b || (a === null && b === undefined);
     }
-    const keyOf = (k) => k instanceof Chr ? k.c : k instanceof Dbl ? k.v : k;
+    const keyOf = (k, m) => k instanceof Chr ? ((m && (m.charKeys = true)), k.c) : k instanceof Dbl ? k.v : k;
+    // a map with char keys hands its keys back as chars
+    const outKey = (m, k) => m && m.charKeys && typeof k === 'string' ? new Chr(k) : k;
 
     // ---------------- classes & objects
     function findMethod(cls, name, argc, vals) {
@@ -1443,7 +1447,7 @@
           let items;
           if (coll instanceof CList) items = coll.a.slice();
           else if (typeof coll === 'string') items = [...coll].map(c => new Chr(c));
-          else if (coll instanceof CMap) { items = [...coll.m.entries()].map(([k, v]) => ({ __pair: true, k, v })); if (id === 'cpp') items.sort((x, y) => cmp(x.k, y.k)); }
+          else if (coll instanceof CMap) { items = [...coll.m.entries()].map(([k, v]) => ({ __pair: true, k: outKey(coll, k), v })); if (id === 'cpp') items.sort((x, y) => cmp(x.k, y.k)); }
           else if (coll && coll.__keys) items = coll.__keys;
           else throw E('TypeError', id === 'java' ? 'for-each not applicable to expression type' : id === 'csharp' ? `foreach statement cannot operate on variables of type '${tname(coll)}'` : `'begin' was not declared in this scope (cannot loop over ${tname(coll)})`);
           const byRef = id === 'cpp' && s.ty && s.ty.ref && (coll instanceof CList || typeof coll === 'string');
@@ -1848,7 +1852,7 @@
       }
       if (obj instanceof CList && name === 'Count' && id === 'csharp') return obj.a.length;
       if (obj instanceof CMap && name === 'Count' && id === 'csharp') return obj.m.size;
-      if (obj instanceof CMap && name === 'Keys') return new CList('List', [...obj.m.keys()]);
+      if (obj instanceof CMap && name === 'Keys') return new CList('List', [...obj.m.keys()].map(k => outKey(obj, k)));
       if (obj instanceof CMap && name === 'Values') return new CList('List', [...obj.m.values()]);
       return { __bound: obj, name };
     }
@@ -2011,7 +2015,66 @@
       }
       bad();
     }
+    // stacks and queues: C++ stack/queue, C# Stack/Queue, Java Stack/ArrayDeque/LinkedList.
+    // The top of a stack is at the end, except in C# and in a Java ArrayDeque/LinkedList, where the top/front is a[0].
+    const SQ_NONE = {};
+    function sqMethod(l, name, a) {
+      const k = l.kind, n = l.a.length, last = l.a[n - 1], first = l.a[0];
+      const empty = (what) => { throw E('RuntimeError', id === 'java' ? (k === 'Stack' ? 'java.util.EmptyStackException' : 'java.util.NoSuchElementException') : id === 'csharp' ? `System.InvalidOperationException: ${k} empty.` : `Segmentation fault (${what} on an empty ${k})`); };
+      const el = (v) => l.elem ? coerce(v, { name: l.elem === 'Integer' ? 'int' : l.elem === 'Character' ? 'char' : l.elem, args: [] }) : v;
+      if (id === 'cpp') {
+        switch (name) {
+          case 'push': case 'emplace': l.a.push(clone(el(a[0]))); return null;
+          case 'pop': if (!n) empty('pop'); if (k === 'stack') l.a.pop(); else l.a.shift(); return null;
+          case 'top': if (k !== 'stack') break; if (!n) empty('top'); return last;
+          case 'front': if (k !== 'queue') break; if (!n) empty('front'); return first;
+          case 'back': if (k !== 'queue') break; if (!n) empty('back'); return last;
+          case 'empty': return n === 0;
+          case 'size': return n;
+        }
+        throw E('NameError', D.msg.noMember('std::' + k, name));
+      }
+      if (id === 'csharp') {
+        switch (name) {
+          case 'Push': if (k !== 'Stack') break; l.a.unshift(el(a[0])); return null;
+          case 'Pop': if (k !== 'Stack') break; if (!n) empty(); return l.a.shift();
+          case 'Enqueue': if (k !== 'Queue') break; l.a.push(el(a[0])); return null;
+          case 'Dequeue': if (k !== 'Queue') break; if (!n) empty(); return l.a.shift();
+          case 'Peek': if (!n) empty(); return first;
+          case 'Contains': return l.a.some(x => eq(x, a[0]));
+          case 'Clear': l.a.length = 0; return null;
+          case 'ToArray': return new CList('array', l.a.slice(), l.elem);
+        }
+        throw E('NameError', D.msg.noMember(k, name));
+      }
+      if (k === 'Stack') {   // java.util.Stack (a Vector: the list methods work too)
+        switch (name) {
+          case 'push': l.a.push(el(a[0])); return a[0];
+          case 'pop': if (!n) empty(); return l.a.pop();
+          case 'peek': if (!n) empty(); return last;
+          case 'empty': case 'isEmpty': return n === 0;
+        }
+        return SQ_NONE;
+      }
+      switch (name) {   // Java ArrayDeque / LinkedList used as a Deque or Queue: a[0] is the front
+        case 'push': case 'addFirst': l.a.unshift(el(a[0])); return null;
+        case 'offerFirst': l.a.unshift(el(a[0])); return true;
+        case 'addLast': l.a.push(el(a[0])); return null;
+        case 'offer': case 'offerLast': l.a.push(el(a[0])); return true;
+        case 'add': if (a.length === 1) { l.a.push(el(a[0])); return true; } break;
+        case 'pop': case 'removeFirst': case 'element': case 'getFirst': if (!n) empty(); return name === 'element' || name === 'getFirst' ? first : l.a.shift();
+        case 'remove': if (a.length === 0) { if (!n) empty(); return l.a.shift(); } break;
+        case 'removeLast': case 'getLast': if (!n) empty(); return name === 'getLast' ? last : l.a.pop();
+        case 'poll': case 'pollFirst': return n ? l.a.shift() : null;
+        case 'pollLast': return n ? l.a.pop() : null;
+        case 'peek': case 'peekFirst': return n ? first : null;
+        case 'peekLast': return n ? last : null;
+      }
+      if (k === 'ArrayDeque' && /^(get|set|indexOf)$/.test(name)) throw E('NameError', D.msg.noMember(k, name));
+      return SQ_NONE;
+    }
     function listMethod(l, name, a, node) {
+      if (/^(stack|queue|Stack|Queue|ArrayDeque|LinkedList)$/.test(l.kind) && (id !== 'cpp' || /^(stack|queue)$/.test(l.kind))) { const r = sqMethod(l, name, a); if (r !== SQ_NONE) return r; }
       const bad = () => { throw E('NameError', D.msg.noMember(tname(l), name)); };
       const chk = (i) => { if (!Number.isInteger(i) || i < 0 || i >= l.a.length) throw E('RuntimeError', D.msg.index(i, l.a.length)); return i; };
       const coerceElem = (v) => l.elem ? coerce(v, { name: l.elem === 'Integer' ? 'int' : l.elem, args: [] }) : v;
@@ -2107,7 +2170,7 @@
     }
     function mapMethod(m, name, a) {
       const bad = () => { throw E('NameError', D.msg.noMember(tname(m), name)); };
-      const k = a.length ? keyOf(a[0]) : null;
+      const k = a.length ? keyOf(a[0], m) : null;
       if (id === 'cpp') {
         switch (name) {
           case 'at': if (!m.m.has(k)) throw E('RuntimeError', D.msg.keyMissing(k)); return m.m.get(k);
@@ -2129,9 +2192,9 @@
           case 'containsKey': return m.m.has(k);
           case 'size': return m.m.size;
           case 'remove': m.m.delete(k); return null;
-          case 'keySet': return new CList('ArrayList', [...m.m.keys()]);
+          case 'keySet': return new CList('ArrayList', [...m.m.keys()].map(kk => outKey(m, kk)));
           case 'values': return new CList('ArrayList', [...m.m.values()]);
-          case 'entrySet': return { __keys: [...m.m.entries()].map(([kk, v]) => ({ __pair: true, k: kk, v })) };
+          case 'entrySet': return { __keys: [...m.m.entries()].map(([kk, v]) => ({ __pair: true, k: outKey(m, kk), v })) };
           case 'forEach': { const f2 = fnOf(a[0]); for (const [kk, v] of [...m.m.entries()]) f2(kk, v); return null; }
           case 'merge': { const f2 = fnOf(a[2]); m.m.set(k, m.m.has(k) ? f2(m.m.get(k), a[1]) : a[1]); return null; }
           case 'putIfAbsent': if (!m.m.has(k)) m.m.set(k, a[1]); return null;
@@ -2172,7 +2235,7 @@
           if (!Number.isInteger(n) || n < 0 || n >= obj.a.length) throw E('RuntimeError', id === 'csharp' && obj.kind === 'array' ? 'System.IndexOutOfRangeException: Index was outside the bounds of the array.' : D.msg.index(n, obj.a.length));
           obj.a[n] = obj.elem ? coerce(v, { name: obj.elem === 'Integer' ? 'int' : obj.elem, args: [] }) : v; return;
         }
-        if (obj instanceof CMap) { obj.m.set(keyOf(i), v); return; }
+        if (obj instanceof CMap) { obj.m.set(keyOf(i, obj), v); return; }
         if (typeof obj === 'string') {
           if (id !== 'cpp') throw E('TypeError', id === 'java' ? 'array required, but String found' : "Property or indexer 'string.this[int]' cannot be assigned to -- it is read only");
           const n = nv(i);
@@ -2347,9 +2410,9 @@
             return obj.a[n];
           }
           if (obj instanceof CMap) {
-            const k = keyOf(i);
+            const k = keyOf(i, obj);
             if (id === 'java') throw E('TypeError', 'array required, but HashMap found — use .get(key)');
-            if (!obj.m.has(k)) { if (id === 'csharp') throw E('RuntimeError', D.msg.keyMissing(k)); obj.m.set(k, 0); }
+            if (!obj.m.has(k)) { if (id === 'csharp') throw E('RuntimeError', D.msg.keyMissing(k)); obj.m.set(k, obj.vty ? defaultFor(obj.vty) : 0); }
             return obj.m.get(k);
           }
           if (typeof obj === 'string') {
@@ -2368,8 +2431,12 @@
             if (kc.isIface || ((id === 'csharp' || id === 'java') && kc.decl && kc.decl.isAbstract)) throw E('TypeError', id === 'java' ? `${t} is abstract; cannot be instantiated` : `Cannot create an instance of the abstract type or interface '${t}'`);
             return construct(kc, args, e.line);
           }
+          if ((id === 'csharp' && /^(Stack|Queue)$/.test(t)) || (id === 'java' && /^(Stack|ArrayDeque)$/.test(t))) {   // stacks and queues (see sqMethod)
+            const src = args[0] instanceof CList ? args[0].a.slice() : [];
+            return new CList(t, id === 'csharp' && t === 'Stack' ? src.reverse() : src, e.ty.args[0] && e.ty.args[0].name);
+          }
           if (/^(ArrayList|List|LinkedList|Vector)$/.test(t)) {
-            const l = new CList(id === 'java' ? 'ArrayList' : 'List', args[0] instanceof CList ? args[0].a.slice() : [], e.ty.args[0] && e.ty.args[0].name);
+            const l = new CList(id === 'java' ? (t === 'LinkedList' ? 'LinkedList' : 'ArrayList') : 'List', args[0] instanceof CList ? args[0].a.slice() : [], e.ty.args[0] && e.ty.args[0].name);
             if (e.init) l.a = e.init.items.map(x => evalExpr(x, scope));
             return l;
           }
@@ -2728,7 +2795,9 @@
         if (!f) { result.calls.push({ error: `NameError: ${name} is not defined` }); continue; }
         try {
           const before = out.length;
-          const v = callFunc(f, (t.args || []).map(fromHost), null, fcls);
+          // a test list passed to an array parameter (int[] / String[]) arrives as an array
+          const targs = (t.args || []).map(fromHost).map((a, i) => { const p = f.params && f.params[i]; if (a instanceof CList && p && p.ty && p.ty.arr === 1 && id !== 'cpp') { a.kind = 'array'; a.elem = p.ty.name; } return a; });
+          const v = callFunc(f, targs, null, fcls);
           result.calls.push({ value: toHost(v), printed: out.slice(before).replace(/\n$/, '') });
         } catch (e) {
           if (!(e instanceof CError)) throw e;
