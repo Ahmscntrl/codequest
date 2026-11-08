@@ -36,6 +36,20 @@ Touch controls appear automatically on phones and tablets.
 
 Each save opens on a little map of the course: one stop per level, labelled with the topic it teaches. Your hero stands on the level you're up to. Click any level you've unlocked to play it, whether that's continuing where you left off or replaying an old one. Levels you haven't reached yet are locked. In-game, the label at the top left shows the current level and topic. Click it or press **M** to open the map.
 
+## Chapter 2
+
+Beat Segfault and a **Chapter 2** tab opens on the level map. Each language gets its own chapter, with its own map, story and topics that go deep into that language:
+
+| Language | Chapter | Topics |
+| --- | --- | --- |
+| Python | The Pythonic Isles | comprehensions, slicing & f-strings, tuples & dicts, exceptions, inheritance & `__str__` |
+| JavaScript | The Neon Grid | map/filter/reduce, destructuring & spread, objects & JSON, closures & callbacks, classes (extends, getters, static) |
+| C++ | The Iron Forge | references, encapsulation, STL algorithms & lambdas, overloading, inheritance & virtual |
+| C# | The Crystal Spire | properties, LINQ, interfaces & inheritance, exceptions |
+| Java | The Coffee Works | encapsulation & static, inheritance & @Override, interfaces & abstract classes, collections & lambdas, exceptions |
+
+Chapter 2 keeps its own progress and checkpoints. See `docs/CHAPTER2.md` to write or change one.
+
 ## Features (from the original idea list)
 
 - **A puzzle platformer where you write scripts in a language of your choice.** Python runs on a small Python interpreter built for the game (`js/python.js`). JavaScript runs in the browser in a sandboxed Web Worker. C++, C# and Java run on one C-family interpreter (`js/clike.js`) with a dialect per language, real program shapes (`int main()`, `public class Main`, C# top-level statements) and compiler-style error messages. Every terminal, tutorial, hint and glitch exists in all five languages.
@@ -69,6 +83,7 @@ js/runner.js      runs player code: Python interpreter or JS in a Web Worker
 js/clike.js       C++ / C# / Java interpreter
 js/langs.js       naming and printing rules per language
 js/content/       C++, C# and Java course content (see docs/ADDING_A_LANGUAGE.md)
+js/chapter2/      one Chapter 2 per language (see docs/CHAPTER2.md)
 js/levels.js      level maps, terminal challenges, glitch snippets, skills
 js/teach.js       tutorials, hints and similar-problem examples
 js/art.js         procedural drawing: hero, i, pets, bugs, boss

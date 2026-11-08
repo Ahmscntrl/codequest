@@ -13,6 +13,11 @@ for (const lang of ['cpp', 'csharp', 'java']) {
   const f = path.join(__dirname, '../js/content', lang + '.js');
   if (fs.existsSync(f)) { require(f); LANGS.push(lang); }
 }
+// Chapter 2: one file per language
+for (const lang of ['python', 'javascript', 'cpp', 'csharp', 'java']) {
+  const f = path.join(__dirname, '../js/chapter2', lang + '.js');
+  if (fs.existsSync(f)) require(f);
+}
 const only = process.env.LANGS ? process.env.LANGS.split(',') : null;
 const SOL = require('./solutions.js');
 for (const lang of ['cpp', 'csharp', 'java']) {
@@ -21,6 +26,13 @@ for (const lang of ['cpp', 'csharp', 'java']) {
   const extra = require(f);
   for (const [id, code] of Object.entries(extra)) { SOL[id] = SOL[id] || {}; SOL[id][lang] = code; }
 }
+for (const lang of ['python', 'javascript', 'cpp', 'csharp', 'java']) {
+  const f = path.join(__dirname, 'solutions', 'ch2', lang + '.js');
+  if (!fs.existsSync(f)) continue;
+  for (const [id, code] of Object.entries(require(f))) { SOL[id] = SOL[id] || {}; SOL[id][lang] = code; }
+}
+// the levels to test in a language: Chapter 1, then that language's Chapter 2
+const levelsOf = (lang) => globalThis.GameData.LEVELS.concat(globalThis.GameData.CHAPTER2[lang] ? globalThis.GameData.CHAPTER2[lang].levels : []);
 // game-provided variables use each language's naming style (my_name -> myName ...)
 function globalsFor(id, lang, testGlobals, vars) {
   const g = {};
@@ -41,4 +53,4 @@ async function runChallenge(id, lang, code) {
   const res = ch.check(runs, ctx, code);
   return Object.assign({ runs }, res);
 }
-module.exports = { LANGS: only ? LANGS.filter(l => only.includes(l)) : LANGS, SOL, runChallenge, GameData: globalThis.GameData };
+module.exports = { levelsOf, LANGS: only ? LANGS.filter(l => only.includes(l)) : LANGS, SOL, runChallenge, GameData: globalThis.GameData };

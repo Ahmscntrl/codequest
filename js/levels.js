@@ -1523,5 +1523,8 @@
     { id: 'overclock', name: 'Overclock', icon: 'OC', cost: 1, max: 2, desc: 'Compiler Cannon recharges faster & hits harder.' },
   ];
 
-  root.GameData = { LEVELS, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML, stripComments };
+  // building blocks for Chapter 2 content files (js/chapter2/<lang>.js)
+  const build = { MapBuilder, mapOf, room, OB, TR, gate };
+  const helpers = { c, fn, show, lines, lastLine, nothing, actionsOf, hasLoop, stripComments, printEx, tn, checkCalls, escapeHTML, isC, selfWord, firstErr };
+  root.GameData = { LEVELS, CH, SKILLS, GLITCHES, SNIPPETS, escapeHTML, stripComments, build, helpers };
 })(typeof window !== 'undefined' ? window : globalThis);
