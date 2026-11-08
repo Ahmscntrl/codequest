@@ -2130,7 +2130,7 @@
           case 'size': return l.a.length;
           case 'isEmpty': return l.a.length === 0;
           case 'remove': {
-            if (typeof a[0] === 'number' && l.elem !== 'String') { const i = chk(a[0]); return l.a.splice(i, 1)[0]; }
+            if (typeof a[0] === 'number') { const i = chk(a[0]); return l.a.splice(i, 1)[0]; }   // remove(int) is by index, also on an ArrayList<String>
             const i = l.a.findIndex(x => eq(x, a[0])); if (i >= 0) { l.a.splice(i, 1); return true; } return false;
           }
           case 'contains': return l.a.some(x => eq(x, a[0]));
