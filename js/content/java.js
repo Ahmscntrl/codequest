@@ -24,14 +24,14 @@
 
   // ================================================================ level intros (story pages)
   const intro = {
-    hello: `<p>Welcome to <b>Syntaxia</b>, a world built from code — and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. You have chosen <b>Java</b>, the language of Android phones, big servers and Minecraft. Every programmer's journey starts with the same two words...</p>`,
+    hello: `<p>Welcome to <b>Syntaxia</b>, a world built from code. Lately it has been getting eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. You have chosen <b>Java</b>, the language of Android phones, big servers and Minecraft. Your first program is only two words long...</p>`,
     vars: `<p>A <b>variable</b> is a named box that holds a value. In Java, every box also has a <b>type</b> written in front of it, saying what kind of value it holds:</p><pre>int planks = 7;\nString name = "Ada";</pre><p>In Syntaxia, objects you pick up become variables you can use in your code! Collect the glowing boxes.</p>`,
-    ifs: `<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if (hp &lt; 3) {\n    System.out.println("Heal!");\n} else if (hp == 3) {\n    System.out.println("Okay");\n} else {\n    System.out.println("Strong!");\n}</pre><p>Notice the condition in <b>( round brackets )</b> and the code inside <b>{ curly braces }</b> — that's how Java knows what belongs inside the if.</p><p><b>Bugs</b> live here. Jump on them to squash them — if one bites you, it puts an <b>error in your code</b>!</p>`,
+    ifs: `<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if (hp &lt; 3) {\n    System.out.println("Heal!");\n} else if (hp == 3) {\n    System.out.println("Okay");\n} else {\n    System.out.println("Strong!");\n}</pre><p>Notice the condition in <b>( round brackets )</b> and the code inside <b>{ curly braces }</b>. That's how Java knows what belongs inside the if.</p><p><b>Bugs</b> live here. Jump on them to squash them. If one bites you, it puts an <b>error in your code</b>!</p>`,
     loops: `<p>A <b>loop</b> repeats code so you don't have to:</p><pre>for (int i = 0; i &lt; 3; i++) {\n    System.out.println(i);   // 0, 1, 2\n}</pre><p>That little <b>i</b> is the loop's counter... Legend says a tiny creature named <b>i</b> lives in these caves. Maybe you'll find them!</p>`,
     funcs: `<p>A <b>function</b> is a named recipe. In Java, functions are called <b>methods</b>. Write one once inside <code>Main</code>, use it as often as you like:</p><pre>static int square(int x) {\n    return x * x;\n}\n\n// inside main:\nSystem.out.println(square(4));  // 16</pre><p><code>return</code> sends the answer back to whoever called the method.</p>`,
-    classes: `<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>fields</b>) and abilities (<b>methods</b>):</p><pre>class Dog {\n    String name;\n\n    Dog(String name) {\n        this.name = name;\n    }\n\n    String speak() {\n        return "Woof!";\n    }\n}\n\n// inside main:\nDog rex = new Dog("Rex");\nSystem.out.println(rex.speak());</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b> — or both! Master classes and you'll unlock <b>skill points</b> and the <b>open world</b>.</p>`,
-    world: `<p>You've mastered the basics. Now Syntaxia is yours to explore!</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King's lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul>`,
-    boss: `<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. Stay calm and debug!</p>`,
+    classes: `<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>fields</b>) and abilities (<b>methods</b>):</p><pre>class Dog {\n    String name;\n\n    Dog(String name) {\n        this.name = name;\n    }\n\n    String speak() {\n        return "Woof!";\n    }\n}\n\n// inside main:\nDog rex = new Dog("Rex");\nSystem.out.println(rex.speak());</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b>, or both. Finish this level to unlock <b>skill points</b> and the <b>open world</b>.</p>`,
+    world: `<p>You know the basics now, and the whole map is open.</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King's lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul>`,
+    boss: `<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. When that happens, read the error and fix it.</p>`,
   };
 
   // ================================================================ tutorials
@@ -39,22 +39,22 @@
     // ------------------------------------------------------------ 1. printing
     hello: [
       page('Your first command: System.out.println',
-        `<p><code>System.out.println(...)</code> makes the computer <b>show</b> something. Whatever you put inside the brackets appears in the output, on its own line.</p><p>Press <b>Run</b>. Then change the words and run it again — this box is yours to play with.</p>`,
+        `<p><code>System.out.println(...)</code> makes the computer <b>show</b> something. Whatever you put inside the brackets appears in the output, on its own line.</p><p>Press <b>Run</b>. Then change the words and run it again. You can't break anything here.</p>`,
         M('System.out.println("Hi there!");')),
       page('The shape of a Java program',
         `<p>Every Java program lives inside a <b>class</b> called <code>Main</code>, and starts running inside <code>main</code>:</p><pre>public class Main {\n    public static void main(String[] args) {\n        // your code goes here\n    }\n}</pre><p>For now, think of those lines as the frame of a picture: you write your code <b>between the inner curly braces</b>. Every <code>{</code> needs a matching <code>}</code>. Lines starting with <code>//</code> are <b>comments</b>: notes for humans that the computer skips.</p>`,
         M('// This is a comment. The computer ignores it.\nSystem.out.println("Inside main!");')),
       page('Text needs quotes',
-        `<p>Text (programmers call it a <b>String</b>) must be wrapped in double quotes <code>"like this"</code>. Without quotes the computer thinks the words are names of things — and gets confused.</p><p>Run this. The second line causes an <b>error</b>. Fix it by adding quotes, then run again.</p>`,
+        `<p>Text (programmers call it a <b>String</b>) must be wrapped in double quotes <code>"like this"</code>. Without quotes the computer thinks the words are names of things and gets confused.</p><p>Run this. The second line causes an <b>error</b>. Fix it by adding quotes, then run again.</p>`,
         M('System.out.println("I am text");\nSystem.out.println(I am not text);'), { expectError: true }),
       page('Semicolons end commands',
-        `<p>In Java, every command ends with a <b>semicolon</b> <code>;</code> — like a full stop at the end of a sentence. Forget one and Java refuses to run the program.</p><p>Run this to see the error, then add the missing <code>;</code> at the end of the second line.</p>`,
+        `<p>In Java, every command ends with a <b>semicolon</b> <code>;</code>, like a full stop at the end of a sentence. Forget one and Java refuses to run the program.</p><p>Run this to see the error, then add the missing <code>;</code> at the end of the second line.</p>`,
         M('System.out.println("One");\nSystem.out.println("Two")\nSystem.out.println("Three");'), { expectError: true }),
       page('Top to bottom',
         `<p>Code runs <b>one line at a time, from top to bottom</b>. Every <code>println</code> starts a new line of output.</p><p>Try swapping two lines and see how the output changes.</p>`,
         M('System.out.println("1. Wake up");\nSystem.out.println("2. Write code");\nSystem.out.println("3. Save the world");')),
       page('Gluing text with +',
-        `<p>The <code>+</code> sign <b>glues</b> pieces of text together. It doesn't add spaces for you — if you want a space, put it inside the quotes.</p>`,
+        `<p>The <code>+</code> sign <b>glues</b> pieces of text together. It doesn't add spaces for you. If you want a space, put it inside the quotes.</p>`,
         M('System.out.println("Code" + "Quest");\nSystem.out.println("Code " + "Quest");\nSystem.out.println("Ha" + "Ha" + "Ha");')),
       page('Numbers and maths',
         `<p>Numbers <b>don't</b> use quotes. Without quotes, the computer does the maths for you:</p><ul><li><code>+</code> add &nbsp; <code>-</code> subtract</li><li><code>*</code> multiply &nbsp; <code>/</code> divide</li></ul><p>Look closely at <code>9 / 2</code>: Java shows <b>4</b>, not 4.5! Dividing two whole numbers gives a whole number (the rest is thrown away). Write <code>9.0 / 2</code> to get 4.5.</p><p>On the last line, <code>"2 + 3"</code> has quotes, so it's just text.</p>`,
@@ -81,28 +81,28 @@
     // ------------------------------------------------------------ 2. variables
     vars: [
       page('Making a variable',
-        `<p>A <b>variable</b> is a labelled box that stores a value so you can use it later.</p><p>In Java you write the <b>type</b> first, then the <b>name</b>, then <code>=</code> and the value. The <code>=</code> sign means <b>"store this in the box"</b> — it's not the maths "equals".</p><pre>String name = "Ada";</pre>`,
+        `<p>A <b>variable</b> is a labelled box that stores a value so you can use it later.</p><p>In Java you write the <b>type</b> first, then the <b>name</b>, then <code>=</code> and the value. The <code>=</code> sign means <b>"store this in the box"</b>. It's not the maths "equals".</p><pre>String name = "Ada";</pre>`,
         M('String name = "Ada";\nSystem.out.println(name);')),
       page('The name vs. the text',
         `<p>Without quotes, <code>color</code> means <b>"look inside the box called color"</b>. With quotes, <code>"color"</code> is just the word itself.</p><p>Run it and compare the two lines.</p>`,
         M('String color = "red";\nSystem.out.println(color);\nSystem.out.println("color");')),
       page('Kinds of values',
-        `<p>Every box has a <b>type</b> that says what can go inside:</p><ul><li><code>String</code>: text, in quotes — <code>"Ada"</code> (capital S!)</li><li><code>int</code>: a whole number — <code>5</code></li><li><code>double</code>: a number with a decimal point — <code>2.5</code></li><li><code>boolean</code>: a yes/no value — <code>true</code> or <code>false</code> (all lowercase, no quotes)</li></ul><p>Careful: <code>"5"</code> in quotes is <i>text</i> that happens to look like a number!</p>`,
+        `<p>Every box has a <b>type</b> that says what can go inside:</p><ul><li><code>String</code>: text, in quotes, like <code>"Ada"</code> (capital S!)</li><li><code>int</code>: a whole number, like <code>5</code></li><li><code>double</code>: a number with a decimal point, like <code>2.5</code></li><li><code>boolean</code>: a yes/no value, <code>true</code> or <code>false</code> (all lowercase, no quotes)</li></ul><p>Careful: <code>"5"</code> in quotes is <i>text</i> that happens to look like a number!</p>`,
         M('String name = "Ada";\nint level = 5;\ndouble speed = 2.5;\nboolean alive = true;\nSystem.out.println(name + " " + level + " " + speed + " " + alive);')),
       page('Types are strict',
         `<p>Java checks that every value fits its box. A text value can't go into an <code>int</code> box, even if it looks like a number.</p><p>Run this to see the error, then fix it by removing the quotes around 5.</p>`,
         M('int level = "5";\nSystem.out.println(level);'), { expectError: true }),
       page('Maths with variables',
-        `<p>You can do maths with the values inside boxes — and store the answer in a <b>new</b> box.</p><p>Change <code>width</code> and run again: the area updates automatically. That's the power of variables!</p>`,
+        `<p>You can do maths with the values inside boxes, and store the answer in a <b>new</b> box.</p><p>Change <code>width</code> and run again: the area updates on its own.</p>`,
         M('int width = 4;\nint height = 3;\nint area = width * height;\nSystem.out.println(area);')),
       page('Changing a variable',
-        `<p>A box can get a <b>new value</b>. This line reads the old score, adds 5, and stores the result back in the same box:</p><pre>score = score + 5;</pre><p>The shortcut <code>score += 5;</code> does exactly the same thing, and <code>score++;</code> adds 1. <b>Only write the type the first time</b> — after that, the box already exists.</p>`,
+        `<p>A box can get a <b>new value</b>. This line reads the old score, adds 5, and stores the result back in the same box:</p><pre>score = score + 5;</pre><p>The shortcut <code>score += 5;</code> does exactly the same thing, and <code>score++;</code> adds 1. <b>Only write the type the first time.</b> After that, the box already exists.</p>`,
         M('int score = 10;\nSystem.out.println(score);\nscore = score + 5;\nSystem.out.println(score);\nscore += 1;\nSystem.out.println(score);')),
       page('Mixing text and numbers',
         `<p>When you glue a String and a number with <code>+</code>, Java turns the number into text for you. Just remember the spaces: they only appear if you put them inside the quotes.</p>`,
         M('int coins = 7;\nString hero = "Ada";\nSystem.out.println("Coins: " + coins);\nSystem.out.println(hero + " has " + coins + " coins");')),
       page('Objects become variables',
-        `<p>In Syntaxia, glowing boxes you walk into become <b>variables</b> you can use in any terminal. They appear in the <b>Variables</b> panel in the top-right corner, showing their name and what's inside.</p><p>The game has already created those boxes for you, so use them by name — <b>don't</b> write a type like <code>int</code> in front of them again.</p>`),
+        `<p>In Syntaxia, glowing boxes you walk into become <b>variables</b> you can use in any terminal. They appear in the <b>Variables</b> panel in the top-right corner, showing their name and what's inside.</p><p>The game has already created those boxes for you, so use them by name. <b>Don't</b> write a type like <code>int</code> in front of them again.</p>`),
       page('Cheat sheet',
         cheat([
           ['int x = 5;', 'make a variable (type, name, value)'],
@@ -122,7 +122,7 @@
         `<p>This trips up everyone at first:</p><ul><li><code>=</code> (one) <b>stores</b> a value in a variable</li><li><code>==</code> (two) <b>asks</b> "are these equal?"</li></ul>`,
         M('int x = 5;                    // store 5 in x\nSystem.out.println(x == 5);   // is x equal to 5?\nSystem.out.println(x == 9);   // is x equal to 9?')),
       page('if: do something only sometimes',
-        `<p><code>if</code> runs code <b>only when</b> the condition is true. The condition goes in <b>( round brackets )</b> and the code inside goes between <b>{ curly braces }</b>. There's no semicolon after the <code>)</code>.</p><p>Run it, then change <code>hp</code> to 50 and run again — the warning disappears, but "Done checking" always prints.</p>`,
+        `<p><code>if</code> runs code <b>only when</b> the condition is true. The condition goes in <b>( round brackets )</b> and the code inside goes between <b>{ curly braces }</b>. There's no semicolon after the <code>)</code>.</p><p>Run it, then change <code>hp</code> to 50 and run again. The warning disappears, but "Done checking" always prints.</p>`,
         M('int hp = 20;\nif (hp < 30) {\n    System.out.println("Low health!");\n}\nSystem.out.println("Done checking");')),
       page('else: otherwise...',
         `<p><code>else</code> is the plan B: it runs when the condition is <b>false</b>. Exactly one of the two blocks runs, never both.</p>`,
@@ -134,10 +134,10 @@
         `<p>For numbers, use <code>==</code>. For <b>Strings</b>, Java programmers use <code>.equals(...)</code> instead:</p><pre>door.equals("open")</pre><p>It asks "does this text have exactly the same letters?" (capitals matter). Using <code>==</code> on text can give surprising answers in real Java programs, so get into the <code>.equals</code> habit now.</p>`,
         M('String door = "locked";\nif (door.equals("open")) {\n    System.out.println("Walk in");\n} else {\n    System.out.println("Find a key");\n}\nSystem.out.println(door.equals("Locked"));')),
       page('The remainder: %',
-        `<p><code>%</code> gives the <b>remainder</b> after dividing. <code>7 % 2</code> is 1 (7 = 2+2+2, with 1 left over).</p><p>If <code>n % 2</code> is 0, nothing is left over — so <code>n</code> is <b>even</b>.</p>`,
+        `<p><code>%</code> gives the <b>remainder</b> after dividing. <code>7 % 2</code> is 1 (7 = 2+2+2, with 1 left over).</p><p>If <code>n % 2</code> is 0, nothing is left over, so <code>n</code> is <b>even</b>.</p>`,
         M('System.out.println(7 % 2);\nSystem.out.println(8 % 2);\nint n = 10;\nif (n % 2 == 0) {\n    System.out.println(n + " is even");\n}')),
       page('Combining: &&, ||, !',
-        `<ul><li><code>&amp;&amp;</code> (and) — true only if <b>both</b> sides are true</li><li><code>||</code> (or) — true if <b>at least one</b> side is true</li><li><code>!</code> (not) — flips true and false</li></ul><p>Each side must be a full comparison: write <code>w.equals("rain") || w.equals("snow")</code>, not <code>w.equals("rain") || "snow"</code>.</p>`,
+        `<ul><li><code>&amp;&amp;</code> (and): true only if <b>both</b> sides are true</li><li><code>||</code> (or): true if <b>at least one</b> side is true</li><li><code>!</code> (not): flips true and false</li></ul><p>Each side must be a full comparison: write <code>w.equals("rain") || w.equals("snow")</code>, not <code>w.equals("rain") || "snow"</code>.</p>`,
         M('int age = 14;\nboolean ticket = true;\nSystem.out.println(age >= 12 && ticket);\nSystem.out.println(age < 5 || ticket);\nSystem.out.println(!ticket);')),
       page('Cheat sheet',
         cheat([
@@ -163,7 +163,7 @@
         `<p>A list in Java is usually an <code>ArrayList</code>. The <b>for-each</b> loop visits every item in it. Read the colon as "in": <i>for each String snack in snacks</i>.</p><pre>for (String snack : snacks) { ... }</pre><p>Each time around, <code>snack</code> holds the next item. (The <code>import</code> line at the top tells Java where ArrayList lives. The game's lists are ready to use, so you won't need it in terminals.)</p>`,
         M('ArrayList<String> snacks = new ArrayList<>();\nsnacks.add("apple");\nsnacks.add("cake");\nsnacks.add("pie");\n\nfor (String snack : snacks) {\n    System.out.println("I ate the " + snack);\n}', '', '', LIST_IMPORT)),
       page('while: repeat until...',
-        `<p>A <b>while loop</b> repeats <b>as long as</b> its condition is true. Use it when you don't know in advance how many times you need.</p><p>Something inside the loop must eventually make the condition false — otherwise it runs <b>forever</b> (an infinite loop). Here, <code>fuel -= 1;</code> does that.</p>`,
+        `<p>A <b>while loop</b> repeats <b>as long as</b> its condition is true. Use it when you don't know in advance how many times you need.</p><p>Something inside the loop must eventually make the condition false. Otherwise it runs <b>forever</b> (an infinite loop). Here, <code>fuel -= 1;</code> does that.</p>`,
         M('int fuel = 3;\nwhile (fuel > 0) {\n    System.out.println("Flying! fuel = " + fuel);\n    fuel -= 1;\n}\nSystem.out.println("Landed");')),
       page('Building up a total',
         `<p>A very common pattern: make a variable set to 0 <b>before</b> the loop, add to it <b>inside</b> the loop, and use it <b>after</b>.</p>`,
@@ -185,19 +185,19 @@
     // ------------------------------------------------------------ 5. functions
     funcs: [
       page('Defining and calling',
-        `<p>A <b>method</b> (Java's word for a function) is a named recipe. You write it inside <code>Main</code>, next to <code>main</code>, starting with <code>static</code>. <code>void</code> means "gives nothing back".</p><p><b>Defining</b> it only writes the recipe down — nothing happens until you <b>call</b> it from <code>main</code> by writing its name and <code>()</code>.</p>`,
+        `<p>A <b>method</b> (Java's word for a function) is a named recipe. You write it inside <code>Main</code>, next to <code>main</code>, starting with <code>static</code>. <code>void</code> means "gives nothing back".</p><p><b>Defining</b> it only writes the recipe down. Nothing happens until you <b>call</b> it from <code>main</code> by writing its name and <code>()</code>.</p>`,
         M('hello();\nhello();', 'static void hello() {\n    System.out.println("Hello!");\n}')),
       page('Parameters: giving it inputs',
-        `<p>Names inside the brackets are <b>parameters</b>. Like any Java variable, each one needs a <b>type</b>: <code>String name</code>. When you call the method, the value you pass in gets stored in the parameter — like a variable that only exists inside the method.</p>`,
+        `<p>Names inside the brackets are <b>parameters</b>. Like any Java variable, each one needs a <b>type</b>: <code>String name</code>. When you call the method, the value you pass in gets stored in the parameter, like a variable that only exists inside the method.</p>`,
         M('greet("Ada");\ngreet("Linus");', 'static void greet(String name) {\n    System.out.println("Hi " + name);\n}')),
       page('return: sending an answer back',
         `<p><code>return</code> sends a value <b>back</b> to whoever called the method. Instead of <code>void</code>, write the <b>type</b> of the answer: <code>static int</code> gives back a whole number.</p><p>Printing only <i>shows</i> a value; returning <i>hands it over</i> so you can store it or use it. (We call it <code>doubleIt</code> because <code>double</code> is already a Java type name.)</p>`,
         M('int result = doubleIt(5);\nSystem.out.println(result);', 'static int doubleIt(int n) {\n    return n * 2;\n}')),
       page('Using returned values',
-        `<p>A method call that returns a value can go anywhere a value can go — inside maths, inside <code>println</code>, even inside another call.</p>`,
+        `<p>A method call that returns a value can go anywhere a value can go: inside maths, inside <code>println</code>, even inside another call.</p>`,
         M('System.out.println(doubleIt(3) + doubleIt(4));\nSystem.out.println(doubleIt(doubleIt(2)));', 'static int doubleIt(int n) {\n    return n * 2;\n}')),
       page('if inside methods',
-        `<p>Methods can use everything you know. <code>return</code> also <b>ends</b> the method immediately — so after the first return, the rest is skipped.</p>`,
+        `<p>Methods can use everything you know. <code>return</code> also <b>ends</b> the method right away, so after the first return, the rest is skipped.</p>`,
         M('System.out.println(smaller(8, 3));\nSystem.out.println(smaller(2, 9));', 'static int smaller(int a, int b) {\n    if (a < b) {\n        return a;\n    }\n    return b;\n}')),
       page('Returning true or false',
         `<p>A comparison already <i>is</i> true or false, so you can return it directly. The return type is <code>boolean</code>. Methods like this are great inside an <code>if</code>.</p>`,
@@ -221,7 +221,7 @@
         `<p>A <b>class</b> is a blueprint. You write it <b>outside</b> <code>Main</code> (above it). Using it with <code>new</code> creates an <b>object</b>.</p><ul><li><b>Fields</b> are the object's data, declared with a type: <code>String name;</code></li><li>The <b>constructor</b> has the same name as the class and no return type. It runs automatically when the object is created, to set it up.</li><li><code>this</code> means "this object", so <code>this.name</code> is this object's own name.</li></ul><p>Read a field with a dot: <code>myDog.name</code>.</p>`,
         M('Dog myDog = new Dog();\nSystem.out.println(myDog.name);', '', 'class Dog {\n    String name;\n\n    Dog() {\n        this.name = "Rex";\n    }\n}')),
       page('Giving each object its own values',
-        `<p>Give the constructor parameters, and every object can start with <b>different</b> values. One blueprint, many objects! The type of the variable is the class name: <code>Dog a = new Dog("Rex");</code></p>`,
+        `<p>Give the constructor parameters, and every object can start with <b>different</b> values. The type of the variable is the class name: <code>Dog a = new Dog("Rex");</code></p>`,
         M('Dog a = new Dog("Rex");\nDog b = new Dog("Bella");\nSystem.out.println(a.name + " and " + b.name);', '', 'class Dog {\n    String name;\n\n    Dog(String name) {\n        this.name = name;\n    }\n}')),
       page('Methods: things objects can do',
         `<p>A <b>method</b> inside a class belongs to each object. It has a return type like any method (but no <code>static</code>), and it can use the object's own fields with <code>this</code>. Call it with a dot and brackets.</p>`,
@@ -230,10 +230,10 @@
         `<p>Methods can <b>update</b> fields. The object remembers the new value. A method that only changes things and gives nothing back has the return type <code>void</code>.</p>`,
         M('Counter c = new Counter();\nc.click();\nc.click();\nSystem.out.println(c.count);', '', 'class Counter {\n    int count;\n\n    Counter() {\n        this.count = 0;\n    }\n\n    void click() {\n        this.count += 1;\n    }\n}')),
       page('Methods with inputs',
-        `<p>Methods can take parameters too. Notice that each object keeps <b>its own</b> data — changing one doesn't change the other.</p>`,
+        `<p>Methods can take parameters too. Notice that each object keeps <b>its own</b> data. Changing one doesn't change the other.</p>`,
         M('Tank big = new Tank();\nTank small = new Tank();\nbig.fill(50);\nsmall.fill(5);\nSystem.out.println(big.water + " " + small.water);', '', 'class Tank {\n    int water;\n\n    Tank() {\n        this.water = 0;\n    }\n\n    void fill(int amount) {\n        this.water += amount;\n    }\n}')),
       page('Handing objects to methods',
-        `<p>Objects can be passed into methods just like numbers or text — the parameter's type is the class name. The method can read their fields and call their methods. (That's how <code>equip</code> and <code>adopt</code> will work!)</p>`,
+        `<p>Objects can be passed into methods just like numbers or text. The parameter's type is the class name. The method can read their fields and call their methods. (That's how <code>equip</code> and <code>adopt</code> will work!)</p>`,
         M('introduce(new Dog("Rex"));', 'static void introduce(Dog pet) {\n    System.out.println("This is " + pet.name);\n}', 'class Dog {\n    String name;\n\n    Dog(String name) {\n        this.name = name;\n    }\n}')),
       page('Cheat sheet',
         cheat([
@@ -248,7 +248,7 @@
     // ------------------------------------------------------------ 7. open world
     world: [
       page('Lists',
-        `<p>An <code>ArrayList</code> keeps many values in order. The type in the angle brackets says what goes inside: <code>ArrayList&lt;String&gt;</code> holds text, <code>ArrayList&lt;Integer&gt;</code> holds whole numbers.</p><p>Each item has a position number called an <b>index</b> — and indexes start at <b>0</b>! Use <code>.get(i)</code> to read an item and <code>.size()</code> to count them. The last item is at <code>size() - 1</code>.</p>`,
+        `<p>An <code>ArrayList</code> keeps many values in order. The type in the angle brackets says what goes inside: <code>ArrayList&lt;String&gt;</code> holds text, <code>ArrayList&lt;Integer&gt;</code> holds whole numbers.</p><p>Each item has a position number called an <b>index</b>, and indexes start at <b>0</b>! Use <code>.get(i)</code> to read an item and <code>.size()</code> to count them. The last item is at <code>size() - 1</code>.</p>`,
         M('ArrayList<String> items = new ArrayList<>();\nitems.add("sword");\nitems.add("map");\nitems.add("apple");\nSystem.out.println(items.get(0));\nSystem.out.println(items.get(2));\nSystem.out.println(items.get(items.size() - 1));\nSystem.out.println(items.size());', '', '', LIST_IMPORT)),
       page('Changing lists',
         `<p>Lists can grow and shrink. <code>.add(x)</code> puts an item on the end, <code>.set(i, x)</code> replaces the item at index i, and <code>.remove(i)</code> takes out the item at index i. Printing a whole list shows it in square brackets.</p>`,
@@ -277,7 +277,7 @@
     // ------------------------------------------------------------ 8. boss
     boss: [
       page('Your weapon: loops',
-        `<p>The Compiler Cannon fires once each time you call <code>fire();</code> — but only bursts from a <b>loop</b> get through Segfault's shield. Here's the idea with printing:</p><p>If Segfault corrupts your code, read the error, find the line, fix it — just like the debugger. Look out for missing semicolons and braces!</p>`,
+        `<p>The Compiler Cannon fires once each time you call <code>fire();</code>, but only bursts from a <b>loop</b> get through Segfault's shield. Here's the idea with printing:</p><p>If Segfault corrupts your code, read the error, find the line and fix it, the same as in the debugger. Look out for missing semicolons and braces!</p>`,
         M('for (int shot = 0; shot < 3; shot++) {\n    System.out.println("Pew!");\n}')),
     ],
   };
@@ -309,7 +309,7 @@
   T.math = {
     desc: `<p>Text needs quotes, but <b>numbers don't</b>. Without quotes, the computer does the maths for you:</p>
       <pre>System.out.println(2 + 3);     // shows 5\nSystem.out.println("2 + 3");   // shows the text 2 + 3</pre>
-      <p>Make the computer calculate <b>7 × 6</b> and <b>100 − 1</b>, printing each answer on its own line. (Use <code>*</code> to multiply and <code>-</code> to subtract — don't type the answers yourself!)</p>`,
+      <p>Make the computer calculate <b>7 × 6</b> and <b>100 − 1</b>, printing each answer on its own line. (Use <code>*</code> to multiply and <code>-</code> to subtract. Don't type the answers yourself!)</p>`,
     starter: M('// Maths works inside println:\nSystem.out.println(2 + 3);\n'),
     hints: ['Use * to multiply and - to subtract.', 'Don\'t put quotes around the maths, or it becomes text.'],
     similar: { task: 'Print the answers to 8 × 5 and 50 − 8.', code: M('System.out.println(8 * 5);\nSystem.out.println(50 - 8);') },
@@ -355,7 +355,7 @@
     similar: { task: 'You collected a variable called seeds. Show how many you are planting.', code: M('int seeds = 4;   // (pretend you collected this)\nSystem.out.println("Planting " + seeds + " seeds");') },
   };
   T.area = {
-    desc: `<p>Variables can hold <b>numbers</b>, and you can do maths with them. You have <code>width</code> and <code>height</code> (both <code>int</code>) — they're <b>different for every test</b>, so you can't just type the answer.</p>
+    desc: `<p>Variables can hold <b>numbers</b>, and you can do maths with them. You have <code>width</code> and <code>height</code> (both <code>int</code>). They're <b>different for every test</b>, so you can't just type the answer.</p>
       <p>Make a new <code>int</code> variable called <code>area</code> that equals width times height, then print it.</p>`,
     starter: M('// width and height change for each test!\nSystem.out.println(width);\nSystem.out.println(height);\n'),
     hints: ['Make a new int variable and set it to width times height.', 'Print the new variable at the end.'],
@@ -379,7 +379,7 @@
   };
   T.password = {
     desc: `<p>The lock needs the secret stored in your <code>password</code> variable (a String).</p>
-      <p>The password is different for every adventurer, so don't type it — <b>print the variable</b>!</p>`,
+      <p>The password is different for every adventurer, so don't type it. <b>Print the variable</b> instead.</p>`,
     starter: M('// Print the variable password (no quotes around a variable name!)\n'),
     hints: ['"password" in quotes is just the word. Without quotes it\'s the variable.', 'Print the variable, not the word.'],
     similar: { task: 'Print the contents of a variable called secret.', code: M('String secret = "hidden treasure";\nSystem.out.println(secret);') },
@@ -444,7 +444,7 @@
   T.repeat = {
     desc: `<p>A <b>loop</b> repeats code. Your friend <b>i</b> counts each time it goes around:</p>
       <pre>for (int i = 0; i &lt; 3; i++) {\n    System.out.println("Hi");\n}</pre>
-      <p>That prints "Hi" three times. Now make the machine print <b>Hooray!</b> 3 times — using a loop, not 3 separate println lines.</p>`,
+      <p>That prints "Hi" three times. Now make the machine print <b>Hooray!</b> 3 times, using a loop instead of 3 separate println lines.</p>`,
     starter: M('for (int i = 0; i < 3; i++) {\n    System.out.println("Hi");\n}\n'),
     hints: ['The loop is already written. What text should go inside?', 'i < 3 controls how many times it repeats.'],
     similar: { task: 'Print "Jump!" 4 times using a loop.', code: M('for (int i = 0; i < 4; i++) {\n    System.out.println("Jump!");\n}') },
@@ -473,7 +473,7 @@
   };
   T.listloop = {
     desc: `<p><code>loot</code> is a <b>list</b> (an <code>ArrayList&lt;String&gt;</code>) of treasure. Print every item on its own line.</p>
-      <p>The <b>for-each</b> loop visits each item in turn: <code>for (String item : loot) { ... }</code>. Read the colon as "in". Tested with 3 different lists — one of them is empty!</p>`,
+      <p>The <b>for-each</b> loop visits each item in turn: <code>for (String item : loot) { ... }</code>. Read the colon as "in". Tested with 3 different lists, and one of them is empty!</p>`,
     starter: M('// loot is a list, e.g. [coin, gem, key]\nSystem.out.println(loot);\n'),
     hints: ['A for-each loop gives you one item at a time.', 'Print the loop variable inside the loop, not the whole list.'],
     similar: { task: 'Print each colour in a list of colours.', code: M('ArrayList<String> colours = new ArrayList<>();\ncolours.add("red");\ncolours.add("blue");\nfor (String c : colours) {\n    System.out.println(c);\n}', '', '', LIST_IMPORT) },
@@ -618,7 +618,7 @@
     similar: { task: 'Print every score in a list that is at least 50.', code: M('int[] scores = {30, 75, 50, 10};\nfor (int s : scores) {\n    if (s >= 50) {\n        System.out.println(s);\n    }\n}') },
   };
   T.decoder = {
-    desc: `<p>The message in <code>secret</code> was written in a mirror — it's <b>backwards</b>! Print it the right way around.</p>
+    desc: `<p>The message in <code>secret</code> was written in a mirror, so it's <b>backwards</b>. Print it the right way around.</p>
       <pre>secret = "olleh"   →   prints  hello</pre>
       <p>A <code>StringBuilder</code> has a <code>.reverse()</code> method: <code>new StringBuilder(text).reverse().toString()</code> gives the text backwards. Or build a new String with a loop that walks from the last letter (<code>charAt</code>) to the first.</p>`,
     starter: M('// secret is a backwards String\nSystem.out.println(secret);\n'),
@@ -673,8 +673,8 @@
   };
   // ---- 8. boss
   T.cannon = {
-    desc: `<p>Each call to <code>fire();</code> launches a compiled blast at Segfault. The cannon only accepts <b>burst fire from a loop</b> — up to <b>5 shots</b> per run.</p>
-      <p>After firing, it needs time to recharge. Watch out — Segfault may <b>corrupt your cannon code</b>! If it does, debug it before firing again.</p>`,
+    desc: `<p>Each call to <code>fire();</code> launches a compiled blast at Segfault. The cannon only accepts <b>burst fire from a loop</b>, up to <b>5 shots</b> per run.</p>
+      <p>After firing, it needs time to recharge. Watch out: Segfault may <b>corrupt your cannon code</b>! If it does, debug it before firing again.</p>`,
     starter: M('// Fire a burst!\nfor (int shot = 0; shot < 5; shot++) {\n    fire();\n}\n'),
     hints: ['Call fire() inside a loop.', 'Each run can fire up to 5 shots.'],
     similar: { task: 'Print "Pew!" 5 times with a loop.', code: M('for (int shot = 0; shot < 5; shot++) {\n    System.out.println("Pew!");\n}') },
@@ -698,7 +698,7 @@
       { code: M('int speed = "8";\nSystem.out.println("Speed: " + speed);'), expect: 'Speed: 8', hint: 'An int box holds a number, not text in quotes.' },
       { code: M('String boost = 5;\nSystem.out.println(boost);'), expect: '5', hint: 'A String box holds text, so the value needs quotes.' },
       { code: M('boolean ready = "true";\nSystem.out.println(ready);'), expect: 'true', hint: 'A boolean is true or false without quotes.' },
-      { code: M('System.out.println(run());', 'static int run(int steps) {\n    return steps * 2;\n}'), expect: '20', hint: 'run() needs a number of steps — 10 should do it.' },
+      { code: M('System.out.println(run());', 'static int run(int steps) {\n    return steps * 2;\n}'), expect: '20', hint: 'run() needs a number of steps. 10 should do it.' },
     ],
   };
 

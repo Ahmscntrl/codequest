@@ -124,23 +124,23 @@
     if (Lang.get(lang).family === 'c') return explainC(err, lang);
     const t = err.type;
     if (t === 'SyntaxError') {
-      if (/never closed|unterminated|missing \)|expected '\)'|missing \) after/i.test(err.message)) return 'Something was opened but never closed — check your brackets ( ) [ ] { } and quotes.';
+      if (/never closed|unterminated|missing \)|expected '\)'|missing \) after/i.test(err.message)) return 'Something was opened but never closed. Check your brackets ( ) [ ] { } and quotes.';
       if (/expected ':'/.test(err.message)) return 'Lines that start a block (if, for, while, def, class) must end with a colon <code>:</code>';
       return py ? 'Python couldn\'t understand this line. Look for a missing bracket, quote, comma or colon.' : 'JavaScript couldn\'t understand this. Look for missing brackets ( ), braces { }, quotes or commas.';
     }
     if (t === 'IndentationError') return 'Python uses indentation (spaces at the start of a line) to know which lines belong inside an if/for/def. Make sure they line up!';
     if (t === 'ReferenceError' && /before initialization/.test(err.message)) return 'You used <code>let</code> (or <code>const</code>) on a variable that <b>already exists</b>, so JavaScript made a brand-new empty one. Remove the <code>let</code> and just write <code>name = ...</code>.';
-    if (t === 'NameError' || t === 'ReferenceError') return 'You used a name that doesn\'t exist. Check the spelling — and capital letters matter!' + (py ? '' : ' (Did you declare it with <code>let</code> or <code>const</code>?)');
-    if (t === 'TypeError') return py ? 'You used a value in a way its type doesn\'t allow — like adding text and a number. <code>str(5)</code> turns a number into text, <code>int("5")</code> turns text into a number.' : 'You used a value in a way it doesn\'t allow — like calling something that isn\'t a function, reading a property of <code>null</code>, or changing a <code>const</code>.';
+    if (t === 'NameError' || t === 'ReferenceError') return 'You used a name that doesn\'t exist. Check the spelling, and remember that capital letters matter.' + (py ? '' : ' (Did you declare it with <code>let</code> or <code>const</code>?)');
+    if (t === 'TypeError') return py ? 'You used a value in a way its type doesn\'t allow, like adding text and a number. <code>str(5)</code> turns a number into text, <code>int("5")</code> turns text into a number.' : 'You used a value in a way it doesn\'t allow, like calling something that isn\'t a function, reading a property of <code>null</code>, or changing a <code>const</code>.';
     if (t === 'TimeoutError') return 'Your code never finished! A loop that never stops is called an <b>infinite loop</b>. Make sure your loop condition eventually becomes false.';
-    if (t === 'ZeroDivisionError') return 'You can\'t divide by zero — not even in Syntaxia.';
+    if (t === 'ZeroDivisionError') return 'You can\'t divide by zero, not even in Syntaxia.';
     if (t === 'IndexError') return 'You asked for a position that isn\'t in the list. Remember: the first item is at index 0!';
     if (t === 'KeyError') return 'That key isn\'t in the dictionary. Check the spelling.';
-    if (t === 'AttributeError') return 'That object doesn\'t have that attribute or method. Check the spelling — or did you forget to set it in <code>__init__</code>?';
+    if (t === 'AttributeError') return 'That object doesn\'t have that attribute or method. Check the spelling. Or did you forget to set it in <code>__init__</code>?';
     if (t === 'ValueError') return 'The value has the right type but a wrong value, e.g. <code>int("abc")</code>.';
     if (t === 'RecursionError' || t === 'RangeError') return 'A function kept calling itself forever!';
-    if (t === 'ImportError') return 'No imports needed here — everything you need is built in.';
-    return 'Read the error message carefully — it usually tells you exactly what went wrong.';
+    if (t === 'ImportError') return 'No imports needed here. Everything you need is built in.';
+    return 'Read the error message carefully. It usually tells you what went wrong.';
   }
 
   function explainC(err, lang) {
@@ -149,22 +149,22 @@
       : lang === 'csharp' ? '<code>int</code> for whole numbers, <code>double</code> for decimals, <code>bool</code> for true/false and <code>string</code> for text'
         : '<code>int</code> for whole numbers, <code>double</code> for decimals, <code>bool</code> for true/false and <code>string</code> for text';
     if (t === 'SyntaxError') {
-      if (/;/.test(m) && /expected/.test(m)) return `In ${L.label}, every statement ends with a <b>semicolon</b> <code>;</code> — like a full stop at the end of a sentence. Check the end of the line the error points to (or the line just before it).`;
+      if (/;/.test(m) && /expected/.test(m)) return `In ${L.label}, every statement ends with a <b>semicolon</b> <code>;</code>, like a full stop at the end of a sentence. Check the end of the line the error points to (or the line just before it).`;
       if (/end of (input|file)|\} expected/.test(m)) return 'A <code>{</code> was opened but never closed with a matching <code>}</code>. Count your braces!';
       if (/string|constant|literal/.test(m)) return 'A piece of text is missing its closing quote <code>"</code>.';
       if (/main/.test(m)) return lang === 'java' ? 'Java code runs from <code>public static void main(String[] args)</code>, which must be inside a class. Keep your code inside main.' : 'C++ code runs from <code>int main() { ... }</code>. Statements have to go inside a function like main.';
       return `${L.label} couldn't understand this line. Look for a missing semicolon <code>;</code>, bracket <code>( )</code>, brace <code>{ }</code> or quote.`;
     }
-    if (t === 'NameError') return `You used a name ${L.label} doesn't know. Check the spelling — capital letters matter! — and remember a variable must be <b>declared with a type</b> before you use it (like <code>${lang === 'java' ? 'String' : 'string'} color = "red";</code>).`;
+    if (t === 'NameError') return `You used a name ${L.label} doesn't know. Check the spelling (capital letters matter), and remember a variable must be <b>declared with a type</b> before you use it (like <code>${lang === 'java' ? 'String' : 'string'} color = "red";</code>).`;
     if (t === 'TypeError') return `In ${L.label}, every variable has a <b>type</b> and only holds values of that type: ${types}.` + (lang === 'cpp' && /operator\+/.test(m) ? ' To glue a number onto text, turn it into text first with <code>to_string(n)</code>.' : '');
     if (t === 'TimeoutError') return 'Your code never finished! A loop that never stops is called an <b>infinite loop</b>. Make sure your loop condition eventually becomes false.';
     if (t === 'RuntimeError') {
-      if (/zero/i.test(m)) return 'You can\'t divide by zero — not even in Syntaxia.';
+      if (/zero/i.test(m)) return 'You can\'t divide by zero, not even in Syntaxia.';
       if (/index|range|bounds/i.test(m)) return 'You asked for a position that isn\'t in the list or text. The first item is at index 0, and the last is at size − 1.';
       if (/null|Segmentation/i.test(m)) return 'You used an object that doesn\'t exist yet (it\'s empty / null). Make sure you created it first.';
-      return 'Your code compiled, but crashed while running. Read the message — it says what went wrong.';
+      return 'Your code compiled, but crashed while running. The message says what went wrong.';
     }
-    return 'Read the error message carefully — it usually tells you exactly what went wrong.';
+    return 'Read the error message carefully. It usually tells you what went wrong.';
   }
 
   function corruptCode(code, lang) {
@@ -208,20 +208,20 @@
     sfx(n) { Sound.play(n); }
     inputBlocked() { return this.screen !== 'game' || this.modalOpen || this.editorOpen || this.tutOpen; }
     setFrozen() { this.game.frozen = this.inputBlocked(); if (this.game.frozen) this.game.clearKeys(); }
-    chapter() { return (this.save && this.save.chapter === 2 && GameData.CHAPTER2[this.save.lang]) ? 2 : 1; }
-    levels() { return GameData.levelsFor(this.chapter(), this.save.lang); }
+    chapter() { return (this.save && !this.save.course && this.save.chapter === 2 && GameData.CHAPTER2[this.save.lang]) ? 2 : 1; }
+    levels() { return GameData.levelsFor(this.chapter(), this.save.lang, this.save.course); }
     // progress for the chapter being played: level, maxLevel, completed, checkpoints
     prog() {
       if (this.chapter() === 2) { const c = this.save.ch2 || (this.save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} }); if (!c.checkpoints) c.checkpoints = {}; return c; }
       return this.save;
     }
-    levelsOf(ch) { return GameData.levelsFor(ch, this.save.lang); }
+    levelsOf(ch) { return GameData.levelsFor(ch, this.save.lang, this.save.course); }
     progOf(ch) {
       if (ch !== 2) return this.save;
       const c = this.save.ch2 || (this.save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} }); if (!c.checkpoints) c.checkpoints = {}; return c;
     }
     chUnlocked(ch) { return ch === 1 || this.ch2Unlocked(); }
-    ch2Unlocked() { return !!(this.save && this.save.completed && GameData.CHAPTER2[this.save.lang]); }
+    ch2Unlocked() { return !!(this.save && !this.save.course && this.save.completed && GameData.CHAPTER2[this.save.lang]); }
     ctx() { return { lang: this.save.lang, save: this.save, vars: this.save.vars, name: this.save.hero.name, game: this.game }; }
 
     // ------------------------------------------------------------ persistence
@@ -242,10 +242,10 @@
     persist() {
       if (!this.save) return;
       this.save.updated = Date.now();
-      try { localStorage.setItem(KEY(this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
+      try { localStorage.setItem(KEY(this.slot || this.save.course || this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
     }
-    newSave(hero, lang) {
-      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false };
+    newSave(hero, lang, course) {
+      return { v: 1, course: course || null, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false, minis: {}, ...(course ? { spUnlocked: true, foundI: true } : {}) };
     }
 
     // ------------------------------------------------------------ screens
@@ -262,21 +262,23 @@
       this.migrateOldSlots();
       const wrap = $('#slots');
       wrap.innerHTML = '';
-      for (const lang of Lang.ORDER) {
-        const L = LANGS[lang];
+      const COURSE = GameData.COURSES && GameData.COURSES.dsa && GameData.COURSES.dsa.levels.length ? GameData.COURSES.dsa : null;
+      for (const lang of Lang.ORDER.concat(COURSE ? ['dsa'] : [])) {
+        const isCourse = lang === 'dsa';
+        const L = isCourse ? { badge: 'DSA', label: COURSE.title, blurb: COURSE.blurb, hello: 'binary_search(items, target)' } : LANGS[lang];
         const s = this.readSlot(lang);
-        const ready = GameData.hasContent(lang);
+        const ready = isCourse || GameData.hasContent(lang);
         const card = document.createElement('div');
-        card.className = 'slot lang-slot' + (s ? '' : ' empty');
+        card.className = 'slot lang-slot' + (isCourse ? ' course-slot' : '') + (s ? '' : ' empty');
         const head = `<div class="slot-lang"><span class="lang-badge">${L.badge}</span><b>${L.label}</b></div>`;
         if (s) {
           const inCh2 = s.chapter === 2 && GameData.CHAPTER2[lang] && s.ch2;
-          const lvls = inCh2 ? GameData.CHAPTER2[lang].levels : LEVELS;
+          const lvls = isCourse ? COURSE.levels : inCh2 ? GameData.CHAPTER2[lang].levels : LEVELS;
           const lvl = lvls[inCh2 ? s.ch2.level : s.level] || lvls[0];
           const mins = Math.floor((s.playtime || 0) / 60);
           card.innerHTML = `${head}<canvas width="80" height="90"></canvas>
             <div class="slot-info"><div class="slot-name">${escapeHTML(s.hero.name)}</div>
-            <div class="slot-meta">${inCh2 ? 'Chapter 2 · ' : ''}Level ${(inCh2 ? s.ch2.level : s.level) + 1}: ${escapeHTML(lvl.topic)}${s.completed && !inCh2 ? ' · Chapter 1 complete' : ''}</div>
+            <div class="slot-meta">${inCh2 ? 'Chapter 2 · ' : ''}Level ${(inCh2 ? s.ch2.level : s.level) + 1}: ${escapeHTML(lvl.topic)}${isCourse ? ` · in ${LANGS[s.lang].label}` : s.completed && !inCh2 ? ' · Chapter 1 complete' : ''}</div>
             <div class="slot-meta">${mins} min · ${s.bugs || 0} bugs fixed</div></div>
             <div class="slot-btns"><button class="btn primary" data-act="play">Continue</button><button class="btn ghost small" data-act="del">Delete</button></div>`;
           this.drawMini($('canvas', card), s.hero);
@@ -351,7 +353,14 @@
       build();
       $('#cc-name').value = '';
       $('#cc-name').oninput = (e) => { look.name = e.target.value; };
-      $('#cc-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> <b>${LANGS[lang].label}</b> <span class="muted">— this save file learns ${LANGS[lang].label}</span>`;
+      const isCourse = lang === 'dsa';
+      look.lang = isCourse ? 'python' : lang;
+      const langPick = () => {
+        $('#cc-lang').innerHTML = `<div class="lang-switch">${this.dsaLangs().map(l => `<button class="ls-btn ${l === look.lang ? 'on' : ''}" data-lang="${l}">${LANGS[l].badge} ${LANGS[l].label}</button>`).join('')}</div><span class="muted">Data Structures &amp; Algorithms works in every language. Pick one to start; you can switch later.</span>`;
+        $$('#cc-lang .ls-btn').forEach(b => b.onclick = () => { look.lang = b.dataset.lang; Sound.play('click'); langPick(); });
+      };
+      if (isCourse) langPick();
+      else $('#cc-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> <b>${LANGS[lang].label}</b> <span class="muted">(this save file learns ${LANGS[lang].label})</span>`;
       $('#cc-random').onclick = () => {
         const pick = (a) => a[Math.floor(Math.random() * a.length)];
         Object.assign(look, { skin: pick(Art.SKIN), shirt: pick(Art.CLOTH), pants: pick(Art.CLOTH), hat: pick(Art.HATS), hatColor: pick(Art.CLOTH), eyes: pick(Art.EYES) });
@@ -362,7 +371,7 @@
         const name = (look.name || '').trim().slice(0, 14);
         if (!name) { $('#cc-name').focus(); $('#cc-name').classList.add('shake'); setTimeout(() => $('#cc-name').classList.remove('shake'), 500); return; }
         const hero = { name, skin: look.skin, shirt: look.shirt, pants: look.pants, hat: look.hat, hatColor: look.hatColor, eyes: look.eyes };
-        const save = this.newSave(hero, lang);
+        const save = this.newSave(hero, look.lang, isCourse ? 'dsa' : null);
         this.slot = lang; this.save = save; this.persist();
         Sound.play('success');
         this.startGame(lang, save);
@@ -391,7 +400,7 @@
       this.slot = slot; this.save = save;
       this.mapSel = null;
       // migrate older/partial saves
-      const fresh = this.newSave(save.hero, save.lang);
+      const fresh = this.newSave(save.hero, save.lang, save.course);
       for (const k of Object.keys(fresh)) if (save[k] === undefined) save[k] = fresh[k];
       save.maxLevel = Math.max(save.maxLevel || 0, save.level || 0);
       if (!save.ch2) save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} };
@@ -421,11 +430,11 @@
       const L = LV[P.level];
       const next = P.level + 1;
       Sound.play('success');
-      if (this.chapter() === 2 && next >= LV.length) { this.chapter2Complete(); return; }
+      if ((this.chapter() === 2 || this.save.course) && next >= LV.length) { this.chapter2Complete(); return; }
       let extra = '';
       if (L.grantsSkills && !this.save.spUnlocked) {
         this.save.spUnlocked = true; this.save.sp += 2;
-        extra = '<div class="unlock"><b>SKILL POINTS UNLOCKED!</b> <br>You earned <b>2 SP</b>. Spend them at a Skill Shrine or press <b>K</b> anytime.<br>The <b>open world</b> awaits!</div>';
+        extra = '<div class="unlock"><b>SKILL POINTS UNLOCKED!</b> <br>You earned <b>2 SP</b>. Spend them at a Skill Shrine or press <b>K</b> anytime.<br>Next stop: the <b>open world</b>.</div>';
       }
       delete P.checkpoints[P.level];
       P.level = Math.min(next, LV.length - 1);
@@ -433,18 +442,18 @@
       if (this.chapter() === 1) this.save.checkpoint = null;
       this.persist();
       const nextL = LV[P.level];
-      this.dialog(`Level ${LV.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b> — ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${P.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
+      this.dialog(`Level ${LV.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b>: ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${P.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
         [{ label: 'Map', fn: () => this.showMap(false) }, { label: 'Next level ▶', cls: 'primary', fn: () => this.loadLevel(P.level) }], { noClose: true });
     }
     chapter2Complete() {
-      const P = this.prog(), def = GameData.CHAPTER2[this.save.lang];
+      const P = this.prog(), def = this.save.course ? GameData.COURSES[this.save.course] : GameData.CHAPTER2[this.save.lang];
       const first = !P.completed;
       P.completed = true;
       delete P.checkpoints[P.level];
       if (first) this.save.sp += 3;
       this.persist();
       Sound.play('victory');
-      this.dialog(`${escapeHTML(def.title)} complete!`, `<p class="big-check">✔</p><p>You finished <b>Chapter 2</b> of ${LANGS[this.save.lang].label}: ${def.levels.map(l => '<b>' + escapeHTML(l.topic) + '</b>').join(', ')}.</p>${def.outro ? `<p>${def.outro}</p>` : ''}<p class="muted">${first ? '+3 SP bonus. ' : ''}You can replay any level from the map.</p>`,
+      this.dialog(`${escapeHTML(def.title)} complete!`, `<p class="big-check">✔</p><p>You finished ${this.save.course ? `<b>${escapeHTML(def.title)}</b>` : `<b>Chapter 2</b> of ${LANGS[this.save.lang].label}`}: ${def.levels.map(l => '<b>' + escapeHTML(l.topic) + '</b>').join(', ')}.</p>${def.outro ? `<p>${def.outro}</p>` : ''}<p class="muted">${first ? '+3 SP bonus. ' : ''}You can replay any level from the map.</p>`,
         [{ label: 'Title screen', fn: () => this.showTitle() }, { label: 'Map', cls: 'primary', fn: () => this.showMap(false) }], { noClose: true, wide: true });
     }
     victory() {
@@ -467,10 +476,10 @@
           <div><span>Bugs squashed</span><b>${s.bugs}</b></div>
           <div><span>Terminals solved</span><b>${Object.keys(s.solved).length}</b></div>
           <div><span>Companions</span><b>i${s.pet ? ', ' + escapeHTML(s.pet.name) : ''}</b></div>
-          <div><span>Weapon</span><b>${s.weapon ? escapeHTML(s.weapon.name) : '— (pure code!)'}</b></div>
+          <div><span>Weapon</span><b>${s.weapon ? escapeHTML(s.weapon.name) : 'None (pure code!)'}</b></div>
           <div><span>Time</span><b>${mins} min</b></div>
         </div>
-        <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>. That's real programming. </p>
+        <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>.</p>
         ${GameData.CHAPTER2[s.lang] ? `<div class="unlock"><b>CHAPTER 2 UNLOCKED:</b> ${escapeHTML(GameData.CHAPTER2[s.lang].title)}<br>${escapeHTML(GameData.CHAPTER2[s.lang].blurb)}<br>Open the map and pick the <b>Chapter 2</b> tab.</div>` : ''}
         <p class="muted">${firstWin ? '+3 SP bonus. ' : ''}Return to the Wilds to finish any side quests.</p>`,
         [{ label: 'Title screen', fn: () => this.showTitle() }, { label: 'Map', fn: () => this.showMap(false) }, { label: 'Return to the Wilds', cls: 'primary', fn: () => this.loadLevel(WORLD_INDEX) }], { noClose: true, wide: true });
@@ -480,13 +489,13 @@
     frontier(ch) {
       ch = ch || this.chapter();
       const LV = this.levelsOf(ch), P = this.progOf(ch);
-      if (ch === 2) return P.completed ? LV.length - 1 : Math.min(P.maxLevel || 0, LV.length - 1);
+      if (ch === 2 || this.save.course) return P.completed ? LV.length - 1 : Math.min(P.maxLevel || 0, LV.length - 1);
       return this.save.completed ? WORLD_INDEX : Math.min(this.save.maxLevel || 0, LEVELS.length - 1);
     }
     levelDone(i, ch) {
       ch = ch || this.chapter();
       const LV = this.levelsOf(ch), P = this.progOf(ch);
-      if (ch === 2) return !!P.completed || i < (P.maxLevel || 0);
+      if (ch === 2 || this.save.course) return !!P.completed || i < (P.maxLevel || 0);
       return LV[i].boss ? !!this.save.completed : i < (this.save.maxLevel || 0);
     }
     showMap(fromGame) {
@@ -509,8 +518,10 @@
       $('#map-lang').textContent = LANGS[s.lang].label;
       // chapter tabs: every chapter can be opened; locked ones are a preview
       const def2 = GameData.CHAPTER2[s.lang];
-      $('#map-tabs').innerHTML = `<button class="map-tab ${ch === 1 ? 'on' : ''}" data-ch="1">Chapter 1<small>${escapeHTML(LANGS[s.lang].label)} basics</small></button>` +
+      const course = s.course && GameData.COURSES[s.course];
+      $('#map-tabs').innerHTML = course ? `<button class="map-tab on" data-ch="1">${escapeHTML(course.title)}<small>Any language</small></button>${this.langSwitchHTML()}` : `<button class="map-tab ${ch === 1 ? 'on' : ''}" data-ch="1">Chapter 1<small>${escapeHTML(LANGS[s.lang].label)} basics</small></button>` +
         (def2 ? `<button class="map-tab ${ch === 2 ? 'on' : ''} ${this.ch2Unlocked() ? '' : 'locked'}" data-ch="2">Chapter 2<small>${escapeHTML(def2.title)}</small></button>` : '');
+      this.bindLangSwitch($('#map-tabs'), () => this.renderMap());
       $$('#map-tabs .map-tab').forEach(b => b.onclick = () => {
         const want = +b.dataset.ch;
         Sound.play('click');
@@ -520,7 +531,7 @@
         this.renderMap();
       });
       // this language's board for this chapter: its own scenery, colours and route
-      const board = MapArt.board(s.lang, ch, LV.length);
+      const board = MapArt.board(s.course || s.lang, ch, LV.length);
       const pts = board.pts;
       const brd = $('#map-board');
       brd.className = 'map-board' + (open ? '' : ' preview');
@@ -539,7 +550,7 @@
         const cls = ['map-node', unlocked ? '' : 'locked', done ? 'done' : '', i === front ? 'current' : '', i === this.mapSel ? 'sel' : ''].join(' ');
         return `<button class="${cls}" data-i="${i}" style="left:${x / 10}%;top:${y / 5.6}%">
           <span class="mn-dot">${i + 1}</span>
-          <span class="mn-label">${escapeHTML(L.topic)}</span></button>`;
+          <span class="mn-label">${escapeHTML(L.topic)}</span>${MiniBoss.has(L.id) ? `<span class="mn-mini" title="Miniboss: ${escapeHTML(MiniBoss.DEFS[L.id].name)}">BOSS</span>` : ''}</button>`;
       }).join('');
       const banner = open ? '' : `<div class="map-preview">Preview · ${ch === 2 ? 'defeat <b>Segfault</b> at the end of Chapter 1 to unlock this chapter' : 'locked'}</div>`;
       brd.innerHTML = `<svg viewBox="0 0 1000 560" preserveAspectRatio="none">${svg}</svg>${nodes}
@@ -560,10 +571,11 @@
         return `<span class="mp-term ${solved ? 'solved' : ''}">${solved ? '✔ ' : ''}${escapeHTML(t.title.replace(/^Side Quest — /, ''))}</span>`;
       }).join('');
       $('#map-panel').innerHTML = `
-        <div><div class="mp-kicker">Chapter ${ch} · Level ${i + 1}${locked ? ' · locked' : done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
+        <div><div class="mp-kicker">${course ? '' : `Chapter ${ch} · `}Level ${i + 1}${locked ? ' · locked' : done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
         <div class="mp-title">${escapeHTML(L.topic)}</div>
-        <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div>
+        <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ': ' : ''}${escapeHTML(L.blurb)}</div>
         <div class="mp-terms">${terms}</div>
+        ${MiniBoss.has(L.id) ? `<div class="mp-mini">Miniboss at the end: <b>${escapeHTML(MiniBoss.DEFS[L.id].name)}</b>${s.minis && s.minis[L.id] ? ' (beaten)' : ''}</div>` : ''}
         ${locked ? `<div class="mp-why">${escapeHTML(why)}. You can still read the tutorial.</div>` : ''}</div>
         <div class="mp-btns"><button class="btn" id="mp-tut">${locked ? 'Preview tutorial' : 'Tutorial'}</button><button class="btn primary big" id="mp-go" ${locked ? `disabled title="${escapeHTML(why)}"` : ''}>${label}</button></div>`;
       $('#mp-go').onclick = () => { if (locked) return; Sound.play('click'); this.save.chapter = ch; this.loadLevel(i); };
@@ -574,8 +586,19 @@
       const n = this.save.bitsCollected;
       if (n % 20 === 0) {
         if (this.save.spUnlocked) { this.save.sp += 1; this.toast(`${n} data bits collected: <b>+1 skill point!</b>`, 'good'); }
-        else this.toast(`${n} data bits collected! Keep them coming — once skill points unlock, every 20 bits earns one.`, 'info');
+        else this.toast(`${n} data bits collected. Once skill points unlock, every 20 bits earns one.`, 'info');
       }
+      this.updateHUD();
+    }
+    onMiniDefeated(d) {
+      const L = this.game.L;
+      if (!this.save.minis) this.save.minis = {};
+      const first = !this.save.minis[L.id];
+      this.save.minis[L.id] = true;
+      if (first && this.save.spUnlocked) { this.save.sp += 1; this.toast(`<b>${escapeHTML(d.name)}</b> is beaten. +1 skill point, and the portal is open.`, 'good'); }
+      else this.toast(`<b>${escapeHTML(d.name)}</b> is beaten. The portal is open.`, 'good');
+      Sound.play('success');
+      this.persist();
       this.updateHUD();
     }
     onBugSquashed() {
@@ -619,7 +642,7 @@
       if (s.spUnlocked) extras.push(`<button class="chip sp" data-act="skills">${s.sp} SP <kbd>K</kbd></button>`);
       if (L.openWorld) extras.push(`<span class="chip">Cores ${g.coreCount()}/3</span>`);
       extras.push(`<span class="chip">Bugs ${s.bugs || 0}</span>`);
-      extras.push(`<span class="chip" title="Data bits — every 20 earn a skill point">Bits ${s.bitsCollected || 0}</span>`);
+      extras.push(`<span class="chip" title="Data bits: every 20 earn a skill point">Bits ${s.bitsCollected || 0}</span>`);
       $('#hud-extra').innerHTML = extras.join('');
       const gl = Object.keys(s.glitches || {});
       $('#hud-glitches').innerHTML = gl.map(k => `<button class="chip glitch" data-act="debug" style="--c:${GLITCHES[k].color}">${GLITCHES[k].name} <small>${GLITCHES[k].effect}</small></button>`).join('') + (gl.length ? '<span class="chip hint">press <kbd>Q</kbd> to debug</span>' : '');
@@ -684,11 +707,37 @@
       if (opt.onOpen) opt.onOpen($('#modal-body'));
     }
 
+    // languages a course save can switch between: the game's playable languages that the course has content for
+    dsaLangs() {
+      const course = GameData.COURSES[(this.save && this.save.course) || 'dsa'];
+      const has = (l) => !course || course.levels.every(L => L.terminals.every(id => GameData.CH[id].starter[l]));
+      return Lang.ORDER.filter(l => GameData.hasContent(l) && has(l));
+    }
+    langSwitchHTML() {
+      const s = this.save;
+      return `<div class="lang-switch">${this.dsaLangs().map(l => `<button class="ls-btn ${l === s.lang ? 'on' : ''}" data-lang="${l}" title="Code in ${LANGS[l].label}">${LANGS[l].badge}</button>`).join('')}</div>`;
+    }
+    bindLangSwitch(root, after) {
+      $$('.lang-switch .ls-btn', root).forEach(b => b.onclick = (e) => { e.stopPropagation(); this.switchLanguage(b.dataset.lang); if (after) after(); });
+    }
+    // only course saves (DSA) can change language; code is stored per language
+    switchLanguage(lang) {
+      const s = this.save;
+      if (!s || !s.course || !this.dsaLangs().includes(lang) || lang === s.lang) return;
+      if (this.editorOpen) this.closeEditor();
+      s.lang = lang;
+      s.glitches = {};
+      this.persist();
+      Sound.play('click');
+      this.toast(`Now coding in <b>${LANGS[lang].label}</b>.`, 'info');
+      if ($('#map-lang')) $('#map-lang').textContent = LANGS[lang].label;
+      this.updateHUD();
+    }
     pause() {
       const s = this.save;
       this.dialog('Paused', `
         <div class="pause-grid">
-          <div><h4>Language</h4><p><span class="lang-badge">${LANGS[s.lang].badge}</span> <b>${LANGS[s.lang].label}</b></p><p class="muted">Each save file learns one language. To try another, pick its save file on the title screen.</p></div>
+          <div><h4>Language</h4>${s.course ? `<p class="muted">This course works in every language. Switch any time; your code is kept for each one.</p>${this.langSwitchHTML()}` : `<p><span class="lang-badge">${LANGS[s.lang].badge}</span> <b>${LANGS[s.lang].label}</b></p><p class="muted">Each save file learns one language. To try another, pick its save file on the title screen.</p>`}</div>
           <div><h4>Controls</h4><table class="keys">
             <tr><td><kbd>←</kbd><kbd>→</kbd> / <kbd>A</kbd><kbd>D</kbd></td><td>Move</td></tr>
             <tr><td><kbd>Space</kbd> / <kbd>W</kbd> / <kbd>↑</kbd></td><td>Jump</td></tr>
@@ -706,10 +755,11 @@
           { label: 'Map', fn: () => this.showMap(true) },
           { label: 'Resume ▶', cls: 'primary', fn: () => this.persist() }],
         { wide: true });
+      if (s.course) this.bindLangSwitch($('#modal'), () => { this.closeModal ? this.closeModal() : null; this.pause(); });
     }
 
     openSkills(fromShrine) {
-      if (!this.save.spUnlocked) { this.toast('Skill points unlock once you master <b>Classes</b> (Level 6).', 'info'); return; }
+      if (!this.save.spUnlocked) { this.toast('Skill points unlock after <b>Classes</b> (Level 6).', 'info'); return; }
       const render = (body) => {
         const s = this.save;
         body.innerHTML = `<p class="sp-big"><b>${s.sp}</b> skill point${s.sp === 1 ? '' : 's'} available</p>
@@ -890,7 +940,7 @@
         $('#ed-kicker').textContent = `${LVs === LEVELS ? '' : 'CH2 · '}LEVEL ${li + 1} · ${Lv.topic.toUpperCase()} · TERMINAL ${Lv.terminals.indexOf(ed.chId) + 1}/${Lv.terminals.length}` + (solved ? ' · SOLVED ✔' : '');
         $('#ed-title').textContent = ch.title;
         let html = GameData.descFor(ed.chId, ctx);
-        if (solved) html += '<p class="solved-note">✔ Already solved! Feel free to experiment — nothing will break.</p>';
+        if (solved) html += '<p class="solved-note">✔ Already solved. Experiment all you like, nothing will break.</p>';
         if (ed.chId === 'cannon' && this.save.cannonCorrupt) html += '<p class="corrupt-note">Segfault <b>corrupted</b> this code! Find and fix the error, then fire.</p>';
         $('#ed-desc').innerHTML = html;
         // variables + functions
@@ -912,7 +962,7 @@
         $$('[data-glitch]').forEach(b => b.onclick = () => { this.storeCode(); this.ed = { mode: 'debug', kind: b.dataset.glitch, hints: 0 }; this.renderEditor(); });
         const eye = this.save.skills.debugger;
         $('#ed-side').innerHTML = `<h4>How to debug</h4><ol class="small"><li>Press <b>Run</b> to see the error.</li><li>Read the error type and the <b>line number</b>.</li><li>Fix that line and run again.</li></ol>` +
-          (eye ? `<h4>Debugger's Eye</h4><div class="small">${escapeHTML(sn.hint || { syntax: 'Look for a missing bracket, quote, colon or brace.', name: 'A name is misspelled — compare it letter by letter (capitals too!).', type: 'A value is the wrong type for what the code does with it.' }[ed.kind])}</div>` : '<div class="muted small">Tip: the <b>Debugger\'s Eye</b> skill shows hints here.</div>');
+          (eye ? `<h4>Debugger's Eye</h4><div class="small">${escapeHTML(sn.hint || { syntax: 'Look for a missing bracket, quote, colon or brace.', name: 'A name is misspelled. Compare it letter by letter, capitals too.', type: 'A value is the wrong type for what the code does with it.' }[ed.kind])}</div>` : '<div class="muted small">Tip: the <b>Debugger\'s Eye</b> skill shows hints here.</div>');
         $('#ed-hint').classList.add('hidden');
       }
       const saved = this.codeStore(lang)[this.codeKey()];
@@ -991,6 +1041,7 @@
       const code = $('#tut-code').value;
       T.code[T.page] = code;
       const r = await CodeRunner.run(this.save.lang, code, { globals: {}, api: {} });
+      this.playLoop($('#tut-i-stage'), r.loop);
       let html = r.output.slice(0, 100).map(l => `<div class="c-out">${escapeHTML(l) || '&nbsp;'}</div>`).join('');
       if (r.error) html += `<div class="c-err">${r.error.line ? 'Line ' + r.error.line + ': ' : ''}<b>${escapeHTML(r.error.type)}</b>: ${escapeHTML(r.error.message)}</div><div class="c-dim">${explain(r.error, this.save.lang)}</div>`;
       if (!html) html = '<div class="c-dim">(nothing printed)</div>';
@@ -1005,6 +1056,10 @@
       this.ed = null;
       this.setFrozen();
       if (this.pendingEffect) { const f = this.pendingEffect; this.pendingEffect = null; f(); }
+      if (this.lastLoop && this.save.foundI && this.game.loopDance) this.game.loopDance(this.lastLoop);
+      this.lastLoop = null;
+      if (this.loopAnim) { cancelAnimationFrame(this.loopAnim.raf); this.loopAnim = null; }
+      $$('.i-stage').forEach(c => c.classList.add('hidden'));
       this.updateHUD();
     }
     globalsFor(ch, test, display) {
@@ -1053,8 +1108,53 @@
       }
       const fb = $('#feedback');
       fb.className = 'feedback bad';
-      fb.innerHTML = `<b>${escapeHTML(err.type)}</b> — ${explain(err, lang)}`;
+      fb.innerHTML = `<b>${escapeHTML(err.type)}</b>: ${explain(err, lang)}`;
       Sound.play('error');
+    }
+    // The i friend acts out the first for loop of a run: one hop per pass, holding up the loop variable.
+    playLoop(canvas, loop) {
+      if (this.loopAnim) { cancelAnimationFrame(this.loopAnim.raf); this.loopAnim = null; }
+      $$('.i-stage').forEach(c => c.classList.add('hidden'));
+      if (!loop || !loop.values.length || !this.save || !this.save.foundI) return;
+      canvas.classList.remove('hidden');
+      const c = canvas.getContext('2d'), W = canvas.width, H = canvas.height;
+      const vals = loop.values, n = vals.length;
+      const per = Math.max(10, Math.min(26, Math.floor(360 / n)));     // frames per pass: long loops go faster
+      const box = Math.min(56, Math.max(30, Math.floor((W - 120) / Math.min(n, 10))));
+      const show = Math.min(n, Math.floor((W - 120) / box));               // boxes that fit; the row scrolls past the rest
+      const A = { t: 0, raf: 0 };
+      this.loopAnim = A;
+      const total = n * per + 70;
+      const step = () => {
+        if (this.loopAnim !== A) return;
+        A.t++;
+        const k = Math.min(n - 1, Math.floor(A.t / per)), f = (A.t % per) / per, done = A.t >= n * per;
+        const first = Math.max(0, Math.min(n - show, k - show + 2));
+        c.clearRect(0, 0, W, H);
+        c.font = 'bold 12px "JetBrains Mono", monospace'; c.textAlign = 'left'; c.fillStyle = 'rgba(207,213,255,.8)';
+        c.fillText(`for ${loop.name}`, 10, 18);
+        c.fillStyle = 'rgba(207,213,255,.55)'; c.font = '11px "JetBrains Mono", monospace';
+        c.fillText(done ? `${loop.total} pass${loop.total === 1 ? '' : 'es'}${loop.total > n ? ` (showing ${n})` : ''}` : `pass ${k + 1}`, 10, 34);
+        const x0 = 100, gy = H - 14;
+        for (let j = first; j < Math.min(n, first + show); j++) {
+          const x = x0 + (j - first) * box;
+          const lit = j < k || (j === k && !done) || done;
+          c.fillStyle = j === k && !done ? 'rgba(125,249,255,.35)' : lit ? 'rgba(125,249,255,.14)' : 'rgba(255,255,255,.05)';
+          c.strokeStyle = j === k && !done ? '#7df9ff' : 'rgba(125,249,255,.35)'; c.lineWidth = 2;
+          c.beginPath(); c.roundRect ? c.roundRect(x + 3, gy - 16, box - 6, 18, 4) : c.rect(x + 3, gy - 16, box - 6, 18); c.fill(); c.stroke();
+          c.fillStyle = lit ? '#fff' : 'rgba(255,255,255,.35)'; c.textAlign = 'center'; c.font = 'bold 11px "JetBrains Mono", monospace';
+          c.fillText(vals[j].length > 6 ? vals[j].slice(0, 5) + '…' : vals[j], x + box / 2, gy - 3);
+        }
+        // i hops from box to box
+        const from = x0 + (Math.max(k, first) - first) * box + box / 2;
+        let ix = from, iy = gy - 18, hop = 0, label = `${loop.name} = ${vals[k]}`;
+        if (!done) { hop = Math.sin(f * Math.PI) * 18; }
+        else { const d = A.t - n * per; hop = Math.abs(Math.sin(d * 0.25)) * 10; label = d < 40 ? 'done!' : label; }
+        Art.drawI(c, ix, iy, A.t, { hop, label });
+        if (A.t < total) A.raf = requestAnimationFrame(step);
+      };
+      step();
+      Sound.play('click');
     }
     printOutput(lines, label) {
       const con = $('#console');
@@ -1076,6 +1176,7 @@
         const t = tests[i];
         const r = await CodeRunner.run(lang, code, { globals: this.globalsFor(ch, t), api, callTests: ch.callTests || [], captureVars: ch.captureVars || [] });
         runs.push(r);
+        if (i === 0) { this.playLoop($('#i-stage'), r.loop); this.lastLoop = r.loop; }
         const label = tests.length > 1 ? `Test ${i + 1}: ${t.label}` : null;
         this.printOutput(r.output, label);
         if (r.error) { this.showError(r.error, label); return; }
@@ -1095,7 +1196,7 @@
         setTimeout(() => { if (this.ed && this.ed.chId === ed.chId) this.closeEditor(); }, 1100);
         return;
       }
-      if (!first) { fb.innerHTML += '<div class="muted">(Already solved — but nice work!)</div>'; return; }
+      if (!first) { fb.innerHTML += '<div class="muted">(Already solved, but nice work!)</div>'; return; }
       this.save.solved[ed.chId] = res.data === undefined ? true : res.data;
       this.persist();
       this.pendingEffect = () => { ch.effect(this.game, res.data); this.persist(); this.updateHUD(); };
@@ -1113,7 +1214,7 @@
       const got = r.output.join('\n').trim();
       if (got !== sn.expect) {
         fb.className = 'feedback bad';
-        fb.innerHTML = `No errors — but it printed <b>${escapeHTML(got || 'nothing')}</b> instead of <b>${escapeHTML(sn.expect)}</b>.`;
+        fb.innerHTML = `No errors, but it printed <b>${escapeHTML(got || 'nothing')}</b> instead of <b>${escapeHTML(sn.expect)}</b>.`;
         Sound.play('fail');
         return;
       }

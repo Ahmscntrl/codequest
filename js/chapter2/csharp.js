@@ -378,7 +378,7 @@
       gate: 'E',
       require: [[/class\s+OutOfManaException\s*:\s*Exception/, 'Write <code>class OutOfManaException : Exception</code>.'], [/:\s*base\s*\(/, 'Pass the message on with <code>: base(...)</code> in the constructor.'], [/throw\s+new\s+OutOfManaException\s*\(/, 'In <code>Cast</code>, <code>throw new OutOfManaException(cost - Mana)</code> when there is not enough mana.']],
       expect: ['Cast! 6 mana left', 'Fizzle: Need 1 more mana (short by 1)', 'Cast! 3 mana left'],
-      success: 'Your very own exception! The curse is yours to command now.',
+      success: 'Your very own exception! Now you can throw this curse yourself.',
     },
     cs2_exc6: {
       title: "The Spire's Heart",
@@ -418,7 +418,7 @@
           code: 'Battery b = new Battery();\nb.Level = 100;\nConsole.WriteLine(b.Level);\n\nclass Battery\n{\n    public int Level { get; private set; }\n\n    public void Charge(int amount)\n    {\n        Level += amount;\n    }\n}',
           expectError: true },
         { title: 'Read-only properties and starting values',
-          body: '<p>A property with only <code>{ get; }</code> can be set in the <b>constructor</b> and never again. It is perfect for things that never change, like a name.</p><p>You can also give any auto-property a starting value with <code>= ...;</code> after the braces.</p>',
+          body: '<p>A property with only <code>{ get; }</code> can be set in the <b>constructor</b> and never again. Use it for things that never change, like a name.</p><p>You can also give any auto-property a starting value with <code>= ...;</code> after the braces.</p>',
           code: 'Shard s = new Shard("Moonstone");\nConsole.WriteLine(s.Name + " is " + s.Color);\ns.Color = "silver";\nConsole.WriteLine(s.Name + " is " + s.Color);\n\nclass Shard\n{\n    public string Name { get; }\n    public string Color { get; set; } = "clear";\n\n    public Shard(string name)\n    {\n        Name = name;\n    }\n}' },
         { title: 'get and set with a body',
           body: '<p>When you need to check values, write the property out in full. The data lives in a private <b>backing field</b> (same name, lowercase). Inside <code>set</code>, the word <code>value</code> is the new value someone is assigning.</p><p>Here the setter refuses to let health go below 0.</p>',
@@ -522,7 +522,7 @@
           code: 'IGlow c = new Candle();\nConsole.WriteLine(c.Glow());\n\ninterface IGlow\n{\n    string Glow();\n}\n\nclass Candle : IGlow\n{\n}',
           expectError: true },
         { title: 'One list, many classes',
-          body: '<p>The real power: a <code>List&lt;IShape&gt;</code> can hold squares, circles and anything else that keeps the <code>IShape</code> promise. Each object runs its <b>own</b> version of the method. This is called <b>polymorphism</b> ("many shapes").</p><p>Interfaces can promise properties too, like <code>string Name { get; }</code>.</p>',
+          body: '<p>Here is why that matters: a <code>List&lt;IShape&gt;</code> can hold squares, circles and anything else that keeps the <code>IShape</code> promise. Each object runs its <b>own</b> version of the method. This is called <b>polymorphism</b> ("many shapes").</p><p>Interfaces can promise properties too, like <code>string Name { get; }</code>.</p>',
           code: 'List<IShape> shapes = new List<IShape> { new Square(3), new Circle(2) };\nforeach (IShape s in shapes)\n{\n    Console.WriteLine(s.Name + ": " + s.Area());\n}\n\ninterface IShape\n{\n    string Name { get; }\n    double Area();\n}\n\nclass Square : IShape\n{\n    private double side;\n    public Square(double side) { this.side = side; }\n    public string Name => "Square";\n    public double Area() => side * side;\n}\n\nclass Circle : IShape\n{\n    private double radius;\n    public Circle(double radius) { this.radius = radius; }\n    public string Name => "Circle";\n    public double Area() => 3.14 * radius * radius;\n}' },
         { title: 'Inheritance: virtual and override',
           body: '<p>A class can also <b>inherit</b> from another class with the same <code>:</code> sign. The child gets all the parent\'s members. A <code>virtual</code> method may be replaced in the child with <code>override</code>.</p><p><code>: base(name)</code> runs the parent\'s constructor, and <code>base.Describe()</code> calls the parent\'s version of a method.</p>',
@@ -619,8 +619,8 @@
 
   GD.addChapter2('csharp', {
     title: 'The Crystal Spire',
-    blurb: 'A tower of living crystal rises over Syntaxia. Master properties, LINQ, interfaces and exceptions to drive out the Null Wraith.',
-    outro: '<p>The heart of the Crystal Spire blazes, and its light washes over all of Syntaxia. The Null Wraith is gone: there is no crash it can cause that you can\'t catch.</p><p>You now write C# the way professionals do: classes that protect their data with <b>properties</b>, questions answered in one line of <b>LINQ</b>, families of classes joined by <b>interfaces</b> and <b>inheritance</b>, and programs that handle trouble with <b>exceptions</b>.</p><p>These are the same tools used to build apps, websites and Unity games. Keep building, Coder!</p>',
+    blurb: 'A tower of living crystal rises over Syntaxia. Learn properties, LINQ, interfaces and exceptions to drive out the Null Wraith.',
+    outro: '<p>The heart of the Crystal Spire blazes, and its light washes over all of Syntaxia. The Null Wraith is gone: there is no crash it can cause that you can\'t catch.</p><p>Look at what you can write now: classes that protect their data with <b>properties</b>, questions answered in one line of <b>LINQ</b>, families of classes joined by <b>interfaces</b> and <b>inheritance</b>, and programs that handle trouble with <b>exceptions</b>.</p><p>These are the same tools used to build apps, websites and Unity games. Keep building, Coder!</p>',
     theme: 'crystal',
     challenges,
     levels,

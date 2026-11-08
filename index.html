@@ -15,10 +15,8 @@
   <section id="screen-title" class="screen">
     <div class="title-wrap">
       <h1 class="logo"><span>Code</span>Quest</h1>
-      <p class="tagline">A puzzle platformer where your code changes the world.</p>
       <canvas id="title-canvas" width="520" height="110"></canvas>
       <div id="slots" class="slots"></div>
-      <p class="muted foot">Learn Python, JavaScript, C++, C# or Java by building bridges, taming loops, forging weapons with classes, and debugging your way past an army of bugs.</p>
     </div>
   </section>
 
@@ -106,8 +104,9 @@
       </div>
       <div id="tut-body" class="tut-body"></div>
       <div id="tut-try" class="tut-try">
-        <div class="tut-try-head"><span>Try it — edit the code and run it</span><span class="spacer"></span><button id="tut-reset" class="btn small ghost">↺ Reset</button><button id="tut-run" class="btn small primary">▶ Run</button></div>
+        <div class="tut-try-head"><span>Try it: edit the code and run it</span><span class="spacer"></span><button id="tut-reset" class="btn small ghost">↺ Reset</button><button id="tut-run" class="btn small primary">▶ Run</button></div>
         <textarea id="tut-code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea>
+        <canvas id="tut-i-stage" class="i-stage hidden" width="640" height="84"></canvas>
         <div id="tut-out" class="console tut-out"></div>
       </div>
       <div class="tut-foot">
@@ -149,6 +148,7 @@
           </div>
         </div>
         <div id="feedback" class="feedback"></div>
+        <canvas id="i-stage" class="i-stage hidden" width="640" height="84"></canvas>
         <div class="console-title">Output</div>
         <div id="console" class="console"></div>
       </main>
@@ -171,8 +171,12 @@
   <script src="js/chapter2/cpp.js"></script>
   <script src="js/chapter2/csharp.js"></script>
   <script src="js/chapter2/java.js"></script>
+  <script src="js/dsa/course.js"></script>
+  <script src="js/dsa/part1.js"></script>
+  <script src="js/dsa/part2.js"></script>
   <script src="js/art.js"></script>
   <script src="js/game.js"></script>
+  <script src="js/miniboss.js"></script>
   <script src="js/ui.js"></script>
 </body>
 </html>

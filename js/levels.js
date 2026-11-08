@@ -116,7 +116,7 @@
 
   CH.hello = {
     title: 'The Greeting Gate',
-    desc: (ctx) => `<p>This old gate only opens for programmers. Every programmer's first words are <b>"Hello, World"</b>.</p>
+    desc: (ctx) => `<p>This old gate only opens for programmers. Most programmers start by printing <b>"Hello, World"</b>.</p>
       <p>Use ${c(printFn(ctx) + '(...)')} to make the computer say it.</p>`,
     starter: { python: '# Make the computer say hello!\n# Text goes inside quotes, like "this".\n\n', javascript: '// Make the computer say hello!\n// Text goes inside quotes, like "this".\n\n' },
     api: [],
@@ -148,7 +148,7 @@
       if (!calls.length) return { ok: false, msg: `The bridge wasn't built. Call ${c(fn('build_bridge', ctx) + '(planks)')}.` };
       const n = calls[calls.length - 1].args[0];
       if (typeof n !== 'number') return { ok: false, msg: `${c(fn('build_bridge', ctx))} needs a number of planks, but got ${escapeHTML(show(n))}.` };
-      if (n < ctx.vars.planks) return { ok: false, msg: `Only ${n} planks — the gap needs ${ctx.vars.planks}. Use the variable ${c('planks')}!` };
+      if (n < ctx.vars.planks) return { ok: false, msg: `Only ${n} planks, but the gap needs ${ctx.vars.planks}. Use the variable ${c('planks')}!` };
       if (n > ctx.vars.planks) return { ok: false, msg: `You don't have ${n} planks! You only collected ${ctx.vars.planks}.` };
       const tip = /\bplanks\b/.test(stripComments(code, ctx).replace(/print\s*\(\s*planks\s*\)|console\.log\s*\(\s*planks\s*\)/g, '')) ? '' : ' <i>(Tip: next time pass the variable name <code>planks</code> instead of the number.)</i>';
       return { ok: true, msg: 'Planks fly into place. <b>Bridge built!</b>' + tip, data: { n } };
@@ -162,9 +162,9 @@
 
   CH.password = {
     title: 'The Whispering Lock',
-    requires: (ctx) => ctx.vars.password === undefined ? 'This lock wants a <b>password</b>. One is glowing somewhere nearby — collect it!' : null,
+    requires: (ctx) => ctx.vars.password === undefined ? 'This lock wants a <b>password</b>. One is glowing somewhere nearby. Collect it first!' : null,
     desc: (ctx) => `<p>The lock needs the secret stored in your ${c('password')} variable.</p>
-      <p>The password is different for every adventurer, so don't type it — <b>print the variable</b>!</p>`,
+      <p>The password is different for every adventurer, so don't type it. <b>Print the variable</b> instead.</p>`,
     starter: { python: '# Print the variable password (no quotes around a variable name!)\n', javascript: '// Print the variable password (no quotes around a variable name!)\n' },
     api: [],
     check(runs, ctx, code) {
@@ -285,7 +285,7 @@
       return { ok: true, msg: '<b>Liftoff!</b> The launch pads are charged. Jump on a glowing spring!' };
     },
     hints: {
-      python: ['range(start, stop, step) — the stop number is NOT included.', 'for i in range(5, 0, -1):\n    print(i)\nprint("Liftoff!")'],
+      python: ['range(start, stop, step). The stop number is NOT included.', 'for i in range(5, 0, -1):\n    print(i)\nprint("Liftoff!")'],
       javascript: ['Start at 5, keep going while i >= 1, and do i-- each time.', 'for (let i = 5; i >= 1; i--) {\n  console.log(i);\n}\nconsole.log("Liftoff!");'],
     },
     effect: (game) => game.activateSprings(),
@@ -332,7 +332,7 @@
     title: 'The Counting Vault',
     desc: (ctx) => `<p>Write a function ${c('total')} that takes a <b>list</b> of numbers and returns their sum.</p>
       <pre>total([1, 2, 3])  →  6\ntotal([])         →  0</pre>
-      <p>Functions + loops = power. Start a running total at 0 and add each number.</p>`,
+      <p>You'll need a loop inside the function. Start a running total at 0 and add each number.</p>`,
     starter: {
       python: 'def total(nums):\n    result = 0\n    for n in nums:\n        pass  # add n to result\n    return result\n\nprint(total([1, 2, 3]))\n',
       javascript: 'function total(nums) {\n  let result = 0;\n  for (const n of nums) {\n    // add n to result\n  }\n  return result;\n}\n\nconsole.log(total([1, 2, 3]));\n',
@@ -415,7 +415,7 @@
 
   // ---- open world
   CH.gems = {
-    title: 'Core I — The Gem Sorter',
+    title: 'Core I: The Gem Sorter',
     desc: (ctx) => `<p>${c('gems')} is a <b>list</b> of gem sizes. Deposit only the <b>big</b> ones: call ${c(fn('deposit', ctx) + '(gem)')} for every gem <b>bigger than 5</b>, in order.</p>
       <p>Loop over the list and use an ${c('if')} inside. Tested with 3 different lists.</p>`,
     starter: { python: '# gems is a list, e.g. [3, 8, 1, 9, 6]\nfor gem in gems:\n    pass\n', javascript: '// gems is an array, e.g. [3, 8, 1, 9, 6]\nfor (const gem of gems) {\n\n}\n' },
@@ -434,8 +434,8 @@
   };
 
   CH.decoder = {
-    title: 'Core II — The Mirror Cipher',
-    desc: (ctx) => `<p>The message in ${c('secret')} was written in a mirror — it's <b>backwards</b>! Print it the right way around.</p>
+    title: 'Core II: The Mirror Cipher',
+    desc: (ctx) => `<p>The message in ${c('secret')} was written in a mirror, so it's <b>backwards</b>. Print it the right way around.</p>
       <pre>secret = "olleh"   →   prints  hello</pre>
       <p>${isJS(ctx) ? `Strings can be split into arrays: ${c('secret.split("")')}. Arrays have ${c('.reverse()')} and ${c('.join("")')}.` : `Python slices can step backwards: ${c('secret[::-1]')}. Or build a new string with a loop.`}</p>`,
     starter: { python: '# secret is a backwards string\nprint(secret)\n', javascript: '// secret is a backwards string\nconsole.log(secret);\n' },
@@ -454,7 +454,7 @@
   };
 
   CH.fib = {
-    title: 'Core III — The Spiral Vault',
+    title: 'Core III: The Spiral Vault',
     desc: (ctx) => `<p>The vault opens with the <b>Fibonacci sequence</b>: start with 0 and 1, and each next number is the sum of the two before it.</p>
       <pre>0, 1, 1, 2, 3, 5, 8, 13, ...</pre>
       <p>Print the first ${c('n')} numbers (one per line). Tested with n = 5, 8 and 1. ${isJS(ctx) ? '' : `Tip: ${c('a, b = b, a + b')} updates two variables at once.`}</p>`,
@@ -517,8 +517,8 @@
     title: 'The Compiler Cannon',
     repeatable: true,
     requires: (ctx) => ctx.game && ctx.game.cannonCooldown > 0 ? `The cannon is recharging... <b>${Math.ceil(ctx.game.cannonCooldown / 60)}s</b>` : null,
-    desc: (ctx) => `<p>Each call to ${c(fn('fire', ctx) + '()')} launches a compiled blast at Segfault. The cannon only accepts <b>burst fire from a loop</b> — up to <b>5 shots</b> per run.</p>
-      <p>After firing, it needs time to recharge. Watch out — Segfault may <b>corrupt your cannon code</b>! If it does, debug it before firing again.</p>`,
+    desc: (ctx) => `<p>Each call to ${c(fn('fire', ctx) + '()')} launches a compiled blast at Segfault. The cannon only accepts <b>burst fire from a loop</b>, up to <b>5 shots</b> per run.</p>
+      <p>After firing, it needs time to recharge. Watch out: Segfault may <b>corrupt your cannon code</b>! If it does, debug it before firing again.</p>`,
     starter: { python: '# Fire a burst!\nfor shot in range(5):\n    fire()\n', javascript: '// Fire a burst!\nfor (let shot = 0; shot < 5; shot++) {\n  fire();\n}\n' },
     api: ['fire'],
     check(runs, ctx, code) {
@@ -548,7 +548,7 @@
       const out = lines(runs[0]);
       const want = ['ready', 'set', 'code!'];
       const norm = out.map(l => l.toLowerCase().replace(/^code$/, 'code!'));
-      if (out.length < 3) return { ok: false, msg: `You printed ${out.length} line${out.length === 1 ? '' : 's'} — the bells need 3: <b>Ready</b>, <b>Set</b>, <b>Code!</b>` };
+      if (out.length < 3) return { ok: false, msg: `You printed ${out.length} line${out.length === 1 ? '' : 's'}, but the bells need 3: <b>Ready</b>, <b>Set</b>, <b>Code!</b>` };
       for (let i = 0; i < 3; i++) if (norm[i] !== want[i]) return { ok: false, msg: `Line ${i + 1} should be <b>${['Ready', 'Set', 'Code!'][i]}</b> but it was <b>${nothing(out[i])}</b>. Order matters!` };
       return { ok: true, msg: 'The bells ring in order. <b>Gate open!</b>' };
     },
@@ -559,19 +559,19 @@
     title: 'The Calculator Door',
     desc: (ctx) => `<p>Text needs quotes, but <b>numbers don't</b>. Without quotes, the computer does the math for you:</p>
       <pre>${printFn(ctx)}(2 + 3)    ${isJS(ctx) ? '//' : '#'} shows 5\n${printFn(ctx)}("2 + 3")  ${isJS(ctx) ? '//' : '#'} shows the text 2 + 3</pre>
-      <p>Make the computer calculate <b>7 × 6</b> and <b>100 − 1</b>, printing each answer on its own line. (Use ${c('*')} to multiply and ${c('-')} to subtract — don't type the answers yourself!)</p>`,
+      <p>Make the computer calculate <b>7 × 6</b> and <b>100 − 1</b>, printing each answer on its own line. (Use ${c('*')} to multiply and ${c('-')} to subtract. Don't type the answers yourself!)</p>`,
     starter: { python: '# Math works inside print():\nprint(2 + 3)\n', javascript: '// Math works inside console.log():\nconsole.log(2 + 3);\n' },
     api: [],
     check(runs, ctx, code) {
       const out = lines(runs[0]);
       if (out.some(l => /7\s*\*\s*6|100\s*-\s*1/.test(l))) return { ok: false, msg: 'You printed the math as <i>text</i>. Remove the quotes so the computer calculates it!' };
       const src = stripComments(code, ctx);
-      if (/\b(42|99)\b/.test(src)) return { ok: false, msg: 'No cheating — let the computer do the math with <code>*</code> and <code>-</code>!' };
+      if (/\b(42|99)\b/.test(src)) return { ok: false, msg: 'No cheating! Let the computer do the math with <code>*</code> and <code>-</code>!' };
       const i42 = out.indexOf('42'), i99 = out.indexOf('99');
       if (i42 < 0) return { ok: false, msg: 'I don\'t see the answer to 7 × 6 yet. Try <code>' + printEx(ctx, '7 * 6') + '</code>.' };
       if (i99 < 0) return { ok: false, msg: 'Now print the answer to 100 − 1.' };
       if (i99 < i42) return { ok: false, msg: 'Print 7 × 6 first, then 100 − 1.' };
-      return { ok: true, msg: '42 and 99 — correct! <b>Gate open!</b>' };
+      return { ok: true, msg: '42 and 99. Correct! <b>Gate open!</b>' };
     },
     hints: { python: ['print(7 * 6)', 'print(7 * 6)\nprint(100 - 1)'], javascript: ['console.log(7 * 6);', 'console.log(7 * 6);\nconsole.log(100 - 1);'] },
     effect: (game) => game.openGate('D'),
@@ -591,7 +591,7 @@
       const v = r.vars.color;
       if (v === undefined) return { ok: false, msg: `I can't find a variable called ${c('color')}. Spell it exactly like that (all lowercase).` };
       if (typeof v !== 'string' || !v.trim()) return { ok: false, msg: `${c('color')} should hold some text, like ${c('"blue"')}.` };
-      if (!Lang.printsVar(code, 'color', ctx.lang)) return { ok: false, msg: `Now print the <b>variable</b>: ${c(printEx(ctx, 'color'))} — no quotes around the name.` };
+      if (!Lang.printsVar(code, 'color', ctx.lang)) return { ok: false, msg: `Now print the <b>variable</b>: ${c(printEx(ctx, 'color'))}, with no quotes around the name.` };
       if (!lines(r).includes(v.trim())) return { ok: false, msg: `Print the variable so it shows <b>${escapeHTML(v)}</b>.` };
       return { ok: true, msg: `The name plate glows <b>${escapeHTML(v)}</b>. <b>Gate open!</b>` };
     },
@@ -600,7 +600,7 @@
   };
   CH.area = {
     title: 'The Measuring Gate',
-    desc: (ctx) => `<p>Variables can hold <b>numbers</b>, and you can do math with them. You have ${c('width')} and ${c('height')} — they're <b>different for every test</b>, so you can't just type the answer.</p>
+    desc: (ctx) => `<p>Variables can hold <b>numbers</b>, and you can do math with them. You have ${c('width')} and ${c('height')}. They're <b>different for every test</b>, so you can't just type the answer.</p>
       <p>Make a new variable ${c('area')} that equals width times height, then print it.</p>`,
     starter: { python: '# width and height change for each test!\nprint(width)\nprint(height)\n', javascript: '// width and height change for each test!\nconsole.log(width);\nconsole.log(height);\n' },
     api: [],
@@ -700,12 +700,12 @@
     requires: (ctx) => ctx.save.foundI ? null : 'The machine blinks: <b>"COUNTER NOT FOUND."</b><br>Loops need someone to count for them... Your little friend <b>i</b> is lost somewhere up high in this level. Find them first!',
     desc: (ctx) => `<p>A <b>loop</b> repeats code. Your friend <b>i</b> counts each time it goes around:</p>
       <pre>${isJS(ctx) ? 'for (let i = 0; i < 3; i++) {\n  console.log("Hi");\n}' : 'for i in range(3):\n    print("Hi")'}</pre>
-      <p>That prints "Hi" three times. Now make the machine print <b>Hooray!</b> 3 times — using a loop, not 3 prints.</p>`,
+      <p>That prints "Hi" three times. Now make the machine print <b>Hooray!</b> 3 times, using a loop instead of 3 prints.</p>`,
     starter: { python: 'for i in range(3):\n    print("Hi")\n', javascript: 'for (let i = 0; i < 3; i++) {\n  console.log("Hi");\n}\n' },
     api: [],
     check(runs, ctx, code) {
       const out = lines(runs[0]);
-      if (out.length !== 3 || out.some(l => !/^hooray!?$/i.test(l))) return { ok: false, msg: `The machine wants exactly 3 lines of <b>Hooray!</b> — it got: <b>${escapeHTML(out.join(', ') || 'nothing')}</b>` };
+      if (out.length !== 3 || out.some(l => !/^hooray!?$/i.test(l))) return { ok: false, msg: `The machine wants exactly 3 lines of <b>Hooray!</b>. It got: <b>${escapeHTML(out.join(', ') || 'nothing')}</b>` };
       if (!hasLoop(code, ctx)) return { ok: false, msg: 'Use a loop! i wants to help count.' };
       return { ok: true, msg: 'Hooray ×3! i bounces happily. <b>Gate open!</b>' };
     },
@@ -715,14 +715,14 @@
   CH.count = {
     title: 'The Number Line',
     desc: (ctx) => `<p>The counter ${c('i')} has a value you can use inside the loop! Print the numbers <b>1 to 10</b>, one per line.</p>
-      <p>${isJS(ctx) ? `Start ${c('i')} at 1 and keep going while ${c('i <= 10')}.` : `${c('range(1, 11)')} counts 1, 2, ... 10 — the stop number is <b>not</b> included!`}</p>`,
+      <p>${isJS(ctx) ? `Start ${c('i')} at 1 and keep going while ${c('i <= 10')}.` : `${c('range(1, 11)')} counts 1, 2, ... 10. The stop number is <b>not</b> included!`}</p>`,
     starter: { python: 'for i in range(10):\n    print(i)\n', javascript: 'for (let i = 0; i < 10; i++) {\n  console.log(i);\n}\n' },
     api: [],
     check(runs, ctx, code) {
       const out = lines(runs[0]);
       const want = Array.from({ length: 10 }, (_, k) => String(k + 1));
       if (out.join(',') !== want.join(',')) {
-        if (out[0] === '0') return { ok: false, msg: 'Close! You started at <b>0</b>. Computers love counting from 0 — but this line starts at <b>1</b>.' };
+        if (out[0] === '0') return { ok: false, msg: 'Close! You started at <b>0</b>. Computers love counting from 0, but this line starts at <b>1</b>.' };
         return { ok: false, msg: `Expected 1 to 10 but got: <b>${escapeHTML(out.slice(0, 12).join(', ') || 'nothing')}</b>` };
       }
       if (!hasLoop(code, ctx)) return { ok: false, msg: 'Use a loop, not 10 prints!' };
@@ -733,8 +733,8 @@
   };
   CH.charge = {
     title: 'The Battery',
-    desc: (ctx) => `<p>A ${c('while')} loop keeps going <b>as long as</b> its condition is true — perfect when you don't know how many times you'll need.</p>
-      <p>The battery is at ${c('charge')} percent. While it's below 100: call ${c(fn('charge_up', ctx) + '()')} and add 10 to ${c('charge')}.${isJS(ctx) ? ' <i>(charge already exists — no <code>let</code>.)</i>' : ''}</p>
+    desc: (ctx) => `<p>A ${c('while')} loop keeps going <b>as long as</b> its condition is true. Use it when you don't know how many times you'll need.</p>
+      <p>The battery is at ${c('charge')} percent. While it's below 100: call ${c(fn('charge_up', ctx) + '()')} and add 10 to ${c('charge')}.${isJS(ctx) ? ' <i>(charge already exists, so no <code>let</code>.)</i>' : ''}</p>
       <p>If you forget to change ${c('charge')}, the loop never ends!</p>`,
     starter: { python: 'while charge < 100:\n    charge_up()\n    # don\'t forget to add 10 to charge!\n', javascript: 'while (charge < 100) {\n  chargeUp();\n  // don\'t forget to add 10 to charge!\n}\n' },
     api: ['charge_up'],
@@ -772,13 +772,13 @@
   // ---- Level 5: functions
   CH.cheer = {
     title: 'The Cheer Function',
-    desc: (ctx) => `<p>A <b>function</b> is a named block of code. <b>Defining</b> it doesn't run it — you have to <b>call</b> it by writing its name with ${c('()')}.</p>
+    desc: (ctx) => `<p>A <b>function</b> is a named block of code. <b>Defining</b> it doesn't run it. You have to <b>call</b> it by writing its name with ${c('()')}.</p>
       <p>The function ${c('cheer')} is already defined for you. <b>Call it twice</b>.</p>`,
     starter: { python: 'def cheer():\n    print("Go team!")\n\n# Call it twice below:\n', javascript: 'function cheer() {\n  console.log("Go team!");\n}\n\n// Call it twice below:\n' },
     api: [],
     check(runs, ctx) {
       const out = lines(runs[0]);
-      if (!out.length) return { ok: false, msg: `Nothing happened — defining a function doesn't run it. Write <code>${tn('cheer', ctx)}()${ctx.lang === 'python' ? '' : ';'}</code> to call it!` };
+      if (!out.length) return { ok: false, msg: `Nothing happened. Defining a function doesn't run it. Write <code>${tn('cheer', ctx)}()${ctx.lang === 'python' ? '' : ';'}</code> to call it!` };
       if (out.length !== 2 || out.some(l => l !== 'Go team!')) return { ok: false, msg: `Expected "Go team!" exactly twice, but got: <b>${escapeHTML(out.join(', '))}</b>` };
       return { ok: true, msg: 'Go team! Go team! <b>Gate open!</b>' };
     },
@@ -807,7 +807,7 @@
   };
   CH.biggest = {
     title: 'The Judge',
-    desc: (ctx) => `<p>Functions can use everything you've learned — including ${c('if')}. Write a function ${c('biggest')} that takes two numbers ${c('a')} and ${c('b')} and <b>returns</b> the larger one.</p>
+    desc: (ctx) => `<p>Functions can use everything you've learned, including ${c('if')}. Write a function ${c('biggest')} that takes two numbers ${c('a')} and ${c('b')} and <b>returns</b> the larger one.</p>
       <pre>biggest(3, 9)   →  9\nbiggest(10, 2)  →  10</pre>`,
     starter: { python: 'def biggest(a, b):\n    if a > b:\n        return a\n    # what if a is not bigger?\n', javascript: 'function biggest(a, b) {\n  if (a > b) {\n    return a;\n  }\n  // what if a is not bigger?\n}\n' },
     api: [],
@@ -832,7 +832,7 @@
       const made = ctx.lang === 'python' ? /Crate\s*\(\s*\)/ : ctx.lang === 'cpp' ? /\bCrate\s+\w+\s*[;({=]|Crate\s*\(\s*\)/ : /new\s+Crate\s*\(/;
       if (!made.test(src.replace(/class\s+Crate/, ''))) return { ok: false, msg: `First create an object from the blueprint: ${c(ctx.lang === 'python' ? 'Crate()' : ctx.lang === 'cpp' ? 'Crate my_crate;' : 'new Crate()')}.` };
       if (!lines(runs[0]).includes('golden key')) return { ok: false, msg: `Now print the object's ${c('contents')} attribute.` };
-      if (!/\.contents/i.test(src)) return { ok: false, msg: 'Read it from the object with <code>.contents</code> — don\'t just type it!' };
+      if (!/\.contents/i.test(src)) return { ok: false, msg: 'Read it from the object with <code>.contents</code>. Don\'t just type it!' };
       return { ok: true, msg: 'The crate creaks open: a <b>golden key</b>! <b>Gate open!</b>' };
     },
     hints: { python: ['my_crate = Crate()\nprint(my_crate.contents)'], javascript: ['const myCrate = new Crate();\nconsole.log(myCrate.contents);'] },
@@ -840,7 +840,7 @@
   };
   CH.potion = {
     title: 'The Potion Brewery',
-    desc: (ctx) => `<p>The real power of classes: <b>one blueprint, many different objects</b>. ${isJS(ctx) ? c('constructor') : c('__init__')} can take inputs so each object gets its own values, and <b>methods</b> are functions that belong to the object.</p>
+    desc: (ctx) => `<p>Classes let you make <b>many different objects from one blueprint</b>. ${isJS(ctx) ? c('constructor') : c('__init__')} can take inputs so each object gets its own values, and <b>methods</b> are functions that belong to the object.</p>
       <p>Finish the ${c('Potion')} class: store ${c('power')} on the object, and make ${c('describe()')} return text like <b>Potion of power 3</b>.</p>
       <p>Then ${c(fn('brew', ctx))} <b>two</b> potions with <b>different</b> powers.</p>`,
     starter: {
@@ -850,7 +850,7 @@
     api: ['brew'],
     check(runs, ctx) {
       const pots = actionsOf(runs[0], 'brew').map(a => a.args[0]);
-      if (pots.length < 2) return { ok: false, msg: `Brew <b>two</b> potions — you brewed ${pots.length}.` };
+      if (pots.length < 2) return { ok: false, msg: `Brew <b>two</b> potions. You brewed ${pots.length}.` };
       for (const p of pots) {
         if (!p || !p.__obj) return { ok: false, msg: 'You can only brew Potion <b>objects</b>.' };
         if (typeof p.props.power !== 'number') return { ok: false, msg: `Each potion needs a number ${c('power')}.` };
@@ -887,7 +887,7 @@
   };
   CH.crier = {
     title: 'Side Quest — The Town Crier',
-    desc: (ctx) => `<p>Strings (text) come with built-in <b>methods</b> — tools you call with a dot:</p>
+    desc: (ctx) => `<p>Strings (text) come with built-in <b>methods</b>, tools you call with a dot:</p>
       <pre>${isJS(ctx) ? '"hi".toUpperCase()   → "HI"\n"HI".toLowerCase()   → "hi"' : '"hi".upper()   → "HI"\n"HI".lower()   → "hi"'}</pre>
       <p>The crier shouts every ${c('message')}: print it in <b>UPPERCASE</b> with an ${c('!')} on the end. ${c('"hello"')} → <b>HELLO!</b></p>`,
     starter: { python: '# message changes for each test\nprint(message)\n', javascript: '// message changes for each test\nconsole.log(message);\n' },
@@ -908,15 +908,15 @@
   // ---- Level 1: print()
   CH.textjoin = {
     title: 'The Name Smith',
-    desc: (ctx) => `<p>The ${c('+')} sign <b>glues text together</b>. It doesn't add a space — you get exactly what you glue.</p>
+    desc: (ctx) => `<p>The ${c('+')} sign <b>glues text together</b>. It doesn't add a space. You get exactly what you glue.</p>
       <p>The smith needs the name <b>SuperCoder</b>, made by joining the text ${c('"Super"')} and ${c('"Coder"')} with ${c('+')}.</p>`,
     starter: { python: '# Glue two pieces of text with +\nprint("Super")\n', javascript: '// Glue two pieces of text with +\nconsole.log("Super");\n' },
     api: [],
     check(runs, ctx, code) {
       const src = stripComments(code, ctx);
       const out = lines(runs[0]);
-      if (/SuperCoder/.test(src)) return { ok: false, msg: 'Don\'t type <b>SuperCoder</b> as one word — make the computer glue <code>"Super"</code> and <code>"Coder"</code> with <code>+</code>.' };
-      if (out.includes('Super Coder')) return { ok: false, msg: 'There\'s a space in there! <code>+</code> adds nothing between the pieces — check your quotes for extra spaces.' };
+      if (/SuperCoder/.test(src)) return { ok: false, msg: 'Don\'t type <b>SuperCoder</b> as one word. Make the computer glue <code>"Super"</code> and <code>"Coder"</code> with <code>+</code>.' };
+      if (out.includes('Super Coder')) return { ok: false, msg: 'There\'s a space in there! <code>+</code> adds nothing between the pieces, so check your quotes for extra spaces.' };
       if (!out.includes('SuperCoder')) return { ok: false, msg: `The smith needs to see <b>SuperCoder</b> printed. You printed <b>${escapeHTML(out.join(' / ') || 'nothing')}</b>.` };
       if (!/["'`]\s*\)?\s*\+\s*["'`]/.test(src)) return { ok: false, msg: 'Join the two texts with <code>+</code>.' };
       return { ok: true, msg: '<b>SuperCoder</b>, forged from two pieces. <b>Gate open!</b>' };
@@ -931,19 +931,19 @@
     api: [],
     check(runs, ctx, code) {
       const src = stripComments(code, ctx), out = lines(runs[0]);
-      if (/\b(30|20)\b/.test(src)) return { ok: false, msg: 'Let the computer work it out — don\'t type the answers!' };
+      if (/\b(30|20)\b/.test(src)) return { ok: false, msg: 'Let the computer work it out. Don\'t type the answers!' };
       if (!/\(\s*10\s*\+\s*5\s*\)\s*\*\s*2/.test(src)) return { ok: false, msg: 'For the first one, put brackets around <code>10 + 5</code> so it happens first.' };
       const a = out.indexOf('30'), b = out.indexOf('20');
       if (a < 0) return { ok: false, msg: 'I don\'t see the answer to (10 + 5) × 2 yet.' };
       if (b < 0) return { ok: false, msg: 'Now print 10 + 5 × 2 without brackets.' };
       if (b < a) return { ok: false, msg: 'Print the bracket version first.' };
-      return { ok: true, msg: '30 and 20 — brackets change everything! <b>Gate open!</b>' };
+      return { ok: true, msg: '30 and 20. Brackets change the answer! <b>Gate open!</b>' };
     },
     effect: (game) => game.openGate('E'),
   };
   CH.sep = {
     title: 'The Scoreboard',
-    desc: (ctx) => `<p>You can give ${c(printFn(ctx))} <b>several things at once</b>, separated by commas. It puts a space between them — and they can be different kinds of values!</p>
+    desc: (ctx) => `<p>You can give ${c(printFn(ctx))} <b>several things at once</b>, separated by commas. It puts a space between them, and they can be different kinds of values.</p>
       <pre>${printFn(ctx)}("Level", 3)   ${isJS(ctx) ? '//' : '#'} Level 3</pre>
       <p>Print <b>Score: 100</b> using a comma between the text ${c('"Score:"')} and the calculation ${c('25 * 4')}.</p>`,
     starter: { python: '# print can take several values, separated by commas\n', javascript: '// console.log can take several values, separated by commas\n' },
@@ -963,7 +963,7 @@
   CH.types = {
     title: 'The Type Scanner',
     desc: (ctx) => `<p>Variables can hold different <b>types</b> of value:</p>
-      <ul><li><b>text</b> (a string) — in quotes: ${c('"Ada"')}</li><li><b>numbers</b> — no quotes: ${c('7')}</li><li><b>true/false</b> (a boolean): ${c(isJS(ctx) ? 'true' : 'True')} or ${c(isJS(ctx) ? 'false' : 'False')}</li></ul>
+      <ul><li><b>text</b> (a string), in quotes: ${c('"Ada"')}</li><li><b>numbers</b>, no quotes: ${c('7')}</li><li><b>true/false</b> (a boolean): ${c(isJS(ctx) ? 'true' : 'True')} or ${c(isJS(ctx) ? 'false' : 'False')}</li></ul>
       <p>Make three variables: ${c('name')} holding <b>text</b>, ${c('level')} holding a <b>number</b>, and ${c('alive')} holding ${c(isJS(ctx) ? 'true' : 'True')}.</p>`,
     starter: { python: '# text, number, and True/False\n', javascript: '// text, number, and true/false\n' },
     api: [],
@@ -972,18 +972,18 @@
       const v = runs[0].vars;
       const T = Lang.get(ctx.lang).True;
       if (v.name === undefined) return { ok: false, msg: `Make a variable called ${c('name')}.` };
-      if (typeof v.name !== 'string') return { ok: false, msg: `${c('name')} should hold <b>text</b> — put it in quotes.` };
+      if (typeof v.name !== 'string') return { ok: false, msg: `${c('name')} should hold <b>text</b>, so put it in quotes.` };
       if (v.level === undefined) return { ok: false, msg: `Make a variable called ${c('level')}.` };
-      if (typeof v.level !== 'number') return { ok: false, msg: `${c('level')} should be a <b>number</b>. ${typeof v.level === 'string' ? 'Remove the quotes — <code>"5"</code> is text that looks like a number!' : ''}` };
+      if (typeof v.level !== 'number') return { ok: false, msg: `${c('level')} should be a <b>number</b>. ${typeof v.level === 'string' ? 'Remove the quotes. <code>"5"</code> is text that looks like a number!' : ''}` };
       if (v.alive === undefined) return { ok: false, msg: `Make a variable called ${c('alive')}.` };
-      if (v.alive !== true) return { ok: false, msg: `${c('alive')} should be ${c(T)}${typeof v.alive === 'string' ? ' — without quotes, and' : ''} spelled exactly like that${ctx.lang === 'python' ? ' (capital T)' : ''}.` };
-      return { ok: true, msg: 'Scanner reads: text ✔ number ✔ boolean ✔. <b>Gate open!</b>' };
+      if (v.alive !== true) return { ok: false, msg: `${c('alive')} should be ${c(T)}${typeof v.alive === 'string' ? ', without quotes, and' : ''} spelled exactly like that${ctx.lang === 'python' ? ' (capital T)' : ''}.` };
+      return { ok: true, msg: 'Scanner reads: text OK, number OK, boolean OK. <b>Gate open!</b>' };
     },
     effect: (game) => game.openGate('B'),
   };
   CH.combine = {
     title: 'The Name Badge',
-    desc: (ctx) => `<p>Let's build a sentence out of variables. The badge machine has ${c('hero')} (text) and ${c('coins')} (a number) — different for each test.</p>
+    desc: (ctx) => `<p>Let's build a sentence out of variables. The badge machine has ${c('hero')} (text) and ${c('coins')} (a number). Both change for each test.</p>
       <p>Print a sentence like <b>Ada has 5 coins</b>.</p>
       <p>${isJS(ctx) ? `Tip: ${c('+')} can glue text and numbers in JavaScript, or use a template string: ${c('`${hero} has ...`')}` : `Careful: ${c('+')} can't glue text to a number! Turn the number into text with ${c('str(coins)')}, or use an f-string: ${c('f"{hero} has ..."')}`}</p>`,
     starter: { python: 'print(hero)\nprint(coins)\n', javascript: 'console.log(hero);\nconsole.log(coins);\n' },
@@ -1038,7 +1038,7 @@
     title: 'The Loot Parade',
     desc: (ctx) => `<p>Loops can walk through a <b>list</b> of things, one item at a time:</p>
       <pre>${isJS(ctx) ? 'for (const fruit of ["apple", "pear"]) {\n  console.log(fruit);\n}' : 'for fruit in ["apple", "pear"]:\n    print(fruit)'}</pre>
-      <p>Print every item in ${c('loot')}, one per line. The list changes for each test — it might even be empty!</p>`,
+      <p>Print every item in ${c('loot')}, one per line. The list changes for each test. It might even be empty!</p>`,
     starter: { python: '# loot is a list, e.g. ["coin", "gem", "key"]\nprint(loot)\n', javascript: '// loot is a list, e.g. ["coin", "gem", "key"]\nconsole.log(loot);\n' },
     api: [],
     tests: () => [['coin', 'gem', 'key'], ['map'], []].map(l => ({ label: `loot = ${show(l)}`, globals: { loot: l }, expect: l })),
@@ -1054,7 +1054,7 @@
   };
   CH.breakloop = {
     title: 'The Mine Cart',
-    desc: (ctx) => `<p>${c('break')} jumps <b>out</b> of a loop early — handy when you find what you're looking for (or hit danger!).</p>
+    desc: (ctx) => `<p>${c('break')} jumps <b>out</b> of a loop early. Use it when you find what you're looking for (or hit danger!).</p>
       <p>Ride along ${c('rails')}: print each piece of track. If you reach a ${c('"gap"')}, print <b>Stop!</b> and ${c('break')} out of the loop straight away.</p>`,
     starter: { python: 'for piece in rails:\n    print(piece)\n', javascript: 'for (const piece of rails) {\n  console.log(piece);\n}\n' },
     api: [],
@@ -1076,7 +1076,7 @@
   // ---- Level 5: functions
   CH.square = {
     title: 'The Square Garden',
-    desc: (ctx) => `<p>A returned value can be <b>used</b> like any other value — stored, printed, or even added to another returned value!</p>
+    desc: (ctx) => `<p>A returned value can be <b>used</b> like any other value: stored, printed, or even added to another returned value.</p>
       <p>Write ${c('square')} that returns ${c('n * n')}. Then print ${c('square(3) + square(4)')} (it should show 25).</p>`,
     starter: { python: 'def square(n):\n    pass  # return n times n\n', javascript: 'function square(n) {\n  // return n times n\n}\n' },
     api: [],
@@ -1087,13 +1087,13 @@
       const sq = tn('square', ctx);
       if (!new RegExp(sq + '\\(\\s*3\\s*\\)\\s*\\+\\s*' + sq + '\\(\\s*4\\s*\\)').test(stripComments(code, ctx))) return { ok: false, msg: `Your function works! Now print ${c(sq + '(3) + ' + sq + '(4)')}.` };
       if (!lines(runs[0]).includes('25')) return { ok: false, msg: 'Print the result of <code>square(3) + square(4)</code>.' };
-      return { ok: true, msg: '9 + 16 = 25 — returned values add up! <b>Gate open!</b>' };
+      return { ok: true, msg: '9 + 16 = 25. Returned values add up! <b>Gate open!</b>' };
     },
     effect: (game) => game.openGate('C'),
   };
   CH.evenfn = {
     title: 'The Even Oracle',
-    desc: (ctx) => `<p>Functions can return ${c(isJS(ctx) ? 'true' : 'True')} or ${c(isJS(ctx) ? 'false' : 'False')} — then you can use them in an ${c('if')}!</p>
+    desc: (ctx) => `<p>Functions can return ${c(isJS(ctx) ? 'true' : 'True')} or ${c(isJS(ctx) ? 'false' : 'False')}, and then you can use them in an ${c('if')}.</p>
       <p>Write ${c('even')} that takes a number ${c('n')} and returns ${c(isJS(ctx) ? 'true' : 'True')} if it's even, ${c(isJS(ctx) ? 'false' : 'False')} if it's odd. (Remember ${c('%')} from the Conditions level?)</p>`,
     starter: { python: 'def even(n):\n    pass\n\nprint(even(4))\n', javascript: 'function even(n) {\n\n}\n\nconsole.log(even(4));\n' },
     api: [],
@@ -1108,8 +1108,8 @@
 
   // ---- Level 6: classes
   CH.lamp = {
-    title: 'The Magic Lamp',
-    desc: (ctx) => `<p>Methods can <b>change</b> an object's attributes. The ${c('Lamp')} class is almost done — the ${c('toggle')} method should flip ${c(isJS(ctx) ? 'this.on' : 'self.on')} from off to on, or on to off.</p>
+    title: 'The Switch Lamp',
+    desc: (ctx) => `<p>Methods can <b>change</b> an object's attributes. The ${c('Lamp')} class is almost done. The ${c('toggle')} method should flip ${c(isJS(ctx) ? 'this.on' : 'self.on')} from off to on, or on to off.</p>
       <p>${isJS(ctx) ? c('!') + ' flips true/false: ' + c('!true') + ' is false.' : c('not') + ' flips True/False: ' + c('not True') + ' is False.'} The code at the bottom already tests it.</p>`,
     starter: {
       python: 'class Lamp:\n    def __init__(self):\n        self.on = False\n\n    def status(self):\n        return "on" if self.on else "off"\n\n    def toggle(self):\n        pass  # flip self.on\n\nlamp = Lamp()\nprint(lamp.status())\nlamp.toggle()\nprint(lamp.status())\nlamp.toggle()\nprint(lamp.status())\n',
@@ -1126,7 +1126,7 @@
   CH.wallet = {
     title: 'The Coin Purse',
     desc: (ctx) => `<p>Methods can take <b>inputs</b> too. Finish the ${c('add')} method so it increases ${c(isJS(ctx) ? 'this.coins' : 'self.coins')} by ${c('amount')}.</p>
-      <p>Notice the test code makes <b>two</b> purses — each object keeps its <b>own</b> coins.</p>`,
+      <p>Notice the test code makes <b>two</b> purses. Each object keeps its <b>own</b> coins.</p>`,
     starter: {
       python: 'class Wallet:\n    def __init__(self):\n        self.coins = 0\n\n    def add(self, amount):\n        pass  # increase self.coins by amount\n\nmine = Wallet()\nmine.add(5)\nmine.add(10)\nprint(mine.coins)\n\nyours = Wallet()\nyours.add(3)\nprint(yours.coins)\n',
       javascript: 'class Wallet {\n  constructor() {\n    this.coins = 0;\n  }\n\n  add(amount) {\n    // increase this.coins by amount\n  }\n}\n\nconst mine = new Wallet();\nmine.add(5);\nmine.add(10);\nconsole.log(mine.coins);\n\nconst yours = new Wallet();\nyours.add(3);\nconsole.log(yours.coins);\n',
@@ -1135,7 +1135,7 @@
     check(runs) {
       const out = lines(runs[0]);
       if (out.join(',') !== '15,3') return { ok: false, msg: `Expected <b>15</b> then <b>3</b>, but got <b>${escapeHTML(out.join(', ') || 'nothing')}</b>.` + (out[1] === '18' ? ' <i>Did you store coins somewhere shared instead of on the object?</i>' : '') };
-      return { ok: true, msg: '15 coins in yours, 3 in theirs — every object has its own data. <b>Gate open!</b>' };
+      return { ok: true, msg: '15 coins in yours, 3 in theirs. Every object has its own data. <b>Gate open!</b>' };
     },
     effect: (game) => game.openGate('D'),
   };
@@ -1171,11 +1171,11 @@
         return { ok: false, msg: `${c(name + '(' + escapeHTML(args) + ')')} crashed: <b>${escapeHTML(call.error)}</b>` };
       }
       if (show(call.value) !== show(expected[i])) {
-        const none = call.value === null ? ` <i>(${isC(ctx) ? 'Nothing' : Lang.get(ctx.lang).none} means nothing was <b>returned</b> — did you forget ${c('return')}?)</i>` : '';
+        const none = call.value === null ? ` <i>(${isC(ctx) ? 'Nothing' : Lang.get(ctx.lang).none} means nothing was <b>returned</b>. Did you forget ${c('return')}?)</i>` : '';
         return { ok: false, msg: `${c(name + '(' + escapeHTML(args) + ')')} returned ${c(call.value === null ? Lang.get(ctx.lang).none : escapeHTML(show(call.value)))} but should return ${c(escapeHTML(show(expected[i])))}.${none}` };
       }
     }
-    return { ok: true, msg: `All ${tests.length} tests pass! ✔ Your function ${c(name)} works.` };
+    return { ok: true, msg: `All ${tests.length} tests pass! Your function ${c(name)} works.` };
   }
 
   function escapeHTML(s) { return String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch])); }
@@ -1220,7 +1220,7 @@
         { code: 'speed = 8\nprint("Speed: " + speed)', expect: 'Speed: 8' },
         { code: 'boost = "5"\nprint(boost + 5)', expect: '10' },
         { code: 'legs = ["left", "right"]\nprint(legs + "!")', expect: "['left', 'right', '!']" },
-        { code: 'def run(steps):\n    return steps * 2\n\nprint(run())', expect: '20', hint: 'run() needs a number of steps — 10 should do it.' },
+        { code: 'def run(steps):\n    return steps * 2\n\nprint(run())', expect: '20', hint: 'run() needs a number of steps. 10 should do it.' },
       ],
       javascript: [
         { code: 'const speed = 5;\nspeed = speed + 5;\nconsole.log(speed);', expect: '10' },
@@ -1418,8 +1418,8 @@
       id: 'hello', name: 'Hello, World', theme: 'meadow', ...mapOf(level1()),
       intro: {
         title: 'Level 1 — Hello, World',
-        python: '<p>Welcome to <b>Syntaxia</b>, a world built from code — and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Every programmer\'s journey starts with the same two words...</p>',
-        javascript: '<p>Welcome to <b>Syntaxia</b>, a world built from code — and slowly being eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Every programmer\'s journey starts with the same two words...</p>',
+        python: '<p>Welcome to <b>Syntaxia</b>, a world built from code. Lately it has been getting eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Your first one is only two words long...</p>',
+        javascript: '<p>Welcome to <b>Syntaxia</b>, a world built from code. Lately it has been getting eaten by <b>bugs</b>.</p><p>You are a Coder. In this world, you change things by writing <b>scripts</b>. Your first one is only two words long...</p>',
       },
       signs: ['Move with ← → (or A / D).  Jump with Space, W or ↑.', 'See that terminal? Walk up to it and press E to write code. Press Esc to pause.', 'Each terminal teaches one small new thing. Read the left panel, then try it!'],
       terminals: ['hello', 'lines', 'textjoin', 'math', 'order', 'sep'],
@@ -1431,7 +1431,7 @@
         python: '<p>A <b>variable</b> is a named box that holds a value:</p><pre>planks = 7\nname = "Ada"</pre><p>In Syntaxia, objects you pick up become variables you can use in your code! Collect the glowing boxes.</p>',
         javascript: '<p>A <b>variable</b> is a named box that holds a value:</p><pre>let planks = 7;\nconst name = "Ada";</pre><p>In Syntaxia, objects you pick up become variables you can use in your code! Collect the glowing boxes.</p>',
       },
-      signs: ['Glowing boxes are VARIABLES. Walk into one to collect it — it shows up in your Variables panel (top right).', 'Lava ahead. Better build a bridge...', 'Well done! The exit portal is just ahead.'],
+      signs: ['Glowing boxes are VARIABLES. Walk into one to collect it. It shows up in your Variables panel (top right).', 'Lava ahead. Better build a bridge...', 'Well done! The exit portal is just ahead.'],
       pickups: [{ name: 'planks', value: 7 }, { name: 'password', value: randomWord }],
       terminals: ['firstvar', 'types', 'bridge', 'area', 'update', 'combine', 'password'],
     },
@@ -1439,8 +1439,8 @@
       id: 'ifs', name: 'Conditions', theme: 'cave', ...mapOf(level3()),
       intro: {
         title: 'Level 3 — Conditions',
-        python: '<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if hp < 3:\n    print("Heal!")\nelif hp == 3:\n    print("Okay")\nelse:\n    print("Strong!")</pre><p>Notice the <b>colon</b> and the <b>indent</b> — Python uses them to know what belongs inside the if.</p><p><b>Bugs</b> live here. Jump on them to squash them — if one bites you, it puts an <b>error in your code</b>!</p>',
-        javascript: '<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if (hp < 3) {\n  console.log("Heal!");\n} else if (hp === 3) {\n  console.log("Okay");\n} else {\n  console.log("Strong!");\n}</pre><p>The <b>{ curly braces }</b> hold the code that belongs inside the if.</p><p><b>Bugs</b> live here. Jump on them to squash them — if one bites you, it puts an <b>error in your code</b>!</p>',
+        python: '<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if hp < 3:\n    print("Heal!")\nelif hp == 3:\n    print("Okay")\nelse:\n    print("Strong!")</pre><p>Notice the <b>colon</b> and the <b>indent</b>. Python uses them to know what belongs inside the if.</p><p><b>Bugs</b> live here. Jump on them to squash them. If one bites you, it puts an <b>error in your code</b>!</p>',
+        javascript: '<p>Code can make <b>decisions</b> with <code>if</code>:</p><pre>if (hp < 3) {\n  console.log("Heal!");\n} else if (hp === 3) {\n  console.log("Okay");\n} else {\n  console.log("Strong!");\n}</pre><p>The <b>{ curly braces }</b> hold the code that belongs inside the if.</p><p><b>Bugs</b> live here. Jump on them to squash them. If one bites you, it puts an <b>error in your code</b>!</p>',
       },
       signs: ['BUGS! Jump on top to squash them. If one bites you, you get a GLITCH (an error in your code). Press Q to open the debugger and fix it!', 'Lava! The pump terminal could turn it into stone...', 'Checkpoints (flags) save your progress.'],
       terminals: ['compare', 'heal', 'guard', 'even', 'pump', 'bouncer', 'orgate'],
@@ -1470,10 +1470,10 @@
       id: 'classes', name: 'Classes', theme: 'circuit', ...mapOf(level6()),
       intro: {
         title: 'Level 6 — Classes',
-        python: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>attributes</b>) and abilities (<b>methods</b>):</p><pre>class Dog:\n    def __init__(self, name):\n        self.name = name\n    def speak(self):\n        return "Woof!"\n\nrex = Dog("Rex")\nprint(rex.speak())</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b> — or both! Master classes and you\'ll unlock <b>skill points</b> and the <b>open world</b>.</p>',
-        javascript: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>properties</b>) and abilities (<b>methods</b>):</p><pre>class Dog {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    return "Woof!";\n  }\n}\n\nconst rex = new Dog("Rex");\nconsole.log(rex.speak());</pre><p>Forge a <b>weapon</b> or adopt a <b>pet</b> — or both! Master classes and you\'ll unlock <b>skill points</b> and the <b>open world</b>.</p>',
+        python: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>attributes</b>) and abilities (<b>methods</b>):</p><pre>class Dog:\n    def __init__(self, name):\n        self.name = name\n    def speak(self):\n        return "Woof!"\n\nrex = Dog("Rex")\nprint(rex.speak())</pre><p>Forge a <b>weapon</b>, adopt a <b>pet</b>, or both. Finish this level to unlock <b>skill points</b> and the <b>open world</b>.</p>',
+        javascript: '<p>A <b>class</b> is a blueprint for making objects. Each object gets its own data (<b>properties</b>) and abilities (<b>methods</b>):</p><pre>class Dog {\n  constructor(name) {\n    this.name = name;\n  }\n  speak() {\n    return "Woof!";\n  }\n}\n\nconst rex = new Dog("Rex");\nconsole.log(rex.speak());</pre><p>Forge a <b>weapon</b>, adopt a <b>pet</b>, or both. Finish this level to unlock <b>skill points</b> and the <b>open world</b>.</p>',
       },
-      signs: ['First learn what an object is, then build your own classes. The last two terminals are the Forge (weapons) and the Den (pets) — either one opens the gate, but why not both?', 'The Forge: design a weapon class.', 'Want a pet too? The Den is right here!', 'Weapons: press X or J to attack. Pets follow you around and cheer you on.', 'Beyond the portal lies the open world. Skill points await!'],
+      signs: ['First learn what an object is, then build your own classes. The last two terminals are the Forge (weapons) and the Den (pets). Either one opens the gate, but you can do both.', 'The Forge: design a weapon class.', 'Want a pet too? The Den is right here!', 'Weapons: press X or J to attack. Pets follow you around and cheer you on.', 'Beyond the portal lies the open world. Skill points await!'],
       terminals: ['crate', 'potion', 'lamp', 'wallet', 'forge', 'den'],
       gateAnyOf: true,
       grantsSkills: true,
@@ -1482,18 +1482,18 @@
       id: 'world', name: 'The Wilds of Syntaxia', theme: 'wilds', map: levelWorld(), openWorld: true,
       intro: {
         title: 'The Wilds of Syntaxia',
-        python: '<p>You\'ve mastered the basics. Now Syntaxia is yours to explore!</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul>',
-        javascript: '<p>You\'ve mastered the basics. Now Syntaxia is yours to explore!</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul>',
+        python: '<p>You know the basics now, and the whole map is open.</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul>',
+        javascript: '<p>You know the basics now, and the whole map is open.</p><ul><li>Find the <b>3 Core terminals</b> to open the gate to the Bug King\'s lair.</li><li>Earn <b>skill points</b> from cores, side quests and squashing bugs (1 SP per 3 bugs).</li><li>Spend them at the <b>Skill Shrine</b> (or press K).</li></ul>',
       },
-      signs: ['THE WILDS. Warm up with the Backpack (lists) and Town Crier (strings) quests here, then find the three Core terminals out east. Skill Shrine is right behind you!', 'The Mirror Cipher is just ahead. Strings can be sliced and reversed...', 'The Dictionary Merchant — "Prices, prices! Who\'s buying?"', 'The Great Gate. It opens only for one who carries 3 Core fragments.'],
+      signs: ['THE WILDS. Warm up with the Backpack (lists) and Town Crier (strings) quests here, then find the three Core terminals out east. Skill Shrine is right behind you!', 'The Mirror Cipher is just ahead. Strings can be sliced and reversed...', 'The Dictionary Merchant: "Prices, prices! Who\'s buying?"', 'The Great Gate. It opens only for one who carries 3 Core fragments.'],
       terminals: ['gems', 'decoder', 'fib', 'fizz', 'merchant', 'backpack', 'crier', 'bag'],
     },
     {
       id: 'boss', name: 'Segfault\'s Lair', theme: 'lair', map: levelBoss(), boss: true,
       intro: {
         title: 'Final Boss — Segfault, the Bug King',
-        python: '<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. Stay calm and debug!</p>',
-        javascript: '<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. Stay calm and debug!</p>',
+        python: '<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. When that happens, read the error and fix it.</p>',
+        javascript: '<p>The source of all the bugs. <b>Segfault</b> has corrupted the core of Syntaxia.</p><p>Use the <b>Compiler Cannon</b> terminal to blast it with loops. Hit it with your weapon when it swoops low. Jump on its head if you dare.</p><p>It will throw <b>errors</b> at you and corrupt your code. When that happens, read the error and fix it.</p>',
       },
       signs: [],
       terminals: ['cannon'],
@@ -1505,7 +1505,7 @@
     hello: { topic: 'print()', blurb: 'Write your very first line of code and make the computer talk.' },
     vars: { topic: 'Variables', blurb: 'Store values in named boxes. Objects you collect in the world become variables in your code.' },
     ifs: { topic: 'Conditions', blurb: 'Make decisions with if / else. Your code is tested against several different cases.' },
-    loops: { topic: 'Loops', blurb: 'Repeat code with for and while loops — and find your little friend i.' },
+    loops: { topic: 'Loops', blurb: 'Repeat code with for and while loops, and find your little friend i.' },
     funcs: { topic: 'Functions', blurb: 'Package code into reusable functions that take inputs and return answers.' },
     classes: { topic: 'Classes & Objects', blurb: 'Design blueprints with attributes and methods. Forge a weapon or adopt a pet.' },
     world: { topic: 'Lists, Strings & Dictionaries', blurb: 'Explore the open world, earn skill points, and recover the 3 Core fragments.' },
@@ -1520,7 +1520,7 @@
     { id: 'sharp', name: 'Sharpened Code', icon: 'ATK', cost: 1, max: 3, desc: '+1 weapon damage per level.' },
     { id: 'debugger', name: "Debugger's Eye", icon: 'DBG', cost: 1, max: 1, desc: 'Glitch errors show a hint for the fix. Bugs bite less often.' },
     { id: 'companion', name: 'Companion Strike', icon: 'PET', cost: 2, max: 1, desc: 'Your pet zaps nearby bugs. (Needs a pet.)' },
-    { id: 'overclock', name: 'Overclock', icon: 'OC', cost: 1, max: 2, desc: 'Compiler Cannon recharges faster & hits harder.' },
+    { id: 'overclock', name: 'Overclock', icon: 'OC', cost: 1, max: 2, desc: 'Compiler Cannon recharges faster and hits harder.' },
   ];
 
   // building blocks for Chapter 2 content files (js/chapter2/<lang>.js)

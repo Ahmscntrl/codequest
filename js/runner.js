@@ -116,8 +116,31 @@
     const epilogue = '\n;return {' + capNames.map(n => `${JSON.stringify(n)}: (typeof ${n} !== "undefined" ? ${n} : undefined)`).join(',') + '};';
     const result = { output: out, error: null, actions, calls: [], vars: {} };
     try {
+      // trace loops: insert __cqLoop(site, "x", x) at the top of every braced for loop that declares its variable
+      let loopTrace = null;
+      G.__cqLoop = (site, name, v) => {
+        if (!loopTrace) loopTrace = { site, name, values: [], total: 0 };
+        if (loopTrace.site !== site) return;
+        loopTrace.total++;
+        if (loopTrace.values.length < 60) { let t; try { t = typeof v === 'string' ? JSON.stringify(v) : fmt(v, false); } catch (e) { t = '?'; } loopTrace.values.push(String(t).slice(0, 16)); }
+      };
+      const traced = (function (src) {
+        let outS = '', i = 0, site = 0;
+        const re = /\bfor\s*\(/g;
+        let m;
+        while ((m = re.exec(src))) {
+          let k = m.index + m[0].length, depthP = 1;
+          while (k < src.length && depthP) { const ch = src[k]; if (ch === '(') depthP++; else if (ch === ')') depthP--; k++; }
+          const head = src.slice(m.index + m[0].length, k - 1);
+          const dm = /^\s*(?:let|const|var)\s+([A-Za-z_$][\w$]*)/.exec(head);
+          let j = k; while (j < src.length && /\s/.test(src[j])) j++;
+          if (dm && src[j] === '{') { outS += src.slice(i, j + 1) + ' __cqLoop(' + (site++) + ', ' + JSON.stringify(dm[1]) + ', ' + dm[1] + ');'; i = j + 1; re.lastIndex = j + 1; }
+        }
+        return outS + src.slice(i);
+      })(d.code);
+      Object.defineProperty(result, 'loop', { enumerable: true, get: () => loopTrace ? { name: loopTrace.name, values: loopTrace.values, total: loopTrace.total } : null });
       let fn;
-      try { new Function('"use strict";\n' + d.code); fn = new Function('"use strict";\n' + d.code + epilogue); }
+      try { new Function('"use strict";\n' + d.code); fn = new Function('"use strict";\n' + traced + epilogue); }
       catch (e) { result.error = { type: e.name || 'SyntaxError', message: e.message, line: null, syntax: true }; post(result); return; }
       const cap = fn() || {};
       for (const t of (d.callTests || [])) {
@@ -216,7 +239,11 @@
 
   const CodeRunner = {
     run(lang, code, opts) {
-      if (lang === 'javascript') return runJS(code, opts || {});
+      if (lang === 'javascript') {
+        opts = opts || {};
+        if (opts.callTests && root.Lang) opts = Object.assign({}, opts, { callTests: opts.callTests.map(t => Object.assign({}, t, { fn: root.Lang.testName(t.fn, 'javascript') })) });
+        return runJS(code, opts);
+      }
       if (lang === 'cpp' || lang === 'java' || lang === 'csharp') return runCLike(lang, code, opts || {});
       return runPython(code, opts || {});
     },
