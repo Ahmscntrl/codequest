@@ -72,5 +72,34 @@ err('csharp', 'Console.WriteLine("hi")', 'SyntaxError');
 err('csharp', 'int x = "hi";', 'TypeError');
 err('csharp', 'Console.WriteLine(scroe);', 'NameError');
 
+
+// ---- Chapter 2 features
+const csx = (code, exp, o) => ok('csharp', code, exp, o);
+ok('cpp', cppMain('vector<int> v = {5, 2, 9}; sort(v.begin(), v.end(), [](int a, int b) { return a > b; }); for (int x : v) cout << x << " "; cout << endl; cout << count_if(v.begin(), v.end(), [](int x) { return x > 3; }) << " " << accumulate(v.begin(), v.end(), 0) << " " << *max_element(v.begin(), v.end()) << endl;', '#include <algorithm>\n#include <numeric>'), '9 5 2 \n2 16 9');
+ok('cpp', cppMain('int n = 1; add_one(n); add_one(n); cout << n << endl;', 'void add_one(int &x) { x++; }'), '3');
+ok('cpp', cppMain('int n = 1; no_ref(n); cout << n << endl;', 'void no_ref(int x) { x++; }'), '1');
+ok('cpp', cppMain('Point p = {3, 4}; cout << p.x + p.y << endl;', 'struct Point { int x; int y; };'), '7');
+err('cpp', cppMain('Account a; a.balance = 100;', 'class Account {\n  int balance = 0;\npublic:\n  int get() { return balance; }\n};'), 'AccessError');
+ok('cpp', cppMain('Dog d; Animal &a = d; cout << a.speak() << endl; describe(d);', 'class Animal {\npublic:\n  virtual string speak() { return "..."; }\n};\nclass Dog : public Animal {\npublic:\n  string speak() override { return "Woof"; }\n};\nvoid describe(Animal &a) { cout << "It says " << a.speak() << endl; }'), 'Woof\nIt says Woof');
+ok('cpp', cppMain('try { throw runtime_error("boom"); } catch (const exception& e) { cout << "caught " << e.what() << endl; }', '#include <stdexcept>'), 'caught boom');
+ok('cpp', cppMain('map<string, int> m = {{"b", 2}, {"a", 1}}; for (auto [k, v] : m) cout << k << v << " "; cout << endl;', '#include <map>'), 'a1 b2 ');
+ok('cpp', cppMain('auto twice = [](int x) { return x * 2; }; cout << twice(21) << endl;'), '42');
+ok('cpp', cppMain('cout << area(2) << " " << area(2, 3) << endl;', 'int area(int s) { return s * s; }\nint area(int w, int h) { return w * h; }'), '4 6');
+csx('var nums = new List<int> { 5, 2, 9, 4 };\nvar big = nums.Where(n => n > 3).OrderBy(n => n).ToList();\nConsole.WriteLine(string.Join(", ", big));\nConsole.WriteLine(nums.Sum() + " " + nums.Count(n => n % 2 == 0) + " " + nums.Max() + " " + nums.Select(n => n * 10).First());', '4, 5, 9\n20 2 9 50');
+csx('var h = new Hero(); h.Hp = -5; Console.WriteLine(h.Hp); h.Hp = 7; Console.WriteLine(h.Hp + " " + h.IsAlive);\nclass Hero {\n  private int hp;\n  public int Hp { get { return hp; } set { hp = Math.Max(0, value); } }\n  public bool IsAlive => hp > 0;\n}', '0\n7 True');
+err('csharp', 'var a = new Account();\na.balance = 5;\nclass Account { private int balance; }', 'AccessError');
+csx('IShape s = new Circle(2);\nConsole.WriteLine(s.Area());\ninterface IShape { double Area(); }\nclass Circle : IShape {\n  double r;\n  public Circle(double r) { this.r = r; }\n  public double Area() { return 3 * r * r; }\n}', '12');
+csx('try { throw new ArgumentException("bad value"); }\ncatch (ArgumentException e) { Console.WriteLine("caught: " + e.Message); }\nfinally { Console.WriteLine("done"); }', 'caught: bad value\ndone');
+csx('try { int z = 0; Console.WriteLine(5 / z); } catch (DivideByZeroException) { Console.WriteLine("no dividing by zero"); }', 'no dividing by zero');
+err('csharp', 'throw new InvalidOperationException("nope");', 'RuntimeError');
+csx('Func<int, int> sq = x => x * x;\nConsole.WriteLine(sq(5));', '25');
+ok('java', 'import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    List<Integer> nums = new ArrayList<>(List.of(5, 2, 9, 4));\n    nums.removeIf(n -> n < 3);\n    nums.sort((a, b) -> b - a);\n    System.out.println(nums);\n    int total = nums.stream().filter(n -> n > 4).mapToInt(n -> n).sum();\n    System.out.println(total);\n    nums.forEach(n -> System.out.print(n + " "));\n  }\n}', '[9, 5, 4]\n14\n9 5 4 ');
+ok('java', 'abstract class Shape {\n  abstract double area();\n  String describe() { return "Area " + area(); }\n}\nclass Square extends Shape {\n  double side;\n  Square(double s) { side = s; }\n  @Override\n  double area() { return side * side; }\n}\npublic class Main {\n  public static void main(String[] args) {\n    Shape s = new Square(3);\n    System.out.println(s.describe());\n  }\n}', 'Area 9.0');
+err('java', 'class Bank {\n  private int money = 5;\n}\npublic class Main {\n  public static void main(String[] args) {\n    Bank b = new Bank();\n    System.out.println(b.money);\n  }\n}', 'AccessError');
+ok('java', javaMain('try {\n  int[] a = {1, 2};\n  System.out.println(a[5]);\n} catch (ArrayIndexOutOfBoundsException e) {\n  System.out.println("oops: " + e.getMessage());\n}'), 'oops: Index 5 out of bounds for length 2');
+ok('java', 'class TooHotException extends Exception {\n  TooHotException(String msg) { super(msg); }\n}\npublic class Main {\n  static void check(int t) throws TooHotException { if (t > 100) throw new TooHotException("too hot: " + t); }\n  public static void main(String[] args) {\n    try { check(150); } catch (TooHotException e) { System.out.println(e.getMessage()); }\n  }\n}', 'too hot: 150');
+ok('java', 'import java.util.*;\n' + javaMain('Map<String, Integer> m = new HashMap<>();\nm.put("a", 1); m.merge("a", 5, (x, y) -> x + y);\nfor (Map.Entry<String, Integer> e : m.entrySet()) System.out.println(e.getKey() + "=" + e.getValue());'), 'a=6');
+ok('java', 'class Counter {\n  static int made = 0;\n  Counter() { made++; }\n}\npublic class Main {\n  public static void main(String[] args) {\n    new Counter(); new Counter();\n    System.out.println(Counter.made);\n  }\n}', '2');
+
 console.log(fail ? `${fail} FAILURES` : 'all pass');
 if (fail) process.exitCode = 1;

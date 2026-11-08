@@ -319,3 +319,18 @@ body.touch .keyhints { display: none; }
 .map-langlabel { font-weight: 800; color: var(--muted); }
 .lang-slot .slot-empty-label code { max-width: 100%; overflow-wrap: anywhere; font-size: 11.5px; }
 .lang-slot.empty .btn { margin-top: auto; }
+
+/* ---------- chapter tabs ---------- */
+.map-tabs { display: flex; gap: 8px; margin-bottom: 10px; }
+.map-tab { flex: 0 1 260px; text-align: left; background: var(--panel); border: 2px solid var(--line); border-bottom-width: 4px; color: var(--text); border-radius: 12px; padding: 8px 14px; cursor: pointer; font: 900 16px var(--ui); display: flex; flex-direction: column; gap: 2px; }
+.map-tab small { font-weight: 700; font-size: 12px; color: var(--muted); }
+.map-tab.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78,240,255,.15); }
+.map-tab.locked { opacity: .55; }
+.map-tab.locked small::before { content: 'Locked · '; }
+.map-board.ch2 { background: radial-gradient(ellipse at center, #22183f 0%, #120c26 75%); }
+.map-board.ch2-python { background: radial-gradient(ellipse at 50% 60%, #0f4e5a 0%, #082832 80%); }
+.map-board.ch2-javascript { background: radial-gradient(ellipse at 50% 50%, #3a1460 0%, #12062a 80%); }
+.map-board.ch2-cpp { background: radial-gradient(ellipse at 50% 60%, #5a2a14 0%, #1e0d06 80%); }
+.map-board.ch2-csharp { background: radial-gradient(ellipse at 50% 40%, #2a2f7a 0%, #0c0e2e 80%); }
+.map-board.ch2-java { background: radial-gradient(ellipse at 50% 60%, #4e3220 0%, #1c110a 80%); }
+.map-ch-label { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); font-family: var(--pixel); font-size: clamp(11px, 1.6vw, 16px); color: rgba(255,255,255,.55); letter-spacing: 1px; pointer-events: none; white-space: nowrap; }

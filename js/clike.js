@@ -18,6 +18,11 @@
   class CObj { constructor(cls) { this.cls = cls; this.f = new Map(); } }
   class CSB { constructor(s) { this.s = s || ''; } }
   class Iter { constructor(target, pos, expr) { this.target = target; this.pos = pos; this.expr = expr; } }
+  class CLambda { constructor(node, scope, thisObj) { this.node = node; this.scope = scope; this.thisObj = thisObj; } }
+  class CExc { constructor(type, msg) { this.type = type; this.msg = msg; } }
+  class CStream { constructor(a) { this.a = a; } }
+  class COpt { constructor(v) { this.v = v; } }
+  const EXC_NAMES = /^(Exception|SystemException|ApplicationException|ArgumentException|ArgumentNullException|ArgumentOutOfRangeException|InvalidOperationException|NotImplementedException|IndexOutOfRangeException|DivideByZeroException|NullReferenceException|FormatException|KeyNotFoundException|OverflowException|RuntimeException|IllegalArgumentException|IllegalStateException|ArithmeticException|NullPointerException|IndexOutOfBoundsException|ArrayIndexOutOfBoundsException|NumberFormatException|UnsupportedOperationException|Throwable|Error|exception|runtime_error|logic_error|invalid_argument|out_of_range|length_error|domain_error|range_error|overflow_error|underflow_error)$/;
   const ENDL = { endl: true };
   const BOOLALPHA = { boolalpha: true };
 
@@ -67,6 +72,11 @@
         const w = src.slice(i, j);
         push(KEYWORDS.has(w) ? 'KW' : 'NAME', w);
         i = j; continue;
+      }
+      if (c === '@' && D.id === 'java') {
+        i++; while (i < n && /[A-Za-z0-9_.]/.test(src[i])) i++;
+        if (src[i] === '(') { let d = 0; do { if (src[i] === '(') d++; if (src[i] === ')') d--; i++; } while (i < n && d > 0); }
+        continue;
       }
       if (c === '$' && src[i + 1] === '"' && D.id === 'csharp') { i++; const s = readStr(); push('ISTR', s); continue; }
       if (c === '@' && src[i + 1] === '"' && D.id === 'csharp') { i++; const s = readStr(true); push('STR', s); continue; }
@@ -154,7 +164,7 @@
       if (t.t === 'NAME' || (t.t === 'KW' && (t.v === 'auto' || t.v === 'var' || t.v === 'void' || t.v === 'unsigned' || t.v === 'signed'))) {
         name = next().v;
         if (name === 'unsigned' || name === 'signed') { if (PRIM.has(peek().v)) name = next().v; else name = 'int'; }
-        while (isOp('::') && isName(1)) { next(); name = next().v; }   // std::string -> string
+        while ((isOp('::') || (isOp('.') && D.id !== 'cpp')) && isName(1)) { next(); name = next().v; }   // std::string -> string, Map.Entry -> Entry
         if (name === 'long' && peek().v === 'long') next();
       } else throw new CError('SyntaxError', 'type expected', t.line);
       const args = [];
@@ -259,7 +269,9 @@
         return params;
       } catch (e) { p = save; return null; }
     }
+    function skipThrows() { if (isName() && peek().v === 'throws') { next(); expectName(); while (isOp(',')) { next(); expectName(); } } }
     function parseFuncBody() {
+      skipThrows();
       if (isOp('=>')) { const l = next().line; const e = parseExpr(); expectOp(';'); return [{ type: 'Return', value: e, line: l }]; }
       return parseBlock().body;
     }
@@ -275,21 +287,26 @@
       const name = expectName();
       if (isOp('<')) { let d = 0; do { if (isOp('<')) d++; if (isOp('>')) d--; next(); } while (d > 0 && peek().t !== 'EOF'); }
       let base = null;
+      const ifaces = [];
       if (isOp(':')) {
         next(); skipMods();
         base = expectName();
-        while (isOp(',')) { next(); skipMods(); expectName(); }
-      } else if (isKw('extends')) { next(); base = expectName(); }
-      if (isKw('implements')) { next(); expectName(); while (isOp(',')) { next(); expectName(); } }
+        while (isOp(',')) { next(); skipMods(); ifaces.push(expectName()); }
+      } else if (isKw('extends')) { next(); base = expectName(); while (isOp(',')) { next(); ifaces.push(expectName()); } }
+      if (isKw('implements')) { next(); ifaces.push(expectName()); while (isOp(',')) { next(); ifaces.push(expectName()); } }
       if (isOp('(')) { // record Point(int X, int Y)
         next(); while (!isOp(')')) next(); next();
       }
       expectOp('{');
-      const fields = [], methods = [], ctors = [];
+      const fields = [], methods = [], ctors = [], props = [];
+      const isStruct = t.v === 'struct';
+      const isIface = t.v === 'interface';
+      let label = D.id === 'cpp' ? (isStruct ? 'public' : 'private') : null;
+      const accessOf = (mm) => mm.has('private') ? 'private' : mm.has('protected') ? 'protected' : mm.has('public') ? 'public' : (D.id === 'cpp' ? label : D.id === 'csharp' && !isIface ? 'private' : 'public');
       while (!isOp('}')) {
         if (peek().t === 'EOF') throw new CError('SyntaxError', D.msg.eofBrace, (toks[p - 1] || peek()).line);
         // C++ access labels
-        if ((isKw('public') || isKw('private') || isKw('protected')) && isOp(':', 1)) { next(); next(); continue; }
+        if ((isKw('public') || isKw('private') || isKw('protected')) && isOp(':', 1)) { label = next().v; next(); continue; }
         if (isOp(';')) { next(); continue; }
         const mline = peek().line;
         const mm = skipMods();
@@ -313,7 +330,7 @@
             } while (isOp(',') && next());
           }
           const body = parseFuncBody();
-          ctors.push({ params, body, inits, superArgs, line: mline });
+          ctors.push({ params, body, inits, superArgs, line: mline, access: accessOf(mm) });
           continue;
         }
         const ty = parseType();
@@ -326,19 +343,39 @@
           const params = tryParams();
           if (!params) err(D.msg.expected(')', tokText(peek())));
           if (isKw('const')) next();
-          if (isKw('override')) next();
-          if (isOp(';')) { next(); methods.push({ name: mname, ret: ty, params, body: null, isStatic: mm.has('static'), line: mline }); continue; }
+          while (isKw('override') || isKw('final')) next();
+          if (isOp('=') && peek(1).t === 'NUM') { next(); next(); expectOp(';'); methods.push({ name: mname, ret: ty, params, body: null, isStatic: false, line: mline, access: accessOf(mm), abstract: true }); continue; }
+          if (isOp(';')) { next(); methods.push({ name: mname, ret: ty, params, body: null, isStatic: mm.has('static'), line: mline, access: accessOf(mm), abstract: isIface || mm.has('abstract') }); continue; }
           const body = parseFuncBody();
-          methods.push({ name: mname, ret: ty, params, body, isStatic: mm.has('static'), line: mline });
+          methods.push({ name: mname, ret: ty, params, body, isStatic: mm.has('static'), line: mline, access: isIface ? 'public' : accessOf(mm) });
           continue;
         }
-        // C# property: Type Name { get; set; } [= init;]
+        // C# expression-bodied property: Type Name => expr;
+        if (isOp('=>')) {
+          next(); const e = parseExpr(); expectOp(';');
+          props.push({ name: mname, ty, get: { expr: e }, set: null, line: mline, access: accessOf(mm) });
+          continue;
+        }
+        // C# property: Type Name { get; set; } or with accessor bodies
         if (isOp('{')) {
-          next(); let d = 1;
-          while (d > 0 && peek().t !== 'EOF') { if (isOp('{')) d++; if (isOp('}')) d--; next(); }
+          next();
+          let get = null, set = null, hasBody = false, getAccess = null, setAccess = null;
+          while (!isOp('}')) {
+            if (peek().t === 'EOF') throw new CError('SyntaxError', D.msg.eofBrace, (toks[p - 1] || peek()).line);
+            const am = skipMods();
+            const which = isName() ? next().v : null;
+            if (which !== 'get' && which !== 'set' && which !== 'init') err(D.msg.expected('get or set', tokText(peek())));
+            let acc = { auto: true };
+            if (isOp(';')) next();
+            else if (isOp('=>')) { next(); acc = { expr: parseExpr() }; expectOp(';'); hasBody = true; }
+            else { acc = { body: parseBlock().body }; hasBody = true; }
+            if (which === 'get') { get = acc; getAccess = am.has('private') ? 'private' : null; } else { set = acc; setAccess = am.has('private') ? 'private' : am.has('protected') ? 'protected' : null; }
+          }
+          next();
           let init = null;
           if (isOp('=')) { next(); init = parseExpr(); expectOp(';'); }
-          fields.push({ name: mname, ty, init, isStatic: mm.has('static'), line: mline });
+          if (hasBody) props.push({ name: mname, ty, get, set, line: mline, access: accessOf(mm) });
+          else fields.push({ name: mname, ty, init, isStatic: mm.has('static'), line: mline, access: accessOf(mm), readOnly: !set, setAccess: set ? setAccess : 'private', isProp: true });
           continue;
         }
         // fields: Type a = 1, b;
@@ -350,7 +387,7 @@
           if (isOp('=')) { next(); init = isOp('{') ? parseBraceInit() : parseExpr(); }
           else if (isOp('{')) init = parseBraceInit();
           else if (isOp('(')) { next(); ctorArgs = []; while (!isOp(')')) { ctorArgs.push(parseExpr()); if (isOp(',')) next(); } next(); }
-          fields.push({ name: fname, ty: fty, init, ctorArgs, isStatic: mm.has('static'), line: mline });
+          fields.push({ name: fname, ty: fty, init, ctorArgs, isStatic: mm.has('static'), line: mline, access: accessOf(mm) });
           if (isOp(',')) { next(); fname = expectName(); continue; }
           break;
         }
@@ -359,7 +396,7 @@
       next();
       if (isOp(';')) next();
       else if (D.id === 'cpp') throw new CError('SyntaxError', D.msg.classSemi, (toks[p - 1]).line);
-      return { type: 'Class', name, base, fields, methods, ctors, line: t.line, isStruct: t.v === 'struct' };
+      return { type: 'Class', name, base, ifaces, fields, methods, ctors, props, line: t.line, isStruct, isIface };
     }
 
     // ---- statements
@@ -411,6 +448,13 @@
               const save = p;
               skipMods();
               const ty = tryType();
+              if (typeLooksReal(ty) && isOp('[') && D.id === 'cpp') { // for (auto [k, v] : m)
+                next(); const names = [expectName()];
+                while (isOp(',')) { next(); names.push(expectName()); }
+                expectOp(']'); expectOp(':');
+                const iter = parseExpr(); expectOp(')');
+                return { type: 'ForEach', ty, name: names[0], names, iter, body: parseStatement(), line: t.line };
+              }
               if (typeLooksReal(ty) && isName() && isOp(':', 1)) {
                 const name = next().v; next();
                 const iter = parseExpr(); expectOp(')');
@@ -455,9 +499,9 @@
           case 'try': {
             next(); const body = parseBlock(); const handlers = [];
             while (isKw('catch')) {
-              next(); let name = null;
-              if (isOp('(')) { next(); if (isOp('...')) next(); else { skipMods(); parseType(); if (isName()) name = next().v; } expectOp(')'); }
-              handlers.push({ name, body: parseBlock() });
+              next(); let name = null, ctype = null;
+              if (isOp('(')) { next(); if (isOp('...')) next(); else { skipMods(); ctype = parseType().name; if (isName()) name = next().v; } expectOp(')'); }
+              handlers.push({ name, ctype, body: parseBlock() });
             }
             let fin = null; if (isKw('finally')) { next(); fin = parseBlock(); }
             return { type: 'Try', body, handlers, fin, line: t.line };
@@ -467,6 +511,7 @@
           }
         }
       }
+      if (isName() && peek().v === 'delete' && D.id === 'cpp') { while (!isOp(';')) next(); next(); return { type: 'Empty', line: t.line }; }
       if (looksLikeDecl()) { const d = parseDecl(true); expectOp(';'); return d; }
       // local function (C#/Java inside a method is not allowed in Java, fine for C#)
       const e = parseExprList();
@@ -552,7 +597,7 @@
       if (t.t === 'OP' && ['!', '-', '+', '~'].includes(t.v)) { next(); return { type: 'Unary', op: t.v, operand: parseUnary(), line: t.line }; }
       if (t.t === 'OP' && (t.v === '++' || t.v === '--')) { next(); const operand = parseUnary(); return { type: 'IncDec', op: t.v, prefix: true, target: operand, line: t.line }; }
       if (t.t === 'OP' && t.v === '&') { next(); return parseUnary(); } // address-of: ignore
-      if (t.t === 'OP' && t.v === '*') { next(); return parseUnary(); } // dereference: ignore
+      if (t.t === 'OP' && t.v === '*') { next(); return { type: 'Deref', operand: parseUnary(), line: t.line }; }
       // cast: (int) x
       if (isOp('(') && (isName(1) || peek(1).t === 'KW') && CASTABLE.has(peek(1).v) && isOp(')', 2)) {
         next(); const ty = next().v; next();
@@ -597,7 +642,44 @@
       }
       return e;
     }
+    function tryLambda() {
+      const arrow = D.id === 'java' ? '->' : '=>';
+      const t = peek();
+      if (D.id !== 'cpp' && isName() && isOp(arrow, 1)) { const nm = next().v; next(); return lambdaBody([{ name: nm, ty: null }], t.line); }
+      if (D.id !== 'cpp' && isOp('(')) {
+        const save = p;
+        next();
+        const params = [];
+        let ok = true;
+        while (!isOp(')')) {
+          if (isName() && (isOp(',', 1) || isOp(')', 1))) { params.push({ name: next().v, ty: null }); }
+          else { const ty = tryType(); if (!typeLooksReal(ty) || !isName()) { ok = false; break; } params.push({ name: next().v, ty }); }
+          if (isOp(',')) next(); else if (!isOp(')')) { ok = false; break; }
+        }
+        if (ok && isOp(')') && isOp(arrow, 1)) { next(); next(); return lambdaBody(params, t.line); }
+        p = save;
+        return null;
+      }
+      if (D.id === 'cpp' && isOp('[')) {
+        const save = p;
+        next(); while (!isOp(']') && peek().t !== 'EOF') next(); next();
+        const params = isOp('(') ? tryParams() : [];
+        if (params && (isOp('{') || isOp('->') || isKw('mutable'))) {
+          if (isKw('mutable')) next();
+          if (isOp('->')) { next(); parseType(); }
+          return { type: 'Lambda', params, block: parseBlock().body, line: t.line };
+        }
+        p = save;
+      }
+      return null;
+    }
+    function lambdaBody(params, line) {
+      if (isOp('{')) return { type: 'Lambda', params, block: parseBlock().body, line };
+      return { type: 'Lambda', params, expr: parseAssign(), line };
+    }
     function parsePrimary() {
+      const lam = tryLambda();
+      if (lam) return lam;
       const t = peek();
       if (t.t === 'NUM') { next(); return { type: 'Num', value: t.v, isFloat: t.isFloat, line: t.line }; }
       if (t.t === 'STR') { next(); let v = t.v; while (peek().t === 'STR' && D.id === 'cpp') v += next().v; return { type: 'Str', value: v, line: t.line }; }
@@ -859,6 +941,8 @@
         if (id === 'csharp') return 'System.Collections.Generic.Dictionary`2[System.String,System.Int32]';
         throw E('TypeError', D.msg.operands('<<', 'std::ostream', 'std::map'));
       }
+      if (v instanceof CExc) return id === 'cpp' ? v.msg : `${id === 'java' ? 'java.lang.' : 'System.'}${v.type}: ${v.msg}`;
+      if (v instanceof CLambda) return id === 'java' ? 'Main$$Lambda@1b6d3586' : id === 'csharp' ? 'System.Func`2[System.Int32,System.Int32]' : 'lambda';
       if (v instanceof CObj) {
         const ts = findMethod(v.cls, id === 'csharp' ? 'ToString' : 'toString');
         if (ts && ts.params.length === 0 && id !== 'cpp') return str(callMethod(v, ts, []));
@@ -1014,7 +1098,27 @@
       return obj;
     }
     function runCtor(cls, obj, args, line) {
-      const ctor = cls.ctors.find(c => c.params.length === args.length) || cls.ctors.find(c => c.params.length > args.length && c.params.slice(args.length).every(p => p.def));
+      if (!cls.ctors.length && args.length && !cls.base) {
+        // aggregate initialisation: Point p = {1, 2}; fills the fields in order
+        const fds = cls.fieldDecls.filter(f => !f.isStatic);
+        if (args.length <= fds.length) { args.forEach((a, i) => obj.f.set(fds[i].name, coerce(a, fds[i].ty, fds[i].name))); return; }
+      }
+      if (!cls.base && cls.baseName && EXC_NAMES.test(cls.baseName)) {
+        // a custom exception: class MyError : Exception { MyError(string m) : base(m) {} }
+        const ctor0 = cls.ctors.find(c => c.params.length === args.length);
+        if (ctor0) {
+          const sc = new Scope(globals); sc.thisObj = obj; sc.cls = cls;
+          bindParams(ctor0.params, args, sc, cls.name);
+          const sargs = ctor0.superArgs || (ctor0.body && ctor0.body[0] && isSuperCall(ctor0.body[0]) ? ctor0.body[0].expr.args : null);
+          obj.excMsg = sargs && sargs.length ? str(evalExpr(sargs[0], sc)) : '';
+          for (const ini of ctor0.inits) obj.f.set(ini.name, ini.args.length ? evalExpr(ini.args[0], sc) : null);
+          try { execBlock(ctor0.body.filter(s2 => !isSuperCall(s2)), sc); } catch (e) { if (!(e instanceof Ret)) throw e; }
+          return;
+        }
+        obj.excMsg = args.length ? str(args[0]) : '';
+        return;
+      }
+      const ctor = cls.ctors.find(c => c.params.length === args.length && c.params.every((p, i) => typeMatches(args[i], p.ty))) || cls.ctors.find(c => c.params.length === args.length) || cls.ctors.find(c => c.params.length > args.length && c.params.slice(args.length).every(p => p.def));
       if (!ctor) {
         if (cls.ctors.length || args.length) {
           if (!(cls.ctors.length === 0 && args.length === 0)) throw E('TypeError', D.msg.args(cls.name, cls.ctors.length ? cls.ctors[0].params.length : 0, args.length));
@@ -1037,23 +1141,30 @@
     function findFieldDecl(cls, name) { let c = cls; while (c) { const f = c.fieldDecls.find(x => x.name === name); if (f) return f; c = c.base; } return null; }
 
     // ---------------- functions
-    function bindParams(params, args, scope, fname) {
+    function bindParams(params, args, scope, fname, argExprs, callerScope) {
       const required = params.filter(p => !p.def).length;
       if (args.length < required || args.length > params.length) throw E('TypeError', D.msg.args(fname, params.length, args.length));
       params.forEach((p, i) => {
+        const ax = argExprs && argExprs[i];
+        if (id === 'cpp' && p.ty && p.ty.ref && ax && ['Name', 'Member', 'Index'].includes(ax.type) && !(args[i] instanceof CObj || args[i] instanceof CList || args[i] instanceof CMap)) {
+          // a reference parameter: reading and writing it reads and writes the caller's variable
+          scope.declare(p.name, { get v() { return evalExpr(ax, callerScope); }, set v(nv2) { assignTo(ax, nv2, callerScope); }, ty: p.ty });
+          return;
+        }
         let v = i < args.length ? args[i] : evalExpr(p.def, scope);
         if (!p.ty.ref) v = clone(v);
         scope.declare(p.name, { v: coerce(v, p.ty, p.name), ty: p.ty });
       });
     }
-    function callFunc(f, args, thisObj, cls) {
+    function callFunc(f, args, thisObj, cls, argExprs, callerScope) {
       tick();
+      if (!f.body) throw E('TypeError', id === 'java' ? `abstract method ${f.name}() cannot be called — a subclass has to implement it` : id === 'csharp' ? `Cannot call an abstract member: '${f.name}'` : `pure virtual method '${f.name}' called — a subclass has to override it`);
       if (++depth > 200) { depth = 0; throw E('RuntimeError', id === 'java' ? 'java.lang.StackOverflowError' : id === 'csharp' ? 'Stack overflow.' : 'Segmentation fault (too much recursion)'); }
       const scope = new Scope(globals);
       scope.thisObj = thisObj; scope.cls = cls; scope.func = f;
       const saved = curLine;
       try {
-        bindParams(f.params, args, scope, f.name);
+        bindParams(f.params, args, scope, f.name, argExprs, callerScope);
         execBlock(f.body, scope);
         if (f.ret && f.ret.name !== 'void' && !(f.name === 'main' || f.name === 'Main')) {
           if (id === 'cpp') return defaultFor(f.ret);
@@ -1067,6 +1178,82 @@
       } finally { depth--; curLine = saved; }
     }
     function callMethod(obj, m, args) { return callFunc(m, args, obj, obj.cls); }
+    function typeMatches(v, ty) {
+      if (!ty) return true;
+      const t = ty.name;
+      if (INT_T.has(t)) return typeof v === 'number' || v instanceof Chr;
+      if (DBL_T.has(t)) return typeof v === 'number' || v instanceof Dbl;
+      if (BOOL_T.has(t)) return typeof v === 'boolean';
+      if (STR_T.has(t)) return typeof v === 'string';
+      if (t === 'char') return v instanceof Chr;
+      return true;
+    }
+    function pickOverload(list, argExprs, scope) {
+      const n = argExprs.length;
+      const same = list.filter(x => x.params.length === n);
+      if (same.length > 1) {
+        const vals = argExprs.map(a => { try { return evalExpr(a, scope); } catch (e) { return undefined; } });
+        const exact = same.find(f => f.params.every((p, i) => { const v = vals[i]; const t = p.ty && p.ty.name; if (INT_T.has(t)) return typeof v === 'number'; if (DBL_T.has(t)) return v instanceof Dbl; return typeMatches(v, p.ty); }));
+        if (exact) return exact;
+        const loose = same.find(f => f.params.every((p, i) => typeMatches(vals[i], p.ty)));
+        if (loose) return loose;
+      }
+      return same[0] || list.find(x => x.params.length > n && x.params.slice(n).every(p => p.def)) || list[0];
+    }
+    function callLambda(l, args) {
+      tick();
+      const node = l.node;
+      const scope = new Scope(l.scope);
+      node.params.forEach((p, i) => scope.declare(p.name, { v: p.ty ? coerce(args[i], p.ty, p.name) : args[i], ty: p.ty }));
+      if (node.expr) return evalExpr(node.expr, scope);
+      try { execBlock(node.block, scope); } catch (e) { if (e instanceof Ret) return e.v; throw e; }
+      return null;
+    }
+    const fnOf = (v) => (x, y) => v instanceof CLambda ? callLambda(v, y === undefined ? [x] : [x, y]) : null;
+    function findProp(cls, name) { let c = cls; while (c) { const pr = c.props && c.props.get(name); if (pr) return pr; c = c.base; } return null; }
+    function propGet(obj, pr) {
+      if (!pr.get) throw E('TypeError', id === 'csharp' ? `The property '${pr.name}' cannot be used in this context because it lacks the get accessor` : 'no getter');
+      const scope = new Scope(globals); scope.thisObj = obj; scope.cls = pr.ownerCls;
+      if (pr.get.expr) return evalExpr(pr.get.expr, scope);
+      try { execBlock(pr.get.body, scope); } catch (e) { if (e instanceof Ret) return coerce(e.v, pr.ty); throw e; }
+      return null;
+    }
+    function propSet(obj, pr, v) {
+      if (!pr.set) throw E('TypeError', `Property or indexer '${pr.name}' cannot be assigned to -- it is read only`);
+      const scope = new Scope(globals); scope.thisObj = obj; scope.cls = pr.ownerCls;
+      scope.declare('value', { v: coerce(v, pr.ty), ty: pr.ty });
+      if (pr.set.expr) { evalExpr(pr.set.expr, scope); return; }
+      try { execBlock(pr.set.body, scope); } catch (e) { if (!(e instanceof Ret)) throw e; }
+    }
+    // private / protected members can only be used from inside the class (or subclasses, for protected)
+    function memberAccess(cls, name) {
+      let c = cls;
+      while (c) {
+        const f = c.fieldDecls.find(x => x.name === name); if (f) return { access: f.access, owner: c, decl: f };
+        const m = c.methods.get(name); if (m) return { access: m[0].access, owner: c, decl: m[0] };
+        const pr = c.props && c.props.get(name); if (pr) return { access: pr.access, owner: c, decl: pr };
+        c = c.base;
+      }
+      return null;
+    }
+    function checkAccess(objCls, name, scope, writing) {
+      const info = memberAccess(objCls, name);
+      if (!info) return;
+      let access = info.access;
+      if (writing && info.decl && info.decl.isProp && info.decl.setAccess) access = info.decl.setAccess;
+      if (writing && info.decl && info.decl.isProp && info.decl.readOnly) {
+        const here = findCls(scope);
+        if (!here || here !== info.owner) throw E('AccessError', `Property or indexer '${info.owner.name}.${name}' cannot be assigned to -- it is read only`);
+      }
+      if (!access || access === 'public' || access === 'internal') return;
+      const here = findCls(scope);
+      let ok = false;
+      if (here === info.owner) ok = true;
+      else if (access === 'protected' && here) { let c = here; while (c) { if (c === info.owner) ok = true; c = c.base; } }
+      if (ok) return;
+      const kind = info.decl.params ? 'method' : 'field';
+      throw E('AccessError', id === 'java' ? `${name}${kind === 'method' ? '()' : ''} has ${access} access in ${info.owner.name}` : id === 'csharp' ? `'${info.owner.name}.${name}' is inaccessible due to its protection level` : `'${name}' is ${access} within this context (it belongs to ${info.owner.name})`);
+    }
 
     // ---------------- statements
     function execBlock(stmts, scope) { for (const s of stmts) exec(s, scope); }
@@ -1131,7 +1318,8 @@
             curLine = s.line; tick();
             const ls = new Scope(scope);
             const cell = { v: coerce(it && it.__pair ? it : it, it && it.__pair ? null : s.ty, s.name), ty: s.ty };
-            ls.declare(s.name, cell);
+            if (s.names && it && it.__pair) { ls.declare(s.names[0], { v: it.k, ty: null }); ls.declare(s.names[1], { v: it.v, ty: null }); }
+            else ls.declare(s.name, cell);
             let stop = false;
             try { exec(s.body, ls); } catch (e) { if (e === BREAK) stop = true; else if (e !== CONTINUE) throw e; }
             if (byRef) { if (chars) chars[k] = cell.v instanceof Chr ? cell.v.c : str(cell.v); else coll.a[k] = cell.v; }
@@ -1155,13 +1343,28 @@
         case 'Return': throw new Ret(s.value ? evalExpr(s.value, scope) : null);
         case 'Break': throw BREAK;
         case 'Continue': throw CONTINUE;
-        case 'Throw': throw new CError('RuntimeError', s.value ? str(evalExpr(s.value, scope)) : 'exception thrown', s.line);
+        case 'Throw': {
+          let v = s.value ? evalExpr(s.value, scope) : (scope.find('__caught') ? scope.find('__caught').v : null);
+          if (typeof v === 'string' || isNum(v)) v = new CExc(id === 'cpp' ? (typeof v === 'string' ? 'const char*' : 'int') : 'Exception', str(v));
+          const type = v instanceof CExc ? v.type : v instanceof CObj ? v.cls.name : 'Exception';
+          const msg = v instanceof CExc ? v.msg : v instanceof CObj ? (v.excMsg !== undefined ? v.excMsg : '') : '';
+          const shown = id === 'java' ? `Exception in thread "main" ${/Exception$|Error$/.test(type) && !classes.has(type) ? 'java.lang.' : ''}${type}: ${msg}`
+            : id === 'csharp' ? `Unhandled exception. ${classes.has(type) ? '' : 'System.'}${type}: ${msg}`
+              : `terminate called after throwing an instance of '${classes.has(type) ? type : 'std::' + type}'\n  what():  ${msg}`;
+          const err = new CError('RuntimeError', shown, s.line);
+          err.thrown = v;
+          throw err;
+        }
         case 'Try': {
           try { exec(s.body, scope); }
           catch (e) {
-            if (!(e instanceof CError) || e.cType === 'TimeoutError' || e.cType === 'SyntaxError' || !s.handlers.length) throw e;
-            const h = s.handlers[0]; const hs = new Scope(scope);
-            if (h.name) hs.declare(h.name, { v: e.message, ty: null });
+            if (!(e instanceof CError) || e.cType !== 'RuntimeError' || !s.handlers.length) throw e;
+            const ex = e.thrown || excFromError(e);
+            const h = s.handlers.find(hd => catches(hd.ctype, ex));
+            if (!h) throw e;
+            const hs = new Scope(scope);
+            if (h.name) hs.declare(h.name, { v: ex, ty: null });
+            hs.declare('__caught', { v: ex, ty: null });
             exec(h.body, hs);
           } finally { if (s.fin) exec(s.fin, scope); }
           return;
@@ -1170,6 +1373,42 @@
       }
       throw E('SyntaxError', `unsupported statement ${s.type}`);
     }
+    function excFromError(e) {
+      const m = e.message;
+      const pick = (cs, java, cpp) => id === 'csharp' ? cs : id === 'java' ? java : cpp;
+      let type;
+      if (/zero/i.test(m)) type = pick('DivideByZeroException', 'ArithmeticException', 'runtime_error');
+      else if (/IndexOutOfRange/.test(m)) type = 'IndexOutOfRangeException';
+      else if (/ArgumentOutOfRange/.test(m)) type = 'ArgumentOutOfRangeException';
+      else if (/ArrayIndexOutOfBounds/.test(m)) type = 'ArrayIndexOutOfBoundsException';
+      else if (/StringIndexOutOfBounds/.test(m)) type = 'StringIndexOutOfBoundsException';
+      else if (/IndexOutOfBounds/.test(m)) type = 'IndexOutOfBoundsException';
+      else if (/out of range|map::at/.test(m)) type = 'out_of_range';
+      else if (/NullReference/.test(m)) type = 'NullReferenceException';
+      else if (/NullPointer/.test(m)) type = 'NullPointerException';
+      else if (/NumberFormat/.test(m)) type = 'NumberFormatException';
+      else if (/FormatException/.test(m)) type = 'FormatException';
+      else if (/KeyNotFound/.test(m)) type = 'KeyNotFoundException';
+      else if (/invalid_argument/.test(m)) type = 'invalid_argument';
+      else type = pick('Exception', 'RuntimeException', 'runtime_error');
+      const msg = m.replace(/^.*?(System\.[\w.]+|java\.lang\.[\w.]+): ?/, '');
+      return new CExc(type, msg);
+    }
+    function catches(ctype, ex) {
+      if (!ctype) return true;
+      const type = ex instanceof CExc ? ex.type : ex instanceof CObj ? ex.cls.name : 'Exception';
+      if (ctype === type) return true;
+      if (/^(Exception|exception|Throwable)$/.test(ctype)) return true;
+      if (ctype === 'RuntimeException' && !(ex instanceof CObj && !EXC_NAMES.test(rootBase(ex.cls)))) return true;
+      if (ctype === 'logic_error' && /^(invalid_argument|out_of_range|length_error|domain_error)$/.test(type)) return true;
+      if (ctype === 'runtime_error' && /^(range_error|overflow_error|underflow_error)$/.test(type)) return true;
+      if (ctype === 'IndexOutOfBoundsException' && /IndexOutOfBounds/.test(type)) return true;
+      if (ctype === 'IllegalArgumentException' && type === 'NumberFormatException') return true;
+      if (ctype === 'ArgumentException' && /^Argument/.test(type)) return true;
+      if (ex instanceof CObj) { let c = ex.cls; while (c) { if (c.name === ctype || c.baseName === ctype) return true; c = c.base; } }
+      return false;
+    }
+    function rootBase(cls) { let c = cls; while (c.base) c = c.base; return c.baseName || c.name; }
     function inferType(v) {
       if (typeof v === 'number') return { name: 'int', args: [] };
       if (v instanceof Dbl) return { name: 'double', args: [] };
@@ -1218,6 +1457,7 @@
       const cell = scope.find(name);
       if (cell) return cell.v;
       const thisObj = findThis(scope);
+      if (thisObj) { const pr = findProp(thisObj.cls, name); if (pr) return propGet(thisObj, pr); }
       if (thisObj && thisObj.f.has(name)) return thisObj.f.get(name);
       const cls = findCls(scope);
       if (cls) { const sf = staticField(cls, name); if (sf) return sf.v; }
@@ -1235,6 +1475,7 @@
       const cell = scope.find(name);
       if (cell) { if (cell.isConst) throw E('TypeError', D.msg.constAssign(name)); cell.v = coerce(v, cell.ty, name); return; }
       const thisObj = findThis(scope);
+      if (thisObj) { const pr = findProp(thisObj.cls, name); if (pr) { propSet(thisObj, pr, v); return; } }
       if (thisObj && thisObj.f.has(name)) { const fd = findFieldDecl(thisObj.cls, name); thisObj.f.set(name, coerce(v, fd ? fd.ty : null, name)); return; }
       const cls = findCls(scope);
       if (cls) { const sf = staticField(cls, name); if (sf) { sf.v = coerce(v, sf.ty, name); return; } }
@@ -1331,6 +1572,10 @@
       if (ns === 'int' && (fn === 'Parse')) { if (!/^\s*[+-]?\d+\s*$/.test(a[0])) throw E('RuntimeError', 'System.FormatException: The input string was not in a correct format.'); return parseInt(a[0], 10); }
       if (ns === 'double' && fn === 'Parse') return new Dbl(parseFloat(a[0]));
       if (ns === 'Convert') { if (fn === 'ToInt32') return Math.trunc(typeof a[0] === 'string' ? parseInt(a[0], 10) : num(a[0])); if (fn === 'ToString') return str(a[0]); if (fn === 'ToDouble') return new Dbl(typeof a[0] === 'string' ? parseFloat(a[0]) : num(a[0])); }
+      if (ns === 'Arrays' && fn === 'stream') return new CStream(a[0].a.slice());
+      if (ns === 'Collectors') return { __collect: fn, sep: a.length ? str(a[0]) : '' };
+      if (ns === 'Collections' && fn === 'sort' && a[1] instanceof CLambda) { const f2 = fnOf(a[1]); a[0].a.sort((x, y) => nv(f2(x, y))); return null; }
+      if (ns === 'Collections' && (fn === 'max' || fn === 'min')) return a[0].a.reduce((t, x) => (fn === 'max' ? cmp(x, t) > 0 : cmp(x, t) < 0) ? x : t);
       if (ns === 'Arrays' && fn === 'toString') return '[' + a[0].a.map(x => str(x, true)).join(', ') + ']';
       if (ns === 'Arrays' && fn === 'asList') return new CList('ArrayList', a.length === 1 && a[0] instanceof CList ? a[0].a.slice() : a.slice(), a[0] ? elemName(a[0]) : null);
       if (ns === 'Arrays' && fn === 'sort') { a[0].a.sort((x, y) => cmp(x, y)); return null; }
@@ -1343,6 +1588,14 @@
       if (ns === 'char') { const c = a[0] instanceof Chr ? a[0].c : ''; if (fn === 'ToUpper') return new Chr(c.toUpperCase()); if (fn === 'ToLower') return new Chr(c.toLowerCase()); if (fn === 'IsDigit') return /\d/.test(c); }
       if (ns === 'Thread' && fn === 'sleep') return null;
       throw E('NameError', id === 'java' ? `cannot find symbol\n  symbol: method ${fn} in ${ns}` : id === 'csharp' ? `'${ns}' does not contain a definition for '${fn}'` : `'${fn}' is not a member of '${ns}'`);
+    }
+    function iterItems(t) { return typeof t === 'string' ? [...t].map(c => new Chr(c)) : t instanceof CList ? t.a : []; }
+    function iterIndex(it) { const n = iterItems(it.target).length; if (it.pos === 'end' || it.pos === 'rend') return n + (it.offset || 0); return it.offset || 0; }
+    function iterRange(a, b) {
+      if (!(a instanceof Iter)) throw E('TypeError', 'expected an iterator like v.begin()');
+      const items = iterItems(a.target);
+      if (a.pos === 'rbegin') return items.slice().reverse();
+      return items.slice(iterIndex(a), b instanceof Iter ? iterIndex(b) : items.length);
     }
     function cmp(x, y) { if (isNum(x) && isNum(y)) return nv(x) - nv(y); const a = str(x), b = str(y); return a < b ? -1 : a > b ? 1 : 0; }
     function callBuiltinFn(name, args, callNode, scope) {
@@ -1373,15 +1626,38 @@
             const it = a[0];
             if (!(it instanceof Iter)) throw E('TypeError', `no matching function for call to '${name}'`);
             const t = it.target;
+            const order = a[2] ? (x, y) => (truthy(fnOf(a[2])(x, y)) ? -1 : truthy(fnOf(a[2])(y, x)) ? 1 : 0) : (x, y) => cmp(x, y);
             if (typeof t === 'string') {
-              const chars = [...t];
-              if (name === 'reverse') chars.reverse(); else chars.sort();
-              assignTo(it.expr, chars.join(''), scope);
+              const chars = [...t].map(c => new Chr(c));
+              if (name === 'reverse') chars.reverse(); else chars.sort(order);
+              assignTo(it.expr, chars.map(c => c.c).join(''), scope);
             } else if (t instanceof CList) {
-              if (name === 'reverse') t.a.reverse(); else t.a.sort((x, y) => cmp(x, y));
+              const lo = iterIndex(a[0]), hi = iterIndex(a[1]);
+              const part = t.a.slice(lo, hi);
+              if (name === 'reverse') part.reverse(); else part.sort(order);
+              t.a.splice(lo, part.length, ...part);
             }
             return null;
           }
+          case 'for_each': { for (const x of iterRange(a[0], a[1])) fnOf(a[2])(x); return null; }
+          case 'count_if': return iterRange(a[0], a[1]).filter(x => truthy(fnOf(a[2])(x))).length;
+          case 'count': return iterRange(a[0], a[1]).filter(x => eq(x, a[2])).length;
+          case 'any_of': return iterRange(a[0], a[1]).some(x => truthy(fnOf(a[2])(x)));
+          case 'all_of': return iterRange(a[0], a[1]).every(x => truthy(fnOf(a[2])(x)));
+          case 'none_of': return !iterRange(a[0], a[1]).some(x => truthy(fnOf(a[2])(x)));
+          case 'accumulate': { let t = a[2]; for (const x of iterRange(a[0], a[1])) t = a[3] ? fnOf(a[3])(t, x) : arith('+', t, x); return t; }
+          case 'find': case 'find_if': case 'max_element': case 'min_element': {
+            const items = iterRange(a[0], a[1]); const start = iterIndex(a[0]);
+            let k = -1;
+            if (name === 'find') k = items.findIndex(x => eq(x, a[2]));
+            else if (name === 'find_if') k = items.findIndex(x => truthy(fnOf(a[2])(x)));
+            else items.forEach((x, i) => { if (k < 0 || (name === 'max_element' ? cmp(x, items[k]) > 0 : cmp(x, items[k]) < 0)) k = i; });
+            const it = new Iter(a[0].target, 'begin', a[0].expr);
+            it.offset = k < 0 ? iterItems(a[0].target).length : start + k;
+            return it;
+          }
+          case 'transform': { const src = iterRange(a[0], a[1]).map(x => fnOf(a[3])(x)); const dst = a[2]; const t = dst.target; if (t instanceof CList) { const off = iterIndex(dst); src.forEach((x, i) => { t.a[off + i] = x; }); } return null; }
+          case 'distance': return iterIndex(a[1]) - iterIndex(a[0]);
           case 'getline': throw E('RuntimeError', 'reading input is not available here — use the variables you collected!');
           case 'printf': write(printf(a[0], a.slice(1))); return null;
         }
@@ -1390,8 +1666,13 @@
     }
 
     // ---------------- member access
-    function member(obj, name, line, node) {
+    function member(obj, name, line, node, scope) {
       curLine = line;
+      if (obj instanceof CExc || (obj instanceof CObj && obj.excMsg !== undefined)) {
+        const msg = obj instanceof CExc ? obj.msg : obj.excMsg;
+        if (name === 'Message' || name === 'message') { if (!(obj instanceof CObj && obj.f.has(name))) return msg; }
+        if (obj instanceof CExc) return { __bound: obj, name };
+      }
       if (obj && obj.__ns) return nsMember(obj.__ns, name);
       if (obj && obj.__sysout) return { __bound: obj, name };
       if (obj && obj.__class) {
@@ -1403,6 +1684,9 @@
       }
       if (obj === null || obj === undefined) throw E('RuntimeError', D.msg.nullRef);
       if (obj instanceof CObj) {
+        if (scope) checkAccess(obj.cls, name, scope, false);
+        const pr = findProp(obj.cls, name);
+        if (pr) return propGet(obj, pr);
         if (obj.f.has(name)) return obj.f.get(name);
         if (findMethod(obj.cls, name)) return { __bound: obj, name };
         throw E('NameError', D.msg.noMember(obj.cls.name, name));
@@ -1439,8 +1723,19 @@
       if (obj && obj.__class) {
         const m = findMethod(obj.cls, name, args.length);
         if (!m) throw E('NameError', D.msg.noMember(obj.cls.name, name));
-        return callFunc(m, args, null, obj.cls);
+        const me = findThis(scope);
+        return callFunc(m, args, m.isStatic ? null : me, m.ownerCls || obj.cls, node.args, scope);
       }
+      if (obj instanceof CLambda) {
+        if (/^(apply|test|accept|get|run|compare|applyAsInt|applyAsDouble|Invoke)$/.test(name)) return callLambda(obj, args);
+      }
+      if (obj instanceof CExc || (obj instanceof CObj && obj.excMsg !== undefined && /^(getMessage|what|ToString|toString)$/.test(name) && !findMethod(obj.cls, name))) {
+        const msg = obj instanceof CExc ? obj.msg : obj.excMsg, type = obj instanceof CExc ? obj.type : obj.cls.name;
+        if (name === 'getMessage' || name === 'what') return msg;
+        if (name === 'ToString' || name === 'toString') return `${type}: ${msg}`;
+      }
+      if (obj instanceof CStream) return streamMethod(obj, name, args);
+      if (obj instanceof COpt) { if (name === 'get' || name === 'getAsInt' || name === 'getAsDouble') { if (obj.v === null) throw E('RuntimeError', 'java.util.NoSuchElementException: No value present'); return obj.v; } if (name === 'orElse') return obj.v === null ? args[0] : obj.v; if (name === 'isPresent') return obj.v !== null; }
       if (obj && obj.__super) {
         const m = findMethod(obj.cls, name, args.length);
         if (!m) throw E('NameError', D.msg.noMember(obj.cls.name, name));
@@ -1449,8 +1744,13 @@
       if (obj === null || obj === undefined) throw E('RuntimeError', D.msg.nullRef);
       if (obj instanceof CObj) {
         const m = findMethod(obj.cls, name, args.length);
-        if (!m) { if (obj.f.has(name)) throw E('TypeError', D.msg.notFunc(name)); throw E('NameError', D.msg.noMember(obj.cls.name, name)); }
-        return callFunc(m, args, obj, m.ownerCls || obj.cls);
+        if (!m) {
+          const fv = obj.f.get(name);
+          if (fv instanceof CLambda) return callLambda(fv, args);
+          if (obj.f.has(name)) throw E('TypeError', D.msg.notFunc(name)); throw E('NameError', D.msg.noMember(obj.cls.name, name));
+        }
+        checkAccess(obj.cls, name, scope, false);
+        return callFunc(m, args, obj, m.ownerCls || obj.cls, node.args, scope);
       }
       if (obj.__pair) { if (name === 'getKey') return obj.k; if (name === 'getValue') return obj.v; }
       if (obj instanceof Iter) { if (name === 'base') return obj; }
@@ -1464,12 +1764,37 @@
         if (name === 'length') return obj.s.length;
       }
       if (isNum(obj) || typeof obj === 'boolean') {
-        if (name === 'ToString' || name === 'toString') return str(obj);
+        if (name === 'ToString' || name === 'toString') return args.length ? fmtSpec(obj, str(args[0])) : str(obj);
         if (name === 'Equals' || name === 'equals') return eq(obj, args[0]);
         if (name === 'CompareTo' || name === 'compareTo') return cmp(obj, args[0]);
       }
       if (obj instanceof Chr && (name === 'ToString' || name === 'toString')) return obj.c;
       throw E('NameError', D.msg.noMember(tname(obj), name));
+    }
+    function streamMethod(st, name, a) {
+      const f1 = a[0] instanceof CLambda ? fnOf(a[0]) : null;
+      switch (name) {
+        case 'filter': return new CStream(st.a.filter(x => truthy(f1(x))));
+        case 'map': case 'mapToInt': case 'mapToDouble': case 'mapToObj': return new CStream(st.a.map(x => f1(x)));
+        case 'sorted': return new CStream(st.a.slice().sort((x, y) => f1 ? nv(fnOf(a[0])(x, y)) : cmp(x, y)));
+        case 'distinct': { const out = []; for (const x of st.a) if (!out.some(y => eq(x, y))) out.push(x); return new CStream(out); }
+        case 'limit': return new CStream(st.a.slice(0, nv(a[0])));
+        case 'skip': return new CStream(st.a.slice(nv(a[0])));
+        case 'forEach': st.a.forEach(x => f1(x)); return null;
+        case 'count': return st.a.length;
+        case 'sum': return mkNum(st.a.reduce((t, x) => t + nv(x), 0), st.a.some(isD));
+        case 'average': return new COpt(st.a.length ? new Dbl(st.a.reduce((t, x) => t + nv(x), 0) / st.a.length) : null);
+        case 'max': case 'min': { if (!st.a.length) return new COpt(null); const f2 = a[0] instanceof CLambda ? fnOf(a[0]) : null; return new COpt(st.a.reduce((t, x) => { const c = f2 ? nv(f2(x, t)) : cmp(x, t); return (name === 'max' ? c > 0 : c < 0) ? x : t; })); }
+        case 'anyMatch': return st.a.some(x => truthy(f1(x)));
+        case 'allMatch': return st.a.every(x => truthy(f1(x)));
+        case 'noneMatch': return !st.a.some(x => truthy(f1(x)));
+        case 'findFirst': return new COpt(st.a.length ? st.a[0] : null);
+        case 'reduce': { if (a.length === 2) { let t = a[0]; const f2 = fnOf(a[1]); for (const x of st.a) t = f2(t, x); return t; } const f2 = fnOf(a[0]); if (!st.a.length) return new COpt(null); let t = st.a[0]; for (const x of st.a.slice(1)) t = f2(t, x); return new COpt(t); }
+        case 'toList': return new CList('ArrayList', st.a.slice());
+        case 'collect': { const c = a[0] || {}; if (c.__collect === 'joining') return st.a.map(x => str(x)).join(c.sep); return new CList('ArrayList', st.a.slice()); }
+        case 'boxed': return st;
+      }
+      throw E('NameError', `cannot find symbol\n  symbol: method ${name} in Stream`);
     }
     function stringMethod(s, name, a, node, scope) {
       const bad = () => { throw E('NameError', D.msg.noMember(tname(s), name)); };
@@ -1563,7 +1888,11 @@
         bad();
       }
       if (id === 'java') {
+        if (name === 'stream') return new CStream(l.a.slice());
         if (l.kind === 'array') bad();
+        if (name === 'forEach') { const f2 = fnOf(a[0]); l.a.slice().forEach(x => f2(x)); return null; }
+        if (name === 'removeIf') { const f2 = fnOf(a[0]); const before = l.a.length; l.a = l.a.filter(x => !truthy(f2(x))); return before !== l.a.length; }
+        if (name === 'sort') { const f2 = a[0] instanceof CLambda ? fnOf(a[0]) : null; l.a.sort((x, y) => f2 ? nv(f2(x, y)) : cmp(x, y)); return null; }
         switch (name) {
           case 'add': if (a.length === 2) { l.a.splice(nv(a[0]), 0, a[1]); return true; } l.a.push(a[0]); return true;
           case 'get': return l.a[chk(nv(a[0]))];
@@ -1581,6 +1910,36 @@
         }
         bad();
       }
+      const f1 = a[0] instanceof CLambda ? fnOf(a[0]) : null;
+      const key = (x) => f1 ? f1(x) : x;
+      const numOf = (x) => nv(key(x));
+      const anyD = () => l.a.some(x => key(x) instanceof Dbl);
+      switch (name) { // C# LINQ
+        case 'Where': return new CList('List', l.a.filter(x => truthy(f1(x))), l.elem);
+        case 'Select': return new CList('List', l.a.map(x => f1(x)));
+        case 'OrderBy': return new CList('List', l.a.slice().sort((x, y) => cmp(key(x), key(y))), l.elem);
+        case 'OrderByDescending': return new CList('List', l.a.slice().sort((x, y) => cmp(key(y), key(x))), l.elem);
+        case 'Any': return f1 ? l.a.some(x => truthy(f1(x))) : l.a.length > 0;
+        case 'All': return l.a.every(x => truthy(f1(x)));
+        case 'Count': return f1 ? l.a.filter(x => truthy(f1(x))).length : l.a.length;
+        case 'First': { const r = f1 ? l.a.find(x => truthy(f1(x))) : l.a[0]; if (r === undefined) throw E('RuntimeError', 'System.InvalidOperationException: Sequence contains no matching element'); return r; }
+        case 'FirstOrDefault': { const r = f1 ? l.a.find(x => truthy(f1(x))) : l.a[0]; return r === undefined ? (l.elem === 'int' ? 0 : null) : r; }
+        case 'Last': { const r = f1 ? l.a.filter(x => truthy(f1(x))).pop() : l.a[l.a.length - 1]; if (r === undefined) throw E('RuntimeError', 'System.InvalidOperationException: Sequence contains no elements'); return r; }
+        case 'Sum': return mkNum(l.a.reduce((t, x) => t + numOf(x), 0), anyD());
+        case 'Average': if (!l.a.length) throw E('RuntimeError', 'System.InvalidOperationException: Sequence contains no elements'); return new Dbl(l.a.reduce((t, x) => t + numOf(x), 0) / l.a.length);
+        case 'Max': if (f1) return l.a.map(key).reduce((t, x) => (cmp(x, t) > 0 ? x : t)); break;
+        case 'Min': if (f1) return l.a.map(key).reduce((t, x) => (cmp(x, t) < 0 ? x : t)); break;
+        case 'Distinct': { const out = []; for (const x of l.a) if (!out.some(y => eq(x, y))) out.push(x); return new CList('List', out, l.elem); }
+        case 'Take': return new CList('List', l.a.slice(0, nv(a[0])), l.elem);
+        case 'Skip': return new CList('List', l.a.slice(nv(a[0])), l.elem);
+        case 'ForEach': l.a.slice().forEach(x => f1(x)); return null;
+        case 'RemoveAll': { const before = l.a.length; l.a = l.a.filter(x => !truthy(f1(x))); return before - l.a.length; }
+        case 'Find': { const r = l.a.find(x => truthy(f1(x))); return r === undefined ? (l.elem === 'int' ? 0 : null) : r; }
+        case 'FindAll': return new CList('List', l.a.filter(x => truthy(f1(x))), l.elem);
+        case 'Exists': return l.a.some(x => truthy(f1(x)));
+        case 'Aggregate': { let t = a.length > 1 ? a[0] : l.a[0]; const f2 = fnOf(a.length > 1 ? a[1] : a[0]); for (const x of (a.length > 1 ? l.a : l.a.slice(1))) t = f2(t, x); return t; }
+      }
+      if (name === 'Sort' && a[0] instanceof CLambda) { const f2 = fnOf(a[0]); l.a.sort((x, y) => nv(f2(x, y))); return null; }
       switch (name) { // C#
         case 'Add': if (l.kind === 'array') bad(); l.a.push(coerceElem(a[0])); return null;
         case 'Insert': l.a.splice(nv(a[0]), 0, a[1]); return null;
@@ -1626,6 +1985,9 @@
           case 'keySet': return new CList('ArrayList', [...m.m.keys()]);
           case 'values': return new CList('ArrayList', [...m.m.values()]);
           case 'entrySet': return { __keys: [...m.m.entries()].map(([kk, v]) => ({ __pair: true, k: kk, v })) };
+          case 'forEach': { const f2 = fnOf(a[0]); for (const [kk, v] of [...m.m.entries()]) f2(kk, v); return null; }
+          case 'merge': { const f2 = fnOf(a[2]); m.m.set(k, m.m.has(k) ? f2(m.m.get(k), a[1]) : a[1]); return null; }
+          case 'putIfAbsent': if (!m.m.has(k)) m.m.set(k, a[1]); return null;
           case 'isEmpty': return m.m.size === 0;
         }
         bad();
@@ -1645,6 +2007,9 @@
       if (target.type === 'Member') {
         const obj = evalExpr(target.obj, scope);
         if (obj instanceof CObj) {
+          checkAccess(obj.cls, target.name, scope, true);
+          const pr = findProp(obj.cls, target.name);
+          if (pr) { propSet(obj, pr, v); return; }
           if (!obj.f.has(target.name)) throw E('NameError', D.msg.noMember(obj.cls.name, target.name));
           const fd = findFieldDecl(obj.cls, target.name);
           obj.f.set(target.name, coerce(v, fd ? fd.ty : null, target.name)); return;
@@ -1706,6 +2071,7 @@
       throw E('TypeError', D.msg.operands(op, tname(a), tname(b)));
     }
     function compare(op, a, b) {
+      if ((op === '==' || op === '!=') && a instanceof Iter && b instanceof Iter) { const r = iterIndex(a) === iterIndex(b); return op === '==' ? r : !r; }
       if (op === '==' || op === '!=') {
         let r;
         if (a && a.__mapend !== undefined || b && b.__mapend !== undefined) r = !!(a && a.__mapend) === !!(b && b.__mapend);
@@ -1725,6 +2091,12 @@
         case 'Null': return null;
         case 'Interp': return e.parts.map(p => p.type === 'Fmt' ? fmtSpec(evalExpr(p.value, scope), p.fmt) : p.value).join('');
         case 'Name': return lookup(e.id, scope, e.line);
+        case 'Lambda': return new CLambda(e, scope, findThis(scope));
+        case 'Deref': {
+          const v = evalExpr(e.operand, scope);
+          if (v instanceof Iter) { const items = iterItems(v.target); const i = iterIndex(v); if (i < 0 || i >= items.length) throw E('RuntimeError', 'Segmentation fault (dereferenced end())'); return items[i]; }
+          return v;
+        }
         case 'This': { const t = findThis(scope); if (!t) throw E('SyntaxError', id === 'java' ? 'non-static variable this cannot be referenced from a static context' : "invalid use of 'this'"); return t; }
         case 'Super': { const t = findThis(scope); const c = findCls(scope); return { __super: true, thisObj: t, cls: c && c.base }; }
         case 'Seq': { let v; for (const x of e.items) v = evalExpr(x, scope); return v; }
@@ -1796,7 +2168,7 @@
         }
         case 'Member': {
           const obj = evalExpr(e.obj, scope);
-          const v = member(obj, e.name, e.line, e);
+          const v = member(obj, e.name, e.line, e, scope);
           if (v && v.__bound && !(obj && (obj.__sysout))) {
             // property-like access to a method without call: e.g. list.size (Java) -> error
             if (obj instanceof CObj || obj instanceof CList || obj instanceof CMap || typeof obj === 'string') {
@@ -1841,7 +2213,11 @@
         case 'New': {
           const t = e.ty.name;
           const args = e.args.map(a => evalExpr(a, scope));
-          if (classes.has(t)) return construct(classes.get(t), args, e.line);
+          if (classes.has(t)) {
+            const kc = classes.get(t);
+            if (kc.isIface) throw E('TypeError', id === 'java' ? `${t} is abstract; cannot be instantiated` : `Cannot create an instance of the abstract type or interface '${t}'`);
+            return construct(kc, args, e.line);
+          }
           if (/^(ArrayList|List|LinkedList|Vector)$/.test(t)) {
             const l = new CList(id === 'java' ? 'ArrayList' : 'List', args[0] instanceof CList ? args[0].a.slice() : [], e.ty.args[0] && e.ty.args[0].name);
             if (e.init) l.a = e.init.items.map(x => evalExpr(x, scope));
@@ -1853,6 +2229,7 @@
             return m;
           }
           if (t === 'StringBuilder') return new CSB(args.length ? str(args[0]) : '');
+          if (EXC_NAMES.test(t)) return new CExc(t, args.length ? str(args[0]) : '');
           if (t === 'string' || t === 'String') {
             if (args[0] instanceof CList) return args[0].a.map(x => str(x)).join('');
             if (args.length === 2 && args[0] instanceof Chr) return args[0].c.repeat(nv(args[1]));
@@ -1883,18 +2260,22 @@
         const name = c.id;
         const args = () => e.args.map(a => evalExpr(a, scope));
         // local variable holding something callable? (not supported) -> methods of this class -> global functions -> API -> builtins
+        const lamCell = scope.find(name);
+        if (lamCell && lamCell.v instanceof CLambda) { const av = args(); curLine = e.line; return callLambda(lamCell.v, av); }
         const thisObj = findThis(scope);
         const cls = findCls(scope);
         if (cls) {
-          const m = findMethod(cls, name, e.args.length);
-          if (m) { const av = args(); curLine = e.line; return callFunc(m, av, m.isStatic ? null : thisObj, cls); }
+          // virtual dispatch: the object's real class first, then the class we're in
+          const m = (thisObj && findMethod(thisObj.cls, name, e.args.length)) || findMethod(cls, name, e.args.length);
+          if (m) { const av = args(); curLine = e.line; return callFunc(m, av, m.isStatic ? null : thisObj, m.ownerCls || cls, e.args, scope); }
         }
         if (funcs.has(name)) {
           const list = funcs.get(name);
-          const f = list.find(x => x.params.length === e.args.length) || list.find(x => x.params.length > e.args.length && x.params.slice(e.args.length).every(p => p.def)) || list[0];
+          const f = pickOverload(list, e.args, scope);
           const av = args(); curLine = e.line;
-          return callFunc(f, av, null, null);
+          return callFunc(f, av, null, null, e.args, scope);
         }
+        if (EXC_NAMES.test(name) && id === 'cpp') { const av = args(); return new CExc(name, av.length ? str(av[0]) : ''); }
         if (apiNames[name]) { const av = args(); curLine = e.line; return apiCall(apiNames[name], av); }
         if (classes.has(name) && id === 'cpp') return construct(classes.get(name), args(), e.line);
         if (id === 'cpp' && (STR_T.has(name) || name === 'int' || name === 'double' || name === 'char')) { const av = args(); return name === 'string' ? (av.length === 0 ? '' : av.length === 2 && av[0] instanceof Iter ? iterRangeString(av[0], av[1]) : av.length === 2 && av[1] instanceof Chr ? av[1].c.repeat(nv(av[0])) : str(av[0])) : evalExpr({ type: 'Cast', to: name, value: e.args[0], line: e.line }, scope); }
@@ -1921,7 +2302,9 @@
       for (const k of classes.keys()) known.add(k);
       for (const k of funcs.keys()) known.add(k);
       const BUILTIN = new Set(['std', 'cout', 'cerr', 'cin', 'endl', 'boolalpha', 'string', 'vector', 'map', 'unordered_map', 'to_string', 'stoi', 'stod', 'toupper', 'tolower', 'isdigit', 'isalpha', 'max', 'min', 'abs', 'pow', 'sqrt', 'floor', 'ceil', 'round', 'swap', 'reverse', 'sort', 'printf', 'getline', 'npos', 'int', 'double', 'char',
-        'System', 'Console', 'Math', 'String', 'Integer', 'Double', 'Arrays', 'Collections', 'Character', 'Convert', 'List', 'Array', 'Boolean', 'Objects', 'Thread', 'args', 'StringBuilder', 'ArrayList', 'HashMap', 'Dictionary', 'Random']);
+        'System', 'Console', 'Math', 'String', 'Integer', 'Double', 'Arrays', 'Collections', 'Character', 'Convert', 'List', 'Array', 'Boolean', 'Objects', 'Thread', 'args', 'StringBuilder', 'ArrayList', 'HashMap', 'Dictionary', 'Random',
+        'for_each', 'count_if', 'count', 'any_of', 'all_of', 'none_of', 'accumulate', 'find', 'find_if', 'max_element', 'min_element', 'transform', 'distance', 'Collectors',
+        'runtime_error', 'logic_error', 'invalid_argument', 'out_of_range', 'exception', 'length_error', 'domain_error', 'range_error', 'overflow_error']);
       const scopes = [new Set()];
       const has = (n) => known.has(n) || BUILTIN.has(n) || scopes.some(s => s.has(n));
       const decl = (n) => scopes[scopes.length - 1].add(n);
@@ -1937,10 +2320,10 @@
           case 'If': walkExpr(s.test); push(); walkStmt(s.body); pop(); push(); walkStmt(s.orelse); pop(); return;
           case 'While': case 'DoWhile': walkExpr(s.test); push(); walkStmt(s.body); pop(); return;
           case 'For': push(); walkStmt(s.init); if (s.test) walkExpr(s.test); if (s.update) walkExpr(s.update); walkStmt(s.body); pop(); return;
-          case 'ForEach': walkExpr(s.iter); push(); decl(s.name); walkStmt(s.body); pop(); return;
+          case 'ForEach': walkExpr(s.iter); push(); decl(s.name); (s.names || []).forEach(decl); walkStmt(s.body); pop(); return;
           case 'Switch': walkExpr(s.disc); for (const c of s.cases) { push(); walkStmts(c.body); pop(); } return;
           case 'Return': case 'Throw': if (s.value) walkExpr(s.value); return;
-          case 'Try': walkStmt(s.body); for (const h of s.handlers) { push(); if (h.name) decl(h.name); walkStmt(h.body); pop(); } walkStmt(s.fin); return;
+          case 'Try': walkStmt(s.body); for (const h of s.handlers) { push(); if (h.name) decl(h.name); decl('__caught'); walkStmt(h.body); pop(); } walkStmt(s.fin); return;
         }
       }
       function walkExpr(e) {
@@ -1957,6 +2340,8 @@
             } else walkExpr(e.callee);
             e.args.forEach(walkExpr); return;
           case 'Interp': e.parts.forEach(p => p.type === 'Fmt' && walkExpr(p.value)); return;
+          case 'Lambda': push(); e.params.forEach(p => decl(p.name)); if (e.expr) walkExpr(e.expr); else walkStmts(e.block); pop(); return;
+          case 'Deref': walkExpr(e.operand); return;
           case 'Fmt': walkExpr(e.value); return;
           default:
             for (const k of ['left', 'right', 'operand', 'value', 'target', 'test', 'a', 'b', 'obj', 'index', 'size']) if (e[k]) walkExpr(e[k]);
@@ -1973,6 +2358,7 @@
         if (id === 'cpp') topNames.forEach(n => scopes[0].add(n));     // C++ global variables
         push(); f.params.forEach(p => decl(p.name)); clsFields = fieldSet;
         if (f.inits) f.inits.forEach(ini => ini.args.forEach(walkExpr));
+        if (f.isSetter) decl('value');
         if (f.body) walkStmts(f.body);
         clsFields = null; pop();
       };
@@ -1983,6 +2369,13 @@
           const names = memberNames(classes.get(it.name));
           for (const m of it.methods) walkFunc(m, names);
           for (const c of it.ctors) walkFunc(c, names);
+          for (const pr of it.props) {
+            for (const acc of [pr.get, pr.set]) {
+              if (!acc) continue;
+              const fake = { params: [], body: acc.body || [{ type: 'ExprStmt', expr: acc.expr, line: pr.line }], isSetter: acc === pr.set };
+              if (acc.body || acc.expr) walkFunc(fake, names);
+            }
+          }
           for (const f of it.fields) if (f.init) { clsFields = names; walkExpr(f.init); clsFields = null; }
         }
       }
@@ -1990,7 +2383,7 @@
     function memberNames(cls) {
       const s = new Set();
       let c = cls;
-      while (c) { c.fieldDecls.forEach(f => s.add(f.name)); for (const k of c.methods.keys()) s.add(k); c = c.base; }
+      while (c) { c.fieldDecls.forEach(f => s.add(f.name)); for (const k of c.methods.keys()) s.add(k); if (c.props) for (const k of c.props.keys()) s.add(k); c = c.base; }
       return s;
     }
 
@@ -2002,11 +2395,23 @@
       const collectClasses = (items) => { for (const it of items) if (it.type === 'Class') classDecls.push(it); };
       collectClasses(prog);
       for (const cd of classDecls) {
-        const cls = { name: cd.name, base: null, baseName: cd.base, fieldDecls: cd.fields, methods: new Map(), ctors: cd.ctors, statics: new Map(), decl: cd };
+        const cls = { name: cd.name, base: null, baseName: cd.base, ifaces: cd.ifaces || [], fieldDecls: cd.fields, methods: new Map(), ctors: cd.ctors, statics: new Map(), props: new Map(), decl: cd, isIface: cd.isIface };
         for (const m of cd.methods) { m.ownerCls = cls; if (!cls.methods.has(m.name)) cls.methods.set(m.name, []); cls.methods.get(m.name).push(m); }
+        for (const pr of cd.props || []) { pr.ownerCls = cls; cls.props.set(pr.name, pr); }
         classes.set(cd.name, cls);
       }
-      for (const cls of classes.values()) if (cls.baseName && classes.has(cls.baseName)) cls.base = classes.get(cls.baseName);
+      for (const cls of classes.values()) {
+        if (cls.baseName && classes.has(cls.baseName)) {
+          const b = classes.get(cls.baseName);
+          // C#: class Circle : IShape names an interface, not a base class
+          if (b.isIface && id === 'csharp') { cls.ifaces.unshift(cls.baseName); cls.baseName = null; } else cls.base = b;
+        }
+      }
+      for (const cls of classes.values()) for (const iname of cls.ifaces) {
+        const ic = classes.get(iname);
+        if (ic && !cls.base) cls.base = ic;   // lets interface types hold the object and use instanceof
+        else if (ic) { let c = cls; while (c.base && c.base !== ic) c = c.base; if (!c.base) c.base = ic; }
+      }
       for (const it of prog) {
         if (it.type === 'Func' && it.owner && classes.has(it.owner)) {
           const cls = classes.get(it.owner);

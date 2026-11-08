@@ -324,6 +324,11 @@
             next(); const target = parseExpr();
             return { type: 'Del', target, line: t.line };
           }
+          case 'yield': {
+            next(); let value = null;
+            if (peek().t !== 'NEWLINE' && peek().t !== 'EOF' && peek().t !== 'DEDENT') value = parseExprList();
+            return { type: 'Yield', value, line: t.line };
+          }
           case 'raise': {
             next(); let exc = null;
             if (peek().t !== 'NEWLINE' && peek().t !== 'EOF') exc = parseExpr();
@@ -373,6 +378,7 @@
     function checkTarget(e) {
       if (e.type === 'Name' || e.type === 'Attr' || e.type === 'Sub') return;
       if (e.type === 'Tuple' || e.type === 'List') { e.items.forEach(checkTarget); return; }
+      if (e.type === 'Starred') { checkTarget(e.value); return; }
       if (e.type === 'Call') throw new PyError('SyntaxError', "cannot assign to function call here. Maybe you meant '==' instead of '='?", e.line);
       if (e.type === 'Const') throw new PyError('SyntaxError', "cannot assign to literal here. Maybe you meant '==' instead of '='?", e.line);
       throw new PyError('SyntaxError', 'cannot assign to expression', e.line);
@@ -388,12 +394,13 @@
 
     function parseExprList() {
       const line = peek().line;
-      const first = parseExpr();
+      const first = isOp('*') ? (() => { const st = next(); return { type: 'Starred', value: parseOr(), line: st.line }; })() : parseExpr();
       if (!isOp(',')) return first;
       const items = [first];
       while (isOp(',')) {
         next();
         if (peek().t === 'NEWLINE' || peek().t === 'EOF' || isOp('=') || isOp(')') || isOp(':')) break;
+        if (isOp('*')) { const st = next(); items.push({ type: 'Starred', value: parseOr(), line: st.line }); continue; }
         items.push(parseExpr());
       }
       return { type: 'Tuple', items, line };
@@ -858,6 +865,7 @@
       if (v instanceof PyInstance) {
         const s = v.cls.lookup('__str__');
         if (s instanceof PyFunc) { const r = callValue(new PyBound(v, s), [], {}); if (typeof r !== 'string') throw E('TypeError', '__str__ returned non-string'); return r; }
+        if (v.isException || isExcClass(v.cls)) { const a = v.attrs.get('args'); return a && a.length ? (a.length === 1 ? str(a[0]) : repr(a)) : ''; }
       }
       return repr(v);
     }
@@ -1085,6 +1093,7 @@
     B('any', (args) => iterate(args[0]).some(truthy));
     B('all', (args) => iterate(args[0]).every(truthy));
     B('repr', (args) => repr(args[0]));
+    B('next', (args) => { const g = args[0]; if (!g || !g.isGenerator) throw E('TypeError', `'${typeName(g)}' object is not an iterator`); if (g.pos >= g.items.length) { if (args.length > 1) return args[1]; throw E('StopIteration', ''); } return g.items[g.pos++]; });
     B('input', () => { throw E('InputError', "input() isn't available here — use the variables you collected instead!"); });
     B('pow', (args) => Math.pow(num(args[0]), num(args[1])));
     B('divmod', (args) => tuple([Math.floor(args[0] / args[1]), ((args[0] % args[1]) + args[1]) % args[1]]));
@@ -1095,11 +1104,16 @@
       // resolved specially in Call for zero-arg super()
       throw E('RuntimeError', 'super() must be used inside a method');
     });
-    for (const exc of ['Exception', 'ValueError', 'TypeError', 'NameError', 'KeyError', 'IndexError', 'ZeroDivisionError', 'RuntimeError', 'AttributeError']) {
-      const cls = new PyClass(exc, null, new Map());
+    const excBase = new PyClass('Exception', null, new Map());
+    excBase.isException = true;
+    excBase.attrs.set('__init__', builtin('__init__', (args) => { args[0].attrs.set('args', tuple(args.slice(1))); args[0].isException = true; return null; }));
+    builtins.vars.set('Exception', excBase);
+    for (const exc of ['ValueError', 'TypeError', 'NameError', 'KeyError', 'IndexError', 'ZeroDivisionError', 'RuntimeError', 'AttributeError', 'NotImplementedError', 'ArithmeticError', 'LookupError', 'StopIteration']) {
+      const cls = new PyClass(exc, excBase, new Map());
       cls.isException = true;
       builtins.vars.set(exc, cls);
     }
+    function isExcClass(c) { while (c) { if (c.isException) return true; c = c.base; } return false; }
 
     // host API functions (game actions)
     const api = opts.api || {};
@@ -1282,7 +1296,7 @@
       }
       if (f instanceof PyFunc) return callFunc(f, args, kwargs, null);
       if (f instanceof PyClass) {
-        if (f.isException) { const inst = new PyInstance(f); inst.attrs.set('args', tuple(args)); inst.isException = true; return inst; }
+        if (f.isException && !(f.lookup('__init__') instanceof PyFunc)) { const inst = new PyInstance(f); inst.attrs.set('args', tuple(args)); inst.isException = true; return inst; }
         const inst = new PyInstance(f);
         const init = f.lookup('__init__');
         if (init instanceof PyFunc) {
@@ -1332,6 +1346,11 @@
       const savedLine = curLine;
       try {
         if (fn.isLambda) return evalExpr(fn.body, scope);
+        if (fn.isGen) {
+          scope.yields = [];
+          try { execBlock(fn.body, scope); } catch (e) { if (!(e instanceof ReturnSig)) throw e; }
+          return { isGenerator: true, items: scope.yields, pos: 0 };
+        }
         execBlock(fn.body, scope);
         return null;
       } catch (e) {
@@ -1368,6 +1387,15 @@
         case 'Sub': setItem(evalExpr(target.value, scope), evalIndex(target.index, scope), val); return;
         case 'Tuple': case 'List': {
           const items = iterate(val);
+          const si = target.items.findIndex(t => t.type === 'Starred');
+          if (si >= 0) {
+            const after = target.items.length - si - 1;
+            if (items.length < target.items.length - 1) throw E('ValueError', `not enough values to unpack (expected at least ${target.items.length - 1}, got ${items.length})`);
+            target.items.slice(0, si).forEach((t, i) => assign(t, items[i], scope));
+            assign(target.items[si].value, items.slice(si, items.length - after), scope);
+            target.items.slice(si + 1).forEach((t, i) => assign(t, items[items.length - after + i], scope));
+            return;
+          }
           if (items.length !== target.items.length) throw E('ValueError', items.length > target.items.length ? `too many values to unpack (expected ${target.items.length})` : `not enough values to unpack (expected ${target.items.length}, got ${items.length})`);
           target.items.forEach((t, i) => assign(t, items[i], scope));
           return;
@@ -1438,9 +1466,17 @@
         case 'Return':
           if (scope.kind !== 'function') throw E('SyntaxError', "'return' outside function");
           throw new ReturnSig(s.value ? evalExpr(s.value, scope) : null);
+        case 'Yield': {
+          let sc = scope; while (sc && !sc.yields) sc = sc.parent;
+          if (!sc) throw E('SyntaxError', "'yield' outside function");
+          sc.yields.push(s.value ? evalExpr(s.value, scope) : null);
+          if (sc.yields.length > 100000) throw E('TimeoutError', 'your generator never stops — is there an infinite loop?');
+          return;
+        }
         case 'Def': {
           const params = s.params.map(p => ({ ...p, defValue: p.def ? evalExpr(p.def, scope) : undefined }));
           const fn = new PyFunc(s.name, params, s.body, scope.kind === 'class' ? scope.parent : scope, false);
+          fn.isGen = (function hasYield(list) { return list.some(st => st.type === 'Yield' || (st.type !== 'Def' && st.type !== 'Class' && ['body', 'orelse', 'fin'].some(k => Array.isArray(st[k]) && hasYield(st[k])) || (st.handlers && st.handlers.some(h => hasYield(h.body))))); })(s.body);
           fn.defScope = scope;
           assignName(s.name, fn, scope);
           return;
@@ -1581,7 +1617,7 @@
             if (obj && obj.__super) {
               const m = obj.base.lookup(e.func.name);
               if (!m) throw E('AttributeError', `'super' object has no attribute '${e.func.name}'`);
-              f = m instanceof PyFunc ? new PyBound(obj.self, m) : m;
+              f = (m instanceof PyFunc || typeof m === 'function') ? new PyBound(obj.self, m) : m;
             } else f = getAttr(obj, e.func.name);
           } else f = evalExpr(e.func, scope);
           const args = [];
