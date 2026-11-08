@@ -790,10 +790,12 @@
         if (!isOp(']')) size = parseExpr();
         expectOp(']');
         let dims = 1;
+        const sizes = [];   // new int[rows][cols]
+        while (size && isOp('[') && !isOp(']', 1)) { next(); sizes.push(parseExpr()); expectOp(']'); dims++; }
         while (isOp('[') && isOp(']', 1)) { next(); next(); dims++; }
         let init = null;
         if (isOp('{')) init = parseBraceInit();
-        return { type: 'NewArray', elem: ty, size, init, dims, line: t.line };
+        return { type: 'NewArray', elem: ty, size, sizes, init, dims, line: t.line };
       }
       let args = [];
       if (isOp('(')) args = parseArgs();
@@ -1108,7 +1110,7 @@
       if (id !== 'cpp') return v;
       if (v instanceof CList) return new CList(v.kind, v.a.map(clone), v.elem);
       if (v instanceof CMap) return Object.assign(new CMap(v.kind, new Map([...v.m].map(([k, x]) => [k, clone(x)]))), v.vty ? { vty: v.vty } : {}, v.charKeys ? { charKeys: true } : {});
-      if (v instanceof CObj) { const o = new CObj(v.cls); for (const [k, x] of v.f) o.f.set(k, clone(x)); return o; }
+      if (v instanceof CObj) { if (v.heap) return v; const o = new CObj(v.cls); for (const [k, x] of v.f) o.f.set(k, clone(x)); return o; }   // copying a pointer (from new) copies the address, not the object
       return v;
     }
     function eq(a, b) {
@@ -2433,10 +2435,10 @@
           }
           if ((id === 'csharp' && /^(Stack|Queue)$/.test(t)) || (id === 'java' && /^(Stack|ArrayDeque)$/.test(t))) {   // stacks and queues (see sqMethod)
             const src = args[0] instanceof CList ? args[0].a.slice() : [];
-            return new CList(t, id === 'csharp' && t === 'Stack' ? src.reverse() : src, e.ty.args[0] && e.ty.args[0].name);
+            return new CList(t, id === 'csharp' && t === 'Stack' ? src.reverse() : src, e.ty.args[0] && !e.ty.args[0].arr && e.ty.args[0].name);   // Queue<int[]> holds arrays, not ints
           }
           if (/^(ArrayList|List|LinkedList|Vector)$/.test(t)) {
-            const l = new CList(id === 'java' ? (t === 'LinkedList' ? 'LinkedList' : 'ArrayList') : 'List', args[0] instanceof CList ? args[0].a.slice() : [], e.ty.args[0] && e.ty.args[0].name);
+            const l = new CList(id === 'java' ? (t === 'LinkedList' ? 'LinkedList' : 'ArrayList') : 'List', args[0] instanceof CList ? args[0].a.slice() : [], e.ty.args[0] && !e.ty.args[0].arr && e.ty.args[0].name);
             if (e.init) l.a = e.init.items.map(x => evalExpr(x, scope));
             return l;
           }
@@ -2460,7 +2462,10 @@
           if (e.init) return new CList('array', e.init.items.map(x => coerce(evalExpr(x, scope), e.elem.name === 'var' ? null : { name: e.elem.name, args: [] })), e.elem.name);
           const n = nv(evalExpr(e.size, scope));
           if (n < 0) throw E('RuntimeError', id === 'java' ? 'java.lang.NegativeArraySizeException' : 'System.OverflowException');
-          return new CList('array', Array.from({ length: n }, () => defaultFor({ name: e.elem.name, args: [] })), e.elem.name);
+          const inner = (e.sizes || []).map(x => nv(evalExpr(x, scope)));
+          const jagged = e.dims > 1 + inner.length;   // new char[rows][] leaves the rows empty (null)
+          const mk = (len, i) => new CList('array', Array.from({ length: len }, () => i < inner.length ? mk(inner[i], i + 1) : jagged ? null : defaultFor({ name: e.elem.name, args: [] })), i < inner.length || jagged ? null : e.elem.name);
+          return mk(n, 0);
         }
         case 'Construct': {
           if (e.init) return evalInit(e.init, e.ty, scope);
