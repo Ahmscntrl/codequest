@@ -1,0 +1,62 @@
+// Reference C# solutions for every terminal (used by the tests only).
+module.exports = {
+  // ---- Level 1: Console.WriteLine
+  hello: 'Console.WriteLine("Hello, World!");',
+  lines: 'Console.WriteLine("Ready");\nConsole.WriteLine("Set");\nConsole.WriteLine("Code!");',
+  textjoin: 'Console.WriteLine("Super" + "Coder");',
+  math: 'Console.WriteLine(7 * 6);\nConsole.WriteLine(100 - 1);',
+  order: 'Console.WriteLine((10 + 5) * 2);\nConsole.WriteLine(10 + 5 * 2);',
+  sep: 'Console.WriteLine("Score: " + 25 * 4);',
+  // ---- Level 2: variables
+  firstvar: 'string color = "blue";\nConsole.WriteLine(color);',
+  types: 'string name = "Ada";\nint level = 5;\nbool alive = true;',
+  bridge: 'BuildBridge(planks);',
+  area: 'int area = width * height;\nConsole.WriteLine(area);',
+  update: 'score += 5;\nConsole.WriteLine(score);',
+  combine: 'Console.WriteLine($"{hero} has {coins} coins");',
+  password: 'Console.WriteLine(password);',
+  // ---- Level 3: conditions
+  compare: 'Console.WriteLine(hp > 50);',
+  heal: 'if (hp < 30)\n{\n    Heal();\n}',
+  guard: 'if (visitor == myName)\n{\n    OpenGate();\n}\nelse\n{\n    SoundAlarm();\n}',
+  even: 'if (number % 2 == 0)\n{\n    Console.WriteLine("even");\n}\nelse\n{\n    Console.WriteLine("odd");\n}',
+  pump: 'if (temperature > 100)\n{\n    Cool();\n}\nelse if (temperature < 0)\n{\n    Heat();\n}\nelse\n{\n    Wait();\n}',
+  bouncer: 'if (age >= 12 && hasTicket)\n{\n    OpenGate();\n}\nelse\n{\n    TurnAway();\n}',
+  orgate: 'if (weather == "rain" || weather == "snow")\n{\n    Umbrella();\n}\nelse\n{\n    Sunglasses();\n}',
+  // ---- Level 4: loops
+  repeat: 'for (int i = 0; i < 3; i++)\n{\n    Console.WriteLine("Hooray!");\n}',
+  stairs: 'for (int i = 0; i < 6; i++)\n{\n    BuildStep(i);\n}',
+  count: 'for (int i = 1; i <= 10; i++)\n{\n    Console.WriteLine(i);\n}',
+  countdown: 'for (int i = 5; i >= 1; i--)\n{\n    Console.WriteLine(i);\n}\nConsole.WriteLine("Liftoff!");',
+  listloop: 'foreach (string item in loot)\n{\n    Console.WriteLine(item);\n}',
+  charge: 'while (charge < 100)\n{\n    ChargeUp();\n    charge += 10;\n}',
+  sumloop: 'int total = 0;\nfor (int i = 1; i <= n; i++)\n{\n    total += i;\n}\nConsole.WriteLine(total);',
+  breakloop: 'foreach (string piece in rails)\n{\n    if (piece == "gap")\n    {\n        Console.WriteLine("Stop!");\n        break;\n    }\n    Console.WriteLine(piece);\n}',
+  // ---- Level 5: functions
+  cheer: 'void Cheer()\n{\n    Console.WriteLine("Go team!");\n}\n\n// Call it twice below:\nCheer();\nCheer();',
+  echo: 'void Echo(string word)\n{\n    Console.WriteLine(word);\n    Console.WriteLine(word);\n}',
+  double: 'int DoubleIt(int n)\n{\n    return n * 2;\n}',
+  square: 'int Square(int n)\n{\n    return n * n;\n}\n\nConsole.WriteLine(Square(3) + Square(4));',
+  greet: 'string Greet(string name)\n{\n    return $"Hello, {name}!";\n}',
+  evenfn: 'bool Even(int n)\n{\n    return n % 2 == 0;\n}',
+  total: 'int Total(List<int> nums)\n{\n    int result = 0;\n    foreach (int n in nums)\n    {\n        result += n;\n    }\n    return result;\n}',
+  biggest: 'int Biggest(int a, int b)\n{\n    if (a > b)\n    {\n        return a;\n    }\n    return b;\n}',
+  // ---- Level 6: classes
+  crate: 'Crate myCrate = new Crate();\nConsole.WriteLine(myCrate.contents);\n\nclass Crate\n{\n    public string contents = "golden key";\n}',
+  potion: 'Brew(new Potion(3));\nBrew(new Potion(8));\n\nclass Potion\n{\n    public int Power;\n\n    public Potion(int power)\n    {\n        Power = power;\n    }\n\n    public string Describe()\n    {\n        return $"Potion of power {Power}";\n    }\n}',
+  lamp: 'Lamp lamp = new Lamp();\nConsole.WriteLine(lamp.Status());\nlamp.Toggle();\nConsole.WriteLine(lamp.Status());\nlamp.Toggle();\nConsole.WriteLine(lamp.Status());\n\nclass Lamp\n{\n    public bool On = false;\n\n    public string Status()\n    {\n        return On ? "on" : "off";\n    }\n\n    public void Toggle()\n    {\n        On = !On;\n    }\n}',
+  wallet: 'Wallet mine = new Wallet();\nmine.Add(5);\nmine.Add(10);\nConsole.WriteLine(mine.Coins);\n\nWallet yours = new Wallet();\nyours.Add(3);\nConsole.WriteLine(yours.Coins);\n\nclass Wallet\n{\n    public int Coins = 0;\n\n    public void Add(int amount)\n    {\n        Coins += amount;\n    }\n}',
+  forge: '// Create a Sword object from the blueprint, then equip it\nSword mySword = new Sword();\nEquip(mySword);\n\nclass Sword\n{\n    public string Name;\n    public int Damage;\n\n    public Sword()\n    {\n        Name = "Byte Blade";\n        Damage = 3;\n    }\n\n    public string Swing()\n    {\n        return "Slash!";\n    }\n}',
+  den: '// Make a pet object (pick your own name!)\nPet buddy = new Pet("Pixel", "cat");\nAdopt(buddy);\n\nclass Pet\n{\n    public string Name { get; set; }\n    public string Species { get; set; }\n\n    public Pet(string name, string species)\n    {\n        Name = name;\n        Species = species;\n    }\n\n    public string Speak()\n    {\n        return "Meow!";\n    }\n}',
+  // ---- Open world
+  gems: 'foreach (int gem in gems)\n{\n    if (gem > 5)\n    {\n        Deposit(gem);\n    }\n}',
+  decoder: 'char[] letters = secret.ToCharArray();\nArray.Reverse(letters);\nConsole.WriteLine(new string(letters));',
+  fib: 'int a = 0;\nint b = 1;\nfor (int i = 0; i < n; i++)\n{\n    Console.WriteLine(a);\n    int next = a + b;\n    a = b;\n    b = next;\n}',
+  fizz: 'for (int i = 1; i <= 15; i++)\n{\n    if (i % 15 == 0)\n    {\n        Console.WriteLine("FizzBuzz");\n    }\n    else if (i % 3 == 0)\n    {\n        Console.WriteLine("Fizz");\n    }\n    else if (i % 5 == 0)\n    {\n        Console.WriteLine("Buzz");\n    }\n    else\n    {\n        Console.WriteLine(i);\n    }\n}',
+  merchant: 'int total = 0;\nforeach (string item in cart)\n{\n    total += prices[item];\n}\nConsole.WriteLine(total);',
+  backpack: 'Console.WriteLine(inventory[0]);\nConsole.WriteLine(inventory[inventory.Count - 1]);\nConsole.WriteLine(inventory.Count);',
+  crier: 'Console.WriteLine(message.ToUpper() + "!");',
+  bag: 'bag.Add("potion");\nConsole.WriteLine(bag.Count);\nConsole.WriteLine(bag[bag.Count - 1]);',
+  // ---- Boss
+  cannon: '// Fire a burst!\nfor (int shot = 0; shot < 5; shot++)\n{\n    Fire();\n}',
+};

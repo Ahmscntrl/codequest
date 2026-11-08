@@ -1078,7 +1078,7 @@
         case 'ExprStmt': evalExpr(s.expr, scope); return;
         case 'Decl': {
           for (const v of s.vars) {
-            if (scope.vars.has(v.name) && scope !== globals) throw E('SyntaxError', D.msg.redeclared(v.name));
+            if (scope.vars.has(v.name) && (scope !== globals || scope.vars.get(v.name).user)) throw E('SyntaxError', D.msg.redeclared(v.name));
             let val;
             if (v.init) val = evalInit(v.init, v.ty, scope);
             else if (v.ctorArgs) val = evalCtorDecl(v.ty, v.ctorArgs, scope);
@@ -1087,7 +1087,7 @@
             if (v.init && v.init.type !== 'InitList') val = clone(val);
             if (val === undefined) val = null;
             const ty = (v.ty.name === 'auto' || v.ty.name === 'var') ? inferType(val) : v.ty;
-            scope.declare(v.name, { v: coerce(val, v.ty, v.name), ty, isConst: s.isConst });
+            scope.declare(v.name, { v: coerce(val, v.ty, v.name), ty, isConst: s.isConst, user: true });
           }
           return;
         }
@@ -1793,6 +1793,8 @@
               if (typeof obj === 'string' && id === 'cpp' && (e.name === 'length' || e.name === 'size')) throw E('TypeError', `invalid use of member function '${e.name}' (did you forget the () ?)`);
               if (id === 'csharp' && (e.name === 'Length' || e.name === 'Count')) throw E('NameError', D.msg.noMember(tname(obj), e.name));
             }
+            if (obj instanceof CObj) throw E('TypeError', id === 'csharp' ? `'${e.name}' is a method — call it with ()` : `invalid use of method '${e.name}' (did you forget the () ?)`);
+            throw E('NameError', D.msg.noMember(tname(obj), e.name));
           }
           return v;
         }
@@ -2028,7 +2030,7 @@
         if (mainFn.params.length) scope.declare(mainFn.params[0].name, { v: new CList('array', [], 'String'), ty: mainFn.params[0].ty });
         mainScope = scope;
         try { execBlock(mainFn.body, scope); } catch (e) { if (!(e instanceof Ret)) throw e; }
-      } else if (!(id === 'csharp' && (topStmts.length || funcs.size))) {
+      } else if (!(id === 'csharp' && (topStmts.length || funcs.size || !prog.length))) {
         throw new CError('SyntaxError', D.msg.noMain, 1);
       }
       // tests that call the player's functions directly
