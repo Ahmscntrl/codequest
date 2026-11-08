@@ -102,13 +102,14 @@
     // ------------------------------------------------------------- level loading
     load(index, level) {
       const L = level || GameData.LEVELS[index];
+      if (root.MiniBoss && MiniBoss.has(L.id)) MiniBoss.addArena(L);
       this.levelIndex = index; this.L = L;
       this.theme = THEMES[L.theme] || THEMES.meadow;
       const rows = L.map;
       this.H = rows.length; this.W = Math.max(...rows.map(r => r.length));
       this.tiles = []; this.stepLabel = {};
       for (let y = 0; y < this.H; y++) this.tiles.push(new Array(this.W).fill(0));
-      Object.assign(this, { bossSpawn: null, gates: [], slots: [], terminals: [], pickups: [], signs: [], bugs: [], springs: [], checkpoints: [], portal: null, shrine: null, stairOrigin: null, iFriend: null, cannonPos: null, boss: null, projectiles: [], particles: [], floaters: [], scheduled: [], zaps: [], cannonCooldown: 0, cannonQueue: 0, groups: {}, tileGroup: {}, movers: [], bits: [] });
+      Object.assign(this, { bossSpawn: null, mini: null, miniSpawn: null, gates: [], slots: [], terminals: [], pickups: [], signs: [], bugs: [], springs: [], checkpoints: [], portal: null, shrine: null, stairOrigin: null, iFriend: null, cannonPos: null, boss: null, projectiles: [], particles: [], floaters: [], scheduled: [], zaps: [], cannonCooldown: 0, cannonQueue: 0, groups: {}, tileGroup: {}, movers: [], bits: [] });
       let signI = 0, pickI = 0, bugI = 0;
       let start = { x: 64, y: 64 };
       for (let x = 0; x < this.W; x++) for (let y = 0; y < this.H; y++) {
@@ -144,6 +145,7 @@
           case 'K': this.checkpoints.push({ x, y, active: false }); break;
           case '$': this.shrine = { x, y }; break;
           case 'Z': this.bossSpawn = { x, y }; break;
+          case 'M': this.miniSpawn = { x, y }; break;
           case 'c': this.cannonPos = { x, y }; break;
           case 'o': if (!this.save.taken[`${L.id}:bit:${x},${y}`]) this.bits.push({ x, y }); break;
           default:
@@ -175,6 +177,7 @@
       if (L.openWorld && this.coreCount() >= 3) this.openGate('A');
       this.instantMode = false;
       if (this.bossSpawn) this.spawnBoss();
+      if (this.miniSpawn && !(this.save.minis || {})[L.id]) this.spawnMini(this.miniSpawn.x, this.miniSpawn.y);
       this.cam.x = clamp(p.x - VW / 2, 0, Math.max(0, this.W * TILE - VW));
       this.cam.y = clamp(p.y - VH / 2, 0, Math.max(0, this.H * TILE - VH));
       this.followers = { pet: { x: p.x, y: p.y + p.h, facing: 1 }, i: { x: p.x, y: p.y + p.h, facing: 1 } };
@@ -369,6 +372,7 @@
         const dmg = this.save.weapon.damage + this.skill('sharp');
         for (const b of this.bugs) if (!b.dead && overlap(hb, b)) this.damageBug(b, dmg, p.facing);
         if (this.boss && this.boss.state !== 'dying' && overlap(hb, this.boss)) this.damageBoss(dmg, 'weapon');
+        if (this.mini && overlap(hb, this.mini)) this.damageMini(Math.min(3, dmg), 'weapon');
       }
 
       // -- interactions
@@ -426,7 +430,7 @@
           this.respawnPoint = { x: k.x * TILE + 6, y: (k.y + 1) * TILE - 30 };
           p.hp = this.maxHp;
           this.burst(k.x * TILE + 16, k.y * TILE, '#58ff8b', 14);
-          this.app.toast('Checkpoint — progress saved, HP restored.', 'info');
+          this.app.toast('Checkpoint saved. HP restored.', 'info');
           this.app.sfx('pickup');
           this.app.persist();
         }
@@ -439,7 +443,7 @@
         if (p.vy >= 0 && overlap(p, box)) { p.vy = -16.5; p.noCut = true; p.onGround = false; s.anim = 12; p.jumps = this.skill('double_jump') ? 1 : 0; this.app.sfx('spring'); this.burst(s.x * TILE + 16, s.y * TILE + 24, '#ffe066', 8); }
       }
       // portal
-      if (this.portal && overlap(p, { x: this.portal.x * TILE + 4, y: this.portal.y * TILE - 20, w: 24, h: 52 })) {
+      if (this.portal && !this.miniBlocksPortal() && overlap(p, { x: this.portal.x * TILE + 4, y: this.portal.y * TILE - 20, w: 24, h: 52 })) {
         this.portal = null;
         this.app.levelComplete();
         return;
@@ -447,6 +451,7 @@
 
       this.updateBugs();
       if (this.boss) this.updateBoss();
+      if (this.mini) this.updateMini();
       this.updateProjectiles();
       this.updateFollowers();
       this.updateParticles();
@@ -540,6 +545,7 @@
       p.x = this.respawnPoint.x; p.y = this.respawnPoint.y; p.vx = 0; p.vy = 0; p.hp = this.maxHp; p.inv = 90;
       this.projectiles = [];
       if (this.boss && this.boss.state !== 'dying') { this.boss.state = 'rise'; this.boss.timer = 0; }
+      if (this.mini) this.resetMini();
       this.app.updateHUD();
     }
 
@@ -649,7 +655,7 @@
       }
       if (!b.phase2 && b.hp <= b.max / 2) {
         b.phase2 = true;
-        this.app.toast('Segfault is <b>ENRAGED</b>! It will now corrupt your code!', 'bad');
+        this.app.toast('Segfault is <b>ENRAGED</b>. From now on it will corrupt your code!', 'bad');
         this.shake = 30; this.app.sfx('boom');
       }
       switch (b.state) {
@@ -808,6 +814,7 @@
       ctx.globalAlpha = 1;
       ctx.restore();
       if (this.boss) this.drawBossBar(ctx);
+      if (this.mini) this.drawMiniBar(ctx);
       if (this.player.dead > 0) { ctx.fillStyle = `rgba(80,0,20,${0.5 * (1 - this.player.dead / 90) + 0.15})`; ctx.fillRect(0, 0, VW, VH); }
     }
     drawBackground(ctx) {
@@ -1083,7 +1090,8 @@
           ctx.beginPath(); ctx.ellipse(px, py, 14 - k * 3, 26 - k * 5, 0, t * 0.05 * (k + 1), t * 0.05 * (k + 1) + Math.PI * 1.5); ctx.stroke();
         }
         ctx.fillStyle = 'rgba(184,77,255,0.25)'; ctx.beginPath(); ctx.ellipse(px, py, 14, 26, 0, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#fff'; ctx.font = 'bold 10px monospace'; ctx.fillText('EXIT', px, py - 32);
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 10px monospace'; ctx.fillText(this.miniBlocksPortal() ? 'SEALED' : 'EXIT', px, py - 32);
+        if (this.miniBlocksPortal()) { ctx.strokeStyle = 'rgba(255,84,112,0.9)'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(px - 14, py - 22); ctx.lineTo(px + 14, py + 22); ctx.moveTo(px + 14, py - 22); ctx.lineTo(px - 14, py + 22); ctx.stroke(); }
       }
       // the lost friend i
       if (this.iFriend) {
@@ -1092,6 +1100,7 @@
       }
       for (const b of this.bugs) if (!b.dead) Art.drawBug(ctx, b, t + b.ph * 10);
       if (this.boss) Art.drawBoss(ctx, this.boss, t);
+      if (this.mini) this.drawMini(ctx, t);
     }
     drawLock(ctx, x, y, col) {
       ctx.strokeStyle = col; ctx.lineWidth = 2;
@@ -1172,7 +1181,7 @@
       ctx.fillStyle = '#3a0a1c'; ctx.fillRect(x, y + 10, w, 10);
       ctx.fillStyle = b.phase2 ? '#ff2d6b' : '#b84dff'; ctx.fillRect(x, y + 10, w * Math.max(0, b.hp) / b.max, 10);
       ctx.fillStyle = '#fff'; ctx.font = 'bold 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
-      ctx.fillText('SEGFAULT, THE BUG KING' + (b.phase2 ? ' — ENRAGED' : ''), VW / 2, y + 6);
+      ctx.fillText('SEGFAULT, THE BUG KING' + (b.phase2 ? ' (ENRAGED)' : ''), VW / 2, y + 6);
     }
   }
 

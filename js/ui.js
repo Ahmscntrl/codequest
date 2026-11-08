@@ -124,23 +124,23 @@
     if (Lang.get(lang).family === 'c') return explainC(err, lang);
     const t = err.type;
     if (t === 'SyntaxError') {
-      if (/never closed|unterminated|missing \)|expected '\)'|missing \) after/i.test(err.message)) return 'Something was opened but never closed — check your brackets ( ) [ ] { } and quotes.';
+      if (/never closed|unterminated|missing \)|expected '\)'|missing \) after/i.test(err.message)) return 'Something was opened but never closed. Check your brackets ( ) [ ] { } and quotes.';
       if (/expected ':'/.test(err.message)) return 'Lines that start a block (if, for, while, def, class) must end with a colon <code>:</code>';
       return py ? 'Python couldn\'t understand this line. Look for a missing bracket, quote, comma or colon.' : 'JavaScript couldn\'t understand this. Look for missing brackets ( ), braces { }, quotes or commas.';
     }
     if (t === 'IndentationError') return 'Python uses indentation (spaces at the start of a line) to know which lines belong inside an if/for/def. Make sure they line up!';
     if (t === 'ReferenceError' && /before initialization/.test(err.message)) return 'You used <code>let</code> (or <code>const</code>) on a variable that <b>already exists</b>, so JavaScript made a brand-new empty one. Remove the <code>let</code> and just write <code>name = ...</code>.';
-    if (t === 'NameError' || t === 'ReferenceError') return 'You used a name that doesn\'t exist. Check the spelling — and capital letters matter!' + (py ? '' : ' (Did you declare it with <code>let</code> or <code>const</code>?)');
-    if (t === 'TypeError') return py ? 'You used a value in a way its type doesn\'t allow — like adding text and a number. <code>str(5)</code> turns a number into text, <code>int("5")</code> turns text into a number.' : 'You used a value in a way it doesn\'t allow — like calling something that isn\'t a function, reading a property of <code>null</code>, or changing a <code>const</code>.';
+    if (t === 'NameError' || t === 'ReferenceError') return 'You used a name that doesn\'t exist. Check the spelling, and remember that capital letters matter.' + (py ? '' : ' (Did you declare it with <code>let</code> or <code>const</code>?)');
+    if (t === 'TypeError') return py ? 'You used a value in a way its type doesn\'t allow, like adding text and a number. <code>str(5)</code> turns a number into text, <code>int("5")</code> turns text into a number.' : 'You used a value in a way it doesn\'t allow, like calling something that isn\'t a function, reading a property of <code>null</code>, or changing a <code>const</code>.';
     if (t === 'TimeoutError') return 'Your code never finished! A loop that never stops is called an <b>infinite loop</b>. Make sure your loop condition eventually becomes false.';
-    if (t === 'ZeroDivisionError') return 'You can\'t divide by zero — not even in Syntaxia.';
+    if (t === 'ZeroDivisionError') return 'You can\'t divide by zero, not even in Syntaxia.';
     if (t === 'IndexError') return 'You asked for a position that isn\'t in the list. Remember: the first item is at index 0!';
     if (t === 'KeyError') return 'That key isn\'t in the dictionary. Check the spelling.';
-    if (t === 'AttributeError') return 'That object doesn\'t have that attribute or method. Check the spelling — or did you forget to set it in <code>__init__</code>?';
+    if (t === 'AttributeError') return 'That object doesn\'t have that attribute or method. Check the spelling. Or did you forget to set it in <code>__init__</code>?';
     if (t === 'ValueError') return 'The value has the right type but a wrong value, e.g. <code>int("abc")</code>.';
     if (t === 'RecursionError' || t === 'RangeError') return 'A function kept calling itself forever!';
-    if (t === 'ImportError') return 'No imports needed here — everything you need is built in.';
-    return 'Read the error message carefully — it usually tells you exactly what went wrong.';
+    if (t === 'ImportError') return 'No imports needed here. Everything you need is built in.';
+    return 'Read the error message carefully. It usually tells you what went wrong.';
   }
 
   function explainC(err, lang) {
@@ -149,22 +149,22 @@
       : lang === 'csharp' ? '<code>int</code> for whole numbers, <code>double</code> for decimals, <code>bool</code> for true/false and <code>string</code> for text'
         : '<code>int</code> for whole numbers, <code>double</code> for decimals, <code>bool</code> for true/false and <code>string</code> for text';
     if (t === 'SyntaxError') {
-      if (/;/.test(m) && /expected/.test(m)) return `In ${L.label}, every statement ends with a <b>semicolon</b> <code>;</code> — like a full stop at the end of a sentence. Check the end of the line the error points to (or the line just before it).`;
+      if (/;/.test(m) && /expected/.test(m)) return `In ${L.label}, every statement ends with a <b>semicolon</b> <code>;</code>, like a full stop at the end of a sentence. Check the end of the line the error points to (or the line just before it).`;
       if (/end of (input|file)|\} expected/.test(m)) return 'A <code>{</code> was opened but never closed with a matching <code>}</code>. Count your braces!';
       if (/string|constant|literal/.test(m)) return 'A piece of text is missing its closing quote <code>"</code>.';
       if (/main/.test(m)) return lang === 'java' ? 'Java code runs from <code>public static void main(String[] args)</code>, which must be inside a class. Keep your code inside main.' : 'C++ code runs from <code>int main() { ... }</code>. Statements have to go inside a function like main.';
       return `${L.label} couldn't understand this line. Look for a missing semicolon <code>;</code>, bracket <code>( )</code>, brace <code>{ }</code> or quote.`;
     }
-    if (t === 'NameError') return `You used a name ${L.label} doesn't know. Check the spelling — capital letters matter! — and remember a variable must be <b>declared with a type</b> before you use it (like <code>${lang === 'java' ? 'String' : 'string'} color = "red";</code>).`;
+    if (t === 'NameError') return `You used a name ${L.label} doesn't know. Check the spelling (capital letters matter), and remember a variable must be <b>declared with a type</b> before you use it (like <code>${lang === 'java' ? 'String' : 'string'} color = "red";</code>).`;
     if (t === 'TypeError') return `In ${L.label}, every variable has a <b>type</b> and only holds values of that type: ${types}.` + (lang === 'cpp' && /operator\+/.test(m) ? ' To glue a number onto text, turn it into text first with <code>to_string(n)</code>.' : '');
     if (t === 'TimeoutError') return 'Your code never finished! A loop that never stops is called an <b>infinite loop</b>. Make sure your loop condition eventually becomes false.';
     if (t === 'RuntimeError') {
-      if (/zero/i.test(m)) return 'You can\'t divide by zero — not even in Syntaxia.';
+      if (/zero/i.test(m)) return 'You can\'t divide by zero, not even in Syntaxia.';
       if (/index|range|bounds/i.test(m)) return 'You asked for a position that isn\'t in the list or text. The first item is at index 0, and the last is at size − 1.';
       if (/null|Segmentation/i.test(m)) return 'You used an object that doesn\'t exist yet (it\'s empty / null). Make sure you created it first.';
-      return 'Your code compiled, but crashed while running. Read the message — it says what went wrong.';
+      return 'Your code compiled, but crashed while running. The message says what went wrong.';
     }
-    return 'Read the error message carefully — it usually tells you exactly what went wrong.';
+    return 'Read the error message carefully. It usually tells you what went wrong.';
   }
 
   function corruptCode(code, lang) {
@@ -245,7 +245,7 @@
       try { localStorage.setItem(KEY(this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
     }
     newSave(hero, lang) {
-      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false };
+      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, chapter: 1, ch2: { level: 0, maxLevel: 0, completed: false, checkpoints: {} }, seenIntro: {}, cannonCorrupt: false, minis: {} };
     }
 
     // ------------------------------------------------------------ screens
@@ -351,7 +351,7 @@
       build();
       $('#cc-name').value = '';
       $('#cc-name').oninput = (e) => { look.name = e.target.value; };
-      $('#cc-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> <b>${LANGS[lang].label}</b> <span class="muted">— this save file learns ${LANGS[lang].label}</span>`;
+      $('#cc-lang').innerHTML = `<span class="lang-badge">${LANGS[lang].badge}</span> <b>${LANGS[lang].label}</b> <span class="muted">(this save file learns ${LANGS[lang].label})</span>`;
       $('#cc-random').onclick = () => {
         const pick = (a) => a[Math.floor(Math.random() * a.length)];
         Object.assign(look, { skin: pick(Art.SKIN), shirt: pick(Art.CLOTH), pants: pick(Art.CLOTH), hat: pick(Art.HATS), hatColor: pick(Art.CLOTH), eyes: pick(Art.EYES) });
@@ -425,7 +425,7 @@
       let extra = '';
       if (L.grantsSkills && !this.save.spUnlocked) {
         this.save.spUnlocked = true; this.save.sp += 2;
-        extra = '<div class="unlock"><b>SKILL POINTS UNLOCKED!</b> <br>You earned <b>2 SP</b>. Spend them at a Skill Shrine or press <b>K</b> anytime.<br>The <b>open world</b> awaits!</div>';
+        extra = '<div class="unlock"><b>SKILL POINTS UNLOCKED!</b> <br>You earned <b>2 SP</b>. Spend them at a Skill Shrine or press <b>K</b> anytime.<br>Next stop: the <b>open world</b>.</div>';
       }
       delete P.checkpoints[P.level];
       P.level = Math.min(next, LV.length - 1);
@@ -433,7 +433,7 @@
       if (this.chapter() === 1) this.save.checkpoint = null;
       this.persist();
       const nextL = LV[P.level];
-      this.dialog(`Level ${LV.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b> — ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${P.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
+      this.dialog(`Level ${LV.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b>: ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${P.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
         [{ label: 'Map', fn: () => this.showMap(false) }, { label: 'Next level ▶', cls: 'primary', fn: () => this.loadLevel(P.level) }], { noClose: true });
     }
     chapter2Complete() {
@@ -467,10 +467,10 @@
           <div><span>Bugs squashed</span><b>${s.bugs}</b></div>
           <div><span>Terminals solved</span><b>${Object.keys(s.solved).length}</b></div>
           <div><span>Companions</span><b>i${s.pet ? ', ' + escapeHTML(s.pet.name) : ''}</b></div>
-          <div><span>Weapon</span><b>${s.weapon ? escapeHTML(s.weapon.name) : '— (pure code!)'}</b></div>
+          <div><span>Weapon</span><b>${s.weapon ? escapeHTML(s.weapon.name) : 'None (pure code!)'}</b></div>
           <div><span>Time</span><b>${mins} min</b></div>
         </div>
-        <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>. That's real programming. </p>
+        <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>.</p>
         ${GameData.CHAPTER2[s.lang] ? `<div class="unlock"><b>CHAPTER 2 UNLOCKED:</b> ${escapeHTML(GameData.CHAPTER2[s.lang].title)}<br>${escapeHTML(GameData.CHAPTER2[s.lang].blurb)}<br>Open the map and pick the <b>Chapter 2</b> tab.</div>` : ''}
         <p class="muted">${firstWin ? '+3 SP bonus. ' : ''}Return to the Wilds to finish any side quests.</p>`,
         [{ label: 'Title screen', fn: () => this.showTitle() }, { label: 'Map', fn: () => this.showMap(false) }, { label: 'Return to the Wilds', cls: 'primary', fn: () => this.loadLevel(WORLD_INDEX) }], { noClose: true, wide: true });
@@ -539,7 +539,7 @@
         const cls = ['map-node', unlocked ? '' : 'locked', done ? 'done' : '', i === front ? 'current' : '', i === this.mapSel ? 'sel' : ''].join(' ');
         return `<button class="${cls}" data-i="${i}" style="left:${x / 10}%;top:${y / 5.6}%">
           <span class="mn-dot">${i + 1}</span>
-          <span class="mn-label">${escapeHTML(L.topic)}</span></button>`;
+          <span class="mn-label">${escapeHTML(L.topic)}</span>${MiniBoss.has(L.id) ? `<span class="mn-mini" title="Miniboss: ${escapeHTML(MiniBoss.DEFS[L.id].name)}">BOSS</span>` : ''}</button>`;
       }).join('');
       const banner = open ? '' : `<div class="map-preview">Preview · ${ch === 2 ? 'defeat <b>Segfault</b> at the end of Chapter 1 to unlock this chapter' : 'locked'}</div>`;
       brd.innerHTML = `<svg viewBox="0 0 1000 560" preserveAspectRatio="none">${svg}</svg>${nodes}
@@ -564,6 +564,7 @@
         <div class="mp-title">${escapeHTML(L.topic)}</div>
         <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div>
         <div class="mp-terms">${terms}</div>
+        ${MiniBoss.has(L.id) ? `<div class="mp-mini">Miniboss at the end: <b>${escapeHTML(MiniBoss.DEFS[L.id].name)}</b>${s.minis && s.minis[L.id] ? ' (beaten)' : ''}</div>` : ''}
         ${locked ? `<div class="mp-why">${escapeHTML(why)}. You can still read the tutorial.</div>` : ''}</div>
         <div class="mp-btns"><button class="btn" id="mp-tut">${locked ? 'Preview tutorial' : 'Tutorial'}</button><button class="btn primary big" id="mp-go" ${locked ? `disabled title="${escapeHTML(why)}"` : ''}>${label}</button></div>`;
       $('#mp-go').onclick = () => { if (locked) return; Sound.play('click'); this.save.chapter = ch; this.loadLevel(i); };
@@ -574,8 +575,19 @@
       const n = this.save.bitsCollected;
       if (n % 20 === 0) {
         if (this.save.spUnlocked) { this.save.sp += 1; this.toast(`${n} data bits collected: <b>+1 skill point!</b>`, 'good'); }
-        else this.toast(`${n} data bits collected! Keep them coming — once skill points unlock, every 20 bits earns one.`, 'info');
+        else this.toast(`${n} data bits collected. Once skill points unlock, every 20 bits earns one.`, 'info');
       }
+      this.updateHUD();
+    }
+    onMiniDefeated(d) {
+      const L = this.game.L;
+      if (!this.save.minis) this.save.minis = {};
+      const first = !this.save.minis[L.id];
+      this.save.minis[L.id] = true;
+      if (first && this.save.spUnlocked) { this.save.sp += 1; this.toast(`<b>${escapeHTML(d.name)}</b> is beaten. +1 skill point, and the portal is open.`, 'good'); }
+      else this.toast(`<b>${escapeHTML(d.name)}</b> is beaten. The portal is open.`, 'good');
+      Sound.play('success');
+      this.persist();
       this.updateHUD();
     }
     onBugSquashed() {
@@ -619,7 +631,7 @@
       if (s.spUnlocked) extras.push(`<button class="chip sp" data-act="skills">${s.sp} SP <kbd>K</kbd></button>`);
       if (L.openWorld) extras.push(`<span class="chip">Cores ${g.coreCount()}/3</span>`);
       extras.push(`<span class="chip">Bugs ${s.bugs || 0}</span>`);
-      extras.push(`<span class="chip" title="Data bits — every 20 earn a skill point">Bits ${s.bitsCollected || 0}</span>`);
+      extras.push(`<span class="chip" title="Data bits: every 20 earn a skill point">Bits ${s.bitsCollected || 0}</span>`);
       $('#hud-extra').innerHTML = extras.join('');
       const gl = Object.keys(s.glitches || {});
       $('#hud-glitches').innerHTML = gl.map(k => `<button class="chip glitch" data-act="debug" style="--c:${GLITCHES[k].color}">${GLITCHES[k].name} <small>${GLITCHES[k].effect}</small></button>`).join('') + (gl.length ? '<span class="chip hint">press <kbd>Q</kbd> to debug</span>' : '');
@@ -709,7 +721,7 @@
     }
 
     openSkills(fromShrine) {
-      if (!this.save.spUnlocked) { this.toast('Skill points unlock once you master <b>Classes</b> (Level 6).', 'info'); return; }
+      if (!this.save.spUnlocked) { this.toast('Skill points unlock after <b>Classes</b> (Level 6).', 'info'); return; }
       const render = (body) => {
         const s = this.save;
         body.innerHTML = `<p class="sp-big"><b>${s.sp}</b> skill point${s.sp === 1 ? '' : 's'} available</p>
@@ -890,7 +902,7 @@
         $('#ed-kicker').textContent = `${LVs === LEVELS ? '' : 'CH2 · '}LEVEL ${li + 1} · ${Lv.topic.toUpperCase()} · TERMINAL ${Lv.terminals.indexOf(ed.chId) + 1}/${Lv.terminals.length}` + (solved ? ' · SOLVED ✔' : '');
         $('#ed-title').textContent = ch.title;
         let html = GameData.descFor(ed.chId, ctx);
-        if (solved) html += '<p class="solved-note">✔ Already solved! Feel free to experiment — nothing will break.</p>';
+        if (solved) html += '<p class="solved-note">✔ Already solved. Experiment all you like, nothing will break.</p>';
         if (ed.chId === 'cannon' && this.save.cannonCorrupt) html += '<p class="corrupt-note">Segfault <b>corrupted</b> this code! Find and fix the error, then fire.</p>';
         $('#ed-desc').innerHTML = html;
         // variables + functions
@@ -912,7 +924,7 @@
         $$('[data-glitch]').forEach(b => b.onclick = () => { this.storeCode(); this.ed = { mode: 'debug', kind: b.dataset.glitch, hints: 0 }; this.renderEditor(); });
         const eye = this.save.skills.debugger;
         $('#ed-side').innerHTML = `<h4>How to debug</h4><ol class="small"><li>Press <b>Run</b> to see the error.</li><li>Read the error type and the <b>line number</b>.</li><li>Fix that line and run again.</li></ol>` +
-          (eye ? `<h4>Debugger's Eye</h4><div class="small">${escapeHTML(sn.hint || { syntax: 'Look for a missing bracket, quote, colon or brace.', name: 'A name is misspelled — compare it letter by letter (capitals too!).', type: 'A value is the wrong type for what the code does with it.' }[ed.kind])}</div>` : '<div class="muted small">Tip: the <b>Debugger\'s Eye</b> skill shows hints here.</div>');
+          (eye ? `<h4>Debugger's Eye</h4><div class="small">${escapeHTML(sn.hint || { syntax: 'Look for a missing bracket, quote, colon or brace.', name: 'A name is misspelled. Compare it letter by letter, capitals too.', type: 'A value is the wrong type for what the code does with it.' }[ed.kind])}</div>` : '<div class="muted small">Tip: the <b>Debugger\'s Eye</b> skill shows hints here.</div>');
         $('#ed-hint').classList.add('hidden');
       }
       const saved = this.codeStore(lang)[this.codeKey()];
@@ -1053,7 +1065,7 @@
       }
       const fb = $('#feedback');
       fb.className = 'feedback bad';
-      fb.innerHTML = `<b>${escapeHTML(err.type)}</b> — ${explain(err, lang)}`;
+      fb.innerHTML = `<b>${escapeHTML(err.type)}</b>: ${explain(err, lang)}`;
       Sound.play('error');
     }
     printOutput(lines, label) {
@@ -1095,7 +1107,7 @@
         setTimeout(() => { if (this.ed && this.ed.chId === ed.chId) this.closeEditor(); }, 1100);
         return;
       }
-      if (!first) { fb.innerHTML += '<div class="muted">(Already solved — but nice work!)</div>'; return; }
+      if (!first) { fb.innerHTML += '<div class="muted">(Already solved, but nice work!)</div>'; return; }
       this.save.solved[ed.chId] = res.data === undefined ? true : res.data;
       this.persist();
       this.pendingEffect = () => { ch.effect(this.game, res.data); this.persist(); this.updateHUD(); };
@@ -1113,7 +1125,7 @@
       const got = r.output.join('\n').trim();
       if (got !== sn.expect) {
         fb.className = 'feedback bad';
-        fb.innerHTML = `No errors — but it printed <b>${escapeHTML(got || 'nothing')}</b> instead of <b>${escapeHTML(sn.expect)}</b>.`;
+        fb.innerHTML = `No errors, but it printed <b>${escapeHTML(got || 'nothing')}</b> instead of <b>${escapeHTML(sn.expect)}</b>.`;
         Sound.play('fail');
         return;
       }

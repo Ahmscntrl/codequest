@@ -338,3 +338,5 @@ body.touch .keyhints { display: none; }
 .mp-term.solved { color: var(--good); border-color: rgba(88,255,139,.4); }
 .mp-why { margin-top: 8px; font-size: 13px; color: var(--muted); }
 .btn[disabled] { opacity: .5; cursor: not-allowed; filter: grayscale(.6); }
+.mn-mini { position: absolute; top: -10px; right: -16px; font: 900 9px var(--ui); letter-spacing: .5px; background: #ff5470; color: #fff; padding: 2px 5px; border-radius: 6px; box-shadow: 0 2px 0 rgba(0,0,0,.4); }
+.mp-mini { margin-top: 8px; font-size: 13px; color: #ffb3c0; }
