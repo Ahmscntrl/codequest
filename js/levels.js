@@ -120,9 +120,9 @@
       <p>Use ${c(printFn(ctx) + '(...)')} to make the computer say it.</p>`,
     starter: { python: '# Make the computer say hello!\n# Text goes inside quotes, like "this".\n\n', javascript: '// Make the computer say hello!\n// Text goes inside quotes, like "this".\n\n' },
     api: [],
-    check(runs) {
+    check(runs, ctx) {
       const r = runs[0];
-      if (!r.output.length) return { ok: false, msg: `Nothing was printed. Try ${c('print("Hello, World")')}.` };
+      if (!r.output.length) return { ok: false, msg: `Nothing was printed. Try ${c(printEx(ctx, '"Hello, World"'))}.` };
       const ok = r.output.some(l => /^\s*hello\s*,?\s*world\s*[!.]?\s*$/i.test(l));
       if (!ok) return { ok: false, msg: `The gate heard <b>${escapeHTML(r.output.join(' / '))}</b>, but it's listening for <b>Hello, World</b>.` };
       return { ok: true, msg: 'The gate recognises a fellow programmer. <b>Gate unlocked!</b>' };
@@ -776,9 +776,9 @@
       <p>The function ${c('cheer')} is already defined for you. <b>Call it twice</b>.</p>`,
     starter: { python: 'def cheer():\n    print("Go team!")\n\n# Call it twice below:\n', javascript: 'function cheer() {\n  console.log("Go team!");\n}\n\n// Call it twice below:\n' },
     api: [],
-    check(runs) {
+    check(runs, ctx) {
       const out = lines(runs[0]);
-      if (!out.length) return { ok: false, msg: 'Nothing happened — defining a function doesn\'t run it. Write <code>cheer()</code> to call it!' };
+      if (!out.length) return { ok: false, msg: `Nothing happened — defining a function doesn't run it. Write <code>${tn('cheer', ctx)}()${ctx.lang === 'python' ? '' : ';'}</code> to call it!` };
       if (out.length !== 2 || out.some(l => l !== 'Go team!')) return { ok: false, msg: `Expected "Go team!" exactly twice, but got: <b>${escapeHTML(out.join(', '))}</b>` };
       return { ok: true, msg: 'Go team! Go team! <b>Gate open!</b>' };
     },
@@ -832,7 +832,7 @@
       const made = ctx.lang === 'python' ? /Crate\s*\(\s*\)/ : ctx.lang === 'cpp' ? /\bCrate\s+\w+\s*[;({=]|Crate\s*\(\s*\)/ : /new\s+Crate\s*\(/;
       if (!made.test(src.replace(/class\s+Crate/, ''))) return { ok: false, msg: `First create an object from the blueprint: ${c(ctx.lang === 'python' ? 'Crate()' : ctx.lang === 'cpp' ? 'Crate my_crate;' : 'new Crate()')}.` };
       if (!lines(runs[0]).includes('golden key')) return { ok: false, msg: `Now print the object's ${c('contents')} attribute.` };
-      if (!/\.contents/.test(src)) return { ok: false, msg: 'Read it from the object with <code>.contents</code> — don\'t just type it!' };
+      if (!/\.contents/i.test(src)) return { ok: false, msg: 'Read it from the object with <code>.contents</code> — don\'t just type it!' };
       return { ok: true, msg: 'The crate creaks open: a <b>golden key</b>! <b>Gate open!</b>' };
     },
     hints: { python: ['my_crate = Crate()\nprint(my_crate.contents)'], javascript: ['const myCrate = new Crate();\nconsole.log(myCrate.contents);'] },
@@ -918,7 +918,7 @@
       if (/SuperCoder/.test(src)) return { ok: false, msg: 'Don\'t type <b>SuperCoder</b> as one word — make the computer glue <code>"Super"</code> and <code>"Coder"</code> with <code>+</code>.' };
       if (out.includes('Super Coder')) return { ok: false, msg: 'There\'s a space in there! <code>+</code> adds nothing between the pieces — check your quotes for extra spaces.' };
       if (!out.includes('SuperCoder')) return { ok: false, msg: `The smith needs to see <b>SuperCoder</b> printed. You printed <b>${escapeHTML(out.join(' / ') || 'nothing')}</b>.` };
-      if (!/["'`]\s*\+\s*["'`]/.test(src)) return { ok: false, msg: 'Join the two texts with <code>+</code>.' };
+      if (!/["'`]\s*\)?\s*\+\s*["'`]/.test(src)) return { ok: false, msg: 'Join the two texts with <code>+</code>.' };
       return { ok: true, msg: '<b>SuperCoder</b>, forged from two pieces. <b>Gate open!</b>' };
     },
     effect: (game) => game.openGate('C'),

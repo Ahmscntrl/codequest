@@ -231,7 +231,7 @@
       try { localStorage.setItem(KEY(this.save.lang), JSON.stringify(this.save)); } catch (e) { /* storage may be unavailable */ }
     }
     newSave(hero, lang) {
-      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: { python: {}, javascript: {} }, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, seenIntro: {}, cannonCorrupt: false };
+      return { v: 1, created: Date.now(), updated: Date.now(), playtime: 0, hero, lang, level: 0, maxLevel: 0, solved: {}, code: {}, vars: {}, taken: {}, pickupValues: {}, foundI: false, weapon: null, pet: null, sp: 0, spUnlocked: false, skills: {}, bugs: 0, glitches: {}, checkpoint: null, checkpoints: {}, completed: false, seenIntro: {}, cannonCorrupt: false };
     }
 
     // ------------------------------------------------------------ screens
@@ -527,8 +527,8 @@
     cannonCorrupted() { return !!(this.save && this.save.cannonCorrupt); }
     corruptCannon() {
       const lang = this.save.lang;
-      const cur = this.save.code[lang].cannon || CH.cannon.starter[lang];
-      this.save.code[lang].cannon = corruptCode(cur, lang);
+      const cur = this.codeStore(lang).cannon || CH.cannon.starter[lang];
+      this.codeStore(lang).cannon = corruptCode(cur, lang);
       this.save.cannonCorrupt = true;
       Sound.play('glitch');
       this.toast('Segfault <b>corrupted your cannon code</b>! Open the terminal and debug it.', 'bad');
@@ -766,6 +766,7 @@
         if (e.key === 'ArrowLeft') $('#tut-prev').click();
       }, true);
     }
+    codeStore(lang) { if (!this.save.code) this.save.code = {}; return this.save.code[lang] || (this.save.code[lang] = {}); }
     codeKey() { const ed = this.ed; return ed.mode === 'debug' ? `glitch:${ed.kind}:${this.save.glitches[ed.kind].i}` : ed.chId; }
     defaultCode() {
       const ed = this.ed, lang = this.save.lang;
@@ -775,7 +776,7 @@
     storeCode() {
       if (!this.ed) return;
       if (this.ed.mode === 'debug' && !(this.save.glitches || {})[this.ed.kind]) return;
-      this.save.code[this.save.lang][this.codeKey()] = $('#code').value;
+      this.codeStore(this.save.lang)[this.codeKey()] = $('#code').value;
       this.persist();
     }
     openTerminal(chId) {
@@ -825,7 +826,7 @@
         const g = this.globalsFor(ch, null, true);
         const varRows = Object.entries(g).map(([k, v]) => `<div class="var"><span class="vn">${escapeHTML(k)}</span> = <span class="vv">${escapeHTML(JSON.stringify(v))}</span></div>`);
         const testNote = ch.tests ? `<div class="muted small">Some of these change for each test.</div>` : '';
-        const fnRows = [`<div class="fn"><code>${lang === 'python' ? 'print' : 'console.log'}(value)</code><span>Shows a value in the output.</span></div>`]
+        const fnRows = [`<div class="fn"><code>${escapeHTML(Lang.get(lang).print('value'))}</code><span>Shows a value in the output.</span></div>`]
           .concat((ch.api || []).map(n => `<div class="fn"><code>${CodeRunner.fnName(n, lang)}(${FUNC_DOCS[n][0]})</code><span>${FUNC_DOCS[n][1]}</span></div>`));
         $('#ed-side').innerHTML = `<h4>Your variables</h4>${varRows.join('') || '<div class="muted small">none yet</div>'}${testNote}<h4>Functions you can call</h4>${fnRows.join('')}`;
       } else {
@@ -843,7 +844,7 @@
           (eye ? `<h4>Debugger's Eye</h4><div class="small">${escapeHTML(sn.hint || { syntax: 'Look for a missing bracket, quote, colon or brace.', name: 'A name is misspelled — compare it letter by letter (capitals too!).', type: 'A value is the wrong type for what the code does with it.' }[ed.kind])}</div>` : '<div class="muted small">Tip: the <b>Debugger\'s Eye</b> skill shows hints here.</div>');
         $('#ed-hint').classList.add('hidden');
       }
-      const saved = this.save.code[lang][this.codeKey()];
+      const saved = this.codeStore(lang)[this.codeKey()];
       $('#code').value = saved !== undefined ? saved : this.defaultCode();
       this.syncEditor();
     }
@@ -1045,7 +1046,7 @@
         return;
       }
       const G = GLITCHES[ed.kind];
-      delete this.save.code[lang][this.codeKey()];
+      delete this.codeStore(lang)[this.codeKey()];
       delete this.save.glitches[ed.kind];
       this.persist();
       Sound.play('success');
