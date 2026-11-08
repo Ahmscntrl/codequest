@@ -99,6 +99,28 @@
     </div>
   </div>
 
+  <!-- ============ TUTORIAL ============ -->
+  <div id="tutorial" class="overlay hidden">
+    <div class="tut">
+      <div class="tut-head">
+        <div><div id="tut-kicker" class="ed-kicker"></div><h2 id="tut-title"></h2></div>
+        <button id="tut-close" class="btn small ghost" title="Close (Esc)">✕</button>
+      </div>
+      <div id="tut-body" class="tut-body"></div>
+      <div id="tut-try" class="tut-try">
+        <div class="tut-try-head"><span>✏️ Try it — edit the code and run it</span><span class="spacer"></span><button id="tut-reset" class="btn small ghost">↺ Reset</button><button id="tut-run" class="btn small primary">▶ Run</button></div>
+        <textarea id="tut-code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea>
+        <div id="tut-out" class="console tut-out"></div>
+      </div>
+      <div class="tut-foot">
+        <button id="tut-prev" class="btn">◀ Back</button>
+        <div id="tut-dots" class="tut-dots"></div>
+        <span id="tut-count" class="muted small"></span>
+        <button id="tut-next" class="btn primary">Next ▶</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ============ CODE EDITOR ============ -->
   <div id="editor" class="overlay hidden">
     <div class="ed">
@@ -117,6 +139,7 @@
             <option value="javascript">JavaScript</option>
           </select>
           <span class="spacer"></span>
+          <button id="ed-tut" class="btn small ghost" title="Review this level's tutorial">📖 Tutorial</button>
           <button id="ed-hint" class="btn small ghost">💡 Hint</button>
           <button id="ed-reset" class="btn small ghost" title="Reset to starter code">↺ Reset</button>
           <button id="ed-close" class="btn small ghost" title="Close (Esc)">✕ Close</button>
@@ -140,6 +163,7 @@
   <script src="js/python.js"></script>
   <script src="js/runner.js"></script>
   <script src="js/levels.js"></script>
+  <script src="js/teach.js"></script>
   <script src="js/art.js"></script>
   <script src="js/game.js"></script>
   <script src="js/ui.js"></script>

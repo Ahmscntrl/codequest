@@ -41,15 +41,16 @@ Each save opens on a little map of the course: one stop per level, labelled with
 - **A puzzle platformer where you write scripts in a language of your choice.** Python runs on a small Python interpreter built for the game (`js/python.js`), with real Python-style errors. JavaScript runs on the browser's own JS engine inside a sandboxed Web Worker with a timeout. You can switch languages at any time, and every terminal works in both.
 - **You collect objects as variables and print them when you need them.** Glowing boxes like `planks` and `password` become variables in your scripts. The password is random for each player, so you have to print the variable rather than type the value.
 - **A character creator** with your name, skin, clothes, hats and eyes. The guard bot even checks visitors against your name.
-- **Levels, starting with "Hello, World".** Each topic is a series of small steps, and every terminal teaches one new idea:
-  1. **print()**: Hello World → printing several lines → math with numbers
-  2. **Variables**: make a variable → use a collected one → do math with variables → change a variable → print a secret
-  3. **Conditions**: true/false comparisons → `if` → `if/else` → `elif` → `and`
-  4. **Loops**: repeat → use the counter `i` → count 1 to 10 → count down → `while` → add up totals
-  5. **Functions**: call a function → parameters → `return` → returning text → functions with loops → functions with `if`
-  6. **Classes**: objects and attributes → constructor inputs and methods → forge a weapon / adopt a pet
-  7. **The Wilds**, an open world: list and string warm-ups, then lists, strings, Fibonacci, FizzBuzz and dictionaries
+- **Levels, starting with "Hello, World".** Each level opens with a step-by-step **tutorial** that teaches the syntax: one idea per page, each with an example you can edit and run. Then a series of terminals practises one new idea each:
+  1. **print()**: print → several lines → gluing text with `+` → maths → brackets first → printing several values
+  2. **Variables**: make one → text/number/boolean types → use a collected one → maths with variables → change a variable → build sentences from variables → print a secret
+  3. **Conditions**: comparisons → `if` → `if/else` → `%` and even/odd → `elif` → `and` → `or`
+  4. **Loops**: repeat → use the counter `i` → count 1 to 10 → count down → loop over a list → `while` → running totals → `break`
+  5. **Functions**: call → parameters → `return` → using returned values → returning text → returning True/False → loops inside functions → `if` inside functions
+  6. **Classes**: objects and attributes → constructor inputs and methods → methods that change attributes → methods with inputs → forge a weapon / adopt a pet
+  7. **The Wilds**, an open world: list and string side quests, then the three Core puzzles, FizzBuzz and dictionaries
   8. **The final boss**: Segfault the Bug King
+- **Hints that teach.** Hints nudge you toward the idea without giving code to copy. The last hint shows a *similar* problem solved step by step, never the answer to your own terminal (a test checks this).
 - **The `i` in loops is a little friend you can find.** `i` is hidden in the Loops level, and the Staircase Engine won't run until you find them. They hop up each step your loop builds (`i=0`, `i=1`, ...) and follow you for the rest of the game.
 - **Save slots.** There are 3 slots stored in your browser's localStorage. The game saves at checkpoints and when you solve terminals.
 - **Classes can be used for weapons or pets.** Write a `class` with `name`/`damage` to get a real weapon, or one with `name`/`speak()` to get a pet that follows you around and talks (cats, dogs, birds, robots, dragons, slimes...).
@@ -65,6 +66,7 @@ css/style.css     styles
 js/python.js      Python interpreter (tokenizer, parser, evaluator)
 js/runner.js      runs player code: Python interpreter or JS in a Web Worker
 js/levels.js      level maps, terminal challenges, glitch snippets, skills
+js/teach.js       tutorials, hints and similar-problem examples
 js/art.js         procedural drawing: hero, i, pets, bugs, boss
 js/game.js        platformer engine: physics, entities, effects, boss
 js/ui.js          menus, save slots, character creator, code editor, HUD, sound
@@ -105,4 +107,5 @@ A challenge has a description, starter code for each language, the API functions
 ```bash
 node tests/py_test.js          # Python interpreter
 node tests/challenges_test.js  # every challenge solved in both languages + every glitch snippet errors
+node tests/teach_test.js       # tutorials run; hints and similar examples never solve their terminal
 ```

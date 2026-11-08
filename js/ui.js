@@ -22,6 +22,8 @@
     deposit: ['gem', 'Deposits one gem.'],
     fire: ['', 'Fires one cannon shot.'],
     heal: ['', 'Heals you.'],
+    umbrella: ['', 'Opens an umbrella.'],
+    sunglasses: ['', 'Puts on sunglasses.'],
     turn_away: ['', 'Politely turns the visitor away.'],
     charge_up: ['', 'Charges the battery a little.'],
     brew: ['potion', 'Brews one potion object.'],
@@ -174,7 +176,7 @@
       stage.style.setProperty('--s', scale);
     }
     sfx(n) { Sound.play(n); }
-    inputBlocked() { return this.screen !== 'game' || this.modalOpen || this.editorOpen; }
+    inputBlocked() { return this.screen !== 'game' || this.modalOpen || this.editorOpen || this.tutOpen; }
     setFrozen() { this.game.frozen = this.inputBlocked(); if (this.game.frozen) this.game.clearKeys(); }
     ctx() { return { lang: this.save.lang, save: this.save, vars: this.save.vars, name: this.save.hero.name, game: this.game }; }
 
@@ -348,7 +350,7 @@
       if (!this.save.seenIntro[L.id]) {
         this.save.seenIntro[L.id] = true;
         this.persist();
-        this.dialog(L.intro.title, L.intro[this.save.lang], [{ label: "Let's go! ▶", cls: 'primary' }], { wide: true });
+        this.openTutorial(index);
       } else {
         this.toast(`📍 ${escapeHTML(L.name)}`, 'info');
       }
@@ -451,8 +453,9 @@
         <div><div class="mp-kicker">Level ${i + 1}${done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
         <div class="mp-title">${escapeHTML(L.topic)}</div>
         <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div></div>
-        <button class="btn primary big" id="mp-go">${label}</button>`;
+        <div class="mp-btns"><button class="btn" id="mp-tut">📖 Tutorial</button><button class="btn primary big" id="mp-go">${label}</button></div>`;
       $('#mp-go').onclick = () => { Sound.play('click'); this.loadLevel(i); };
+      $('#mp-tut').onclick = () => { Sound.play('click'); this.openTutorial(i); };
     }
 
     onBugSquashed() {
@@ -696,6 +699,31 @@
         ta.value = this.defaultCode(); sync(); Sound.play('click');
       };
       $('#ed-hint').onclick = () => this.showHint();
+      $('#ed-tut').onclick = () => {
+        if (!this.ed) return;
+        const li = this.ed.mode === 'terminal' ? LEVELS.findIndex(l => l.terminals.includes(this.ed.chId)) : this.save.level;
+        this.openTutorial(li, 1);
+      };
+      $('#tut-prev').onclick = () => { if (this.tut && this.tut.page > 0) { this.tut.code[this.tut.page] = $('#tut-code').value; this.tut.page--; this.renderTutorial(); Sound.play('click'); } };
+      $('#tut-next').onclick = () => {
+        const T = this.tut; if (!T) return;
+        T.code[T.page] = $('#tut-code').value;
+        if (T.page < T.pages.length - 1) { T.page++; this.renderTutorial(); Sound.play('click'); } else { Sound.play('success'); this.closeTutorial(); }
+      };
+      $('#tut-close').onclick = () => this.closeTutorial();
+      $('#tut-run').onclick = () => this.runTutorial();
+      $('#tut-reset').onclick = () => { const T = this.tut; if (!T) return; delete T.code[T.page]; this.renderTutorial(); };
+      $('#tut-code').addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); this.runTutorial(); }
+        if (e.key === 'Tab') { e.preventDefault(); e.target.setRangeText(this.save.lang === 'javascript' ? '  ' : '    ', e.target.selectionStart, e.target.selectionEnd, 'end'); }
+        e.stopPropagation();
+      });
+      document.addEventListener('keydown', (e) => {
+        if (!this.tutOpen || e.target === $('#tut-code')) return;
+        if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); this.closeTutorial(); }
+        if (e.key === 'ArrowRight') $('#tut-next').click();
+        if (e.key === 'ArrowLeft') $('#tut-prev').click();
+      }, true);
       $('#ed-lang').onchange = (e) => {
         this.storeCode();
         this.save.lang = e.target.value;
@@ -747,6 +775,8 @@
       $('#err-line').classList.add('hidden');
       ed.errLine = null;
       $('#ed-hint').classList.remove('hidden');
+      $('#ed-hint').disabled = false;
+      $('#ed-hint').innerHTML = '💡 Hint';
       if (ed.mode === 'terminal') {
         const ch = CH[ed.chId];
         const solved = this.save.solved[ed.chId] !== undefined && !ch.repeatable;
@@ -786,11 +816,80 @@
     }
     showHint() {
       const ed = this.ed; if (!ed || ed.mode !== 'terminal') return;
-      const hints = CH[ed.chId].hints[this.save.lang];
-      if (ed.hints >= hints.length) return;
+      const ch = CH[ed.chId], lang = this.save.lang;
+      const hints = ch.hints[lang], sim = ch.similar && ch.similar[lang];
+      const max = hints.length + (sim ? 1 : 0);
+      if (ed.hints >= max) return;
       ed.hints++;
-      $('#hints').innerHTML = hints.slice(0, ed.hints).map((h, i) => `<div class="hint"><b>Hint ${i + 1}${i === hints.length - 1 ? ' (spoiler!)' : ''}:</b><pre>${escapeHTML(h)}</pre></div>`).join('');
+      this.renderHints();
       Sound.play('click');
+    }
+    renderHints() {
+      const ed = this.ed, ch = CH[ed.chId], lang = this.save.lang;
+      const hints = ch.hints[lang], sim = ch.similar && ch.similar[lang];
+      const shown = Math.min(ed.hints, hints.length);
+      let html = hints.slice(0, shown).map((h, i) => `<div class="hint"><b>Hint ${i + 1}:</b> ${escapeHTML(h)}</div>`).join('');
+      if (sim && ed.hints > hints.length) {
+        html += `<div class="hint similar"><b>📘 A similar problem, solved</b><p>${escapeHTML(sim.task)}</p><pre>${highlight(sim.code, lang)}</pre>
+          <p class="muted small">Same idea, different problem. Work out how to change it to fit <i>your</i> task.</p></div>`;
+      }
+      $('#hints').innerHTML = html;
+      const max = hints.length + (sim ? 1 : 0);
+      const btn = $('#ed-hint');
+      btn.disabled = ed.hints >= max;
+      btn.innerHTML = ed.hints >= max ? '💡 No more hints' : ed.hints === hints.length && sim ? '📘 Similar example' : `💡 Hint ${ed.hints + 1}/${hints.length}`;
+    }
+    // ------------------------------------------------------------ tutorials
+    openTutorial(levelIndex, startPage) {
+      const L = LEVELS[levelIndex];
+      const pages = GameData.TUTORIALS[L.id] || [];
+      if (!pages.length) return;
+      this.tut = { level: levelIndex, page: startPage || 0, pages, code: {} };
+      this.tutOpen = true;
+      this.setFrozen();
+      $('#tutorial').classList.remove('hidden');
+      this.renderTutorial();
+    }
+    closeTutorial() {
+      if (!this.tutOpen) return;
+      $('#tutorial').classList.add('hidden');
+      this.tutOpen = false;
+      this.tut = null;
+      this.setFrozen();
+      if (this.editorOpen) setTimeout(() => $('#code').focus(), 30);
+    }
+    renderTutorial() {
+      const T = this.tut, lang = this.save.lang, L = LEVELS[T.level];
+      const p = T.pages[T.page];
+      const fill = (h) => GameData.fillTutorial(h, lang);
+      $('#tut-kicker').textContent = `Level ${T.level + 1} tutorial · ${L.topic}`;
+      $('#tut-title').innerHTML = fill(p.story ? L.intro.title.replace(/^.*?— /, '') : p.title);
+      $('#tut-dots').innerHTML = T.pages.map((_, i) => `<button class="tdot ${i === T.page ? 'on' : i < T.page ? 'seen' : ''}" data-p="${i}" title="Page ${i + 1}"></button>`).join('');
+      $$('#tut-dots .tdot').forEach(b => b.onclick = () => { T.page = +b.dataset.p; this.renderTutorial(); });
+      $('#tut-body').innerHTML = p.story ? L.intro[lang] : fill(p.body);
+      const hasCode = !!p.code;
+      $('#tut-try').classList.toggle('hidden', !hasCode);
+      if (hasCode) {
+        const key = T.page;
+        $('#tut-code').value = T.code[key] !== undefined ? T.code[key] : p.code[lang];
+        $('#tut-code').rows = Math.min(12, Math.max(3, $('#tut-code').value.split('\n').length + 1));
+        $('#tut-out').innerHTML = '<div class="c-dim">Press ▶ Run to see what this code does.</div>';
+      }
+      $('#tut-prev').disabled = T.page === 0;
+      const last = T.page === T.pages.length - 1;
+      $('#tut-next').innerHTML = last ? (this.editorOpen ? 'Back to the terminal ▶' : 'Start the level ▶') : 'Next ▶';
+      $('#tut-count').textContent = `${T.page + 1} / ${T.pages.length}`;
+    }
+    async runTutorial() {
+      const T = this.tut; if (!T) return;
+      const code = $('#tut-code').value;
+      T.code[T.page] = code;
+      const r = await CodeRunner.run(this.save.lang, code, { globals: {}, api: {} });
+      let html = r.output.slice(0, 100).map(l => `<div class="c-out">${escapeHTML(l) || '&nbsp;'}</div>`).join('');
+      if (r.error) html += `<div class="c-err">${r.error.line ? 'Line ' + r.error.line + ': ' : ''}<b>${escapeHTML(r.error.type)}</b>: ${escapeHTML(r.error.message)}</div><div class="c-dim">${explain(r.error, this.save.lang)}</div>`;
+      if (!html) html = '<div class="c-dim">(nothing printed)</div>';
+      $('#tut-out').innerHTML = html;
+      Sound.play(r.error ? 'error' : 'click');
     }
     closeEditor() {
       if (!this.ed) return;

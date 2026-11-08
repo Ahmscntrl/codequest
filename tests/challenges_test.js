@@ -4,7 +4,7 @@ require('../js/runner.js');
 require('../js/levels.js');
 const { CH, SNIPPETS } = globalThis.GameData;
 
-const SOL = require('./solutions.js')(CH);
+const SOL = require('./solutions.js');
 const camel = (k) => k.replace(/_([a-z])/g, (m, c) => c.toUpperCase());
 let fails = 0;
 (async () => {
