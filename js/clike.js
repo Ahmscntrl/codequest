@@ -1556,6 +1556,7 @@
     function evalCtorDecl(ty, args, scope) {
       const vals = args.map(a => evalExpr(a, scope));
       if (classes.has(ty.name)) return construct(classes.get(ty.name), vals);
+      if (id === 'cpp' && /^[A-Z]/.test(ty.name)) throw E('NameError', `'${ty.name}' was not declared in this scope (there is no class called ${ty.name} yet)`);
       if (/^(vector|list)$/.test(ty.name)) { const n = nv(vals[0] || 0); return new CList('vector', Array.from({ length: n }, () => vals.length > 1 ? clone(vals[1]) : defaultFor(ty.args[0])), ty.args[0] && ty.args[0].name); }
       if (STR_T.has(ty.name)) {
         if (vals.length === 2 && typeof vals[0] === 'number' && vals[1] instanceof Chr) return vals[1].c.repeat(vals[0]);

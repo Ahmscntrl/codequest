@@ -116,6 +116,7 @@ map: (B) => {
 * Group letters: `A B C D E G H` (there is no `F`, which is the portal). One letter per terminal, at most 7 terminals per level.
 * Travel pieces between rooms (never block progress): `TR.hills`, `TR.pit`, `TR.mover`, `TR.tower`. Put one between most rooms.
 * Extras: `o` data bit, `e` walking bug, `w` flying bug (mid-air, e.g. row 10), `K` checkpoint (one around the middle), `?` sign (one sign text per `?`, in order).
+* Leave at least 6 tiles of flat ground after a `climb` or `spring` room before a `pit` or `mover`: players jump off the high ledge and would otherwise land in the lava.
 * Only use these building blocks on flat ground so the level stays beatable — every terminal must be reachable and the portal must be unreachable until every gate is open.
 
 ## Size
