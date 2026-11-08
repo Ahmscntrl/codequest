@@ -252,7 +252,7 @@
     gainCore(id, instant) {
       if (instant || this.instantMode) return;
       this.save.sp += 1;
-      this.app.toast(`💠 Core fragments: ${this.coreCount()}/3`, 'good');
+      this.app.toast(`Core fragments: ${this.coreCount()}/3`, 'good');
       if (this.coreCount() >= 3) {
         this.schedule(60, () => { this.openGate('A'); this.app.toast('The Great Gate has opened! The Bug King awaits in the far east.', 'good'); });
       }
@@ -309,7 +309,7 @@
       if (this.pressed.jump) p.jumpBuf = 7; else if (p.jumpBuf > 0) p.jumpBuf--;
       if (p.jumpBuf > 0) {
         if (gl.syntax) {
-          if (this.pressed.jump) { this.floater(p.x + 10, p.y - 10, '⛔ SyntaxError: jump()', '#ff5470'); this.app.sfx('error'); }
+          if (this.pressed.jump) { this.floater(p.x + 10, p.y - 10, 'SyntaxError: jump()', '#ff5470'); this.app.sfx('error'); }
           p.jumpBuf = 0;
         } else if (p.coyote > 0) { p.vy = -11; p.coyote = 0; p.jumpBuf = 0; p.onGround = false; this.app.sfx('jump'); }
         else if (p.jumps > 0 && this.pressed.jump) { p.vy = -9.5; p.jumps--; p.jumpBuf = 0; this.burst(p.x + 10, p.y + p.h, '#fff', 6, 2); this.app.sfx('jump'); }
@@ -354,7 +354,6 @@
         if (!this.save.weapon) { if (!this.noWeaponHint) { this.app.toast('You have no weapon yet! Jump on bugs to squash them.', 'info'); this.noWeaponHint = true; } }
         else if (p.attackCD === 0) {
           p.attackT = 14; p.attackCD = 22; this.app.sfx('swing');
-          if (this.save.weapon.cry && Math.random() < 0.25) this.floater(p.x + 10, p.y - 18, this.save.weapon.cry, '#ffe066');
         }
       }
       if (p.attackT === 12) {
@@ -394,7 +393,7 @@
           this.save.vars[def.name] = val;
           this.save.taken[`${this.L.id}:${pk.idx}`] = true;
           this.burst(box.x + 12, box.y + 12, '#ffe066', 18);
-          this.app.toast(`📦 Collected a variable! <code>${def.name} = ${GameData.escapeHTML(JSON.stringify(val))}</code>`, 'good');
+          this.app.toast(`Collected a variable! <code>${def.name} = ${GameData.escapeHTML(JSON.stringify(val))}</code>`, 'good');
           this.app.sfx('pickup');
           this.app.updateHUD();
         }
@@ -418,7 +417,7 @@
           this.respawnPoint = { x: k.x * TILE + 6, y: (k.y + 1) * TILE - 30 };
           p.hp = this.maxHp;
           this.burst(k.x * TILE + 16, k.y * TILE, '#58ff8b', 14);
-          this.app.toast('🚩 Checkpoint — progress saved, HP restored.', 'info');
+          this.app.toast('Checkpoint — progress saved, HP restored.', 'info');
           this.app.sfx('pickup');
           this.app.persist();
         }
@@ -641,7 +640,7 @@
       }
       if (!b.phase2 && b.hp <= b.max / 2) {
         b.phase2 = true;
-        this.app.toast('⚠️ Segfault is <b>ENRAGED</b>! It will now corrupt your code!', 'bad');
+        this.app.toast('Segfault is <b>ENRAGED</b>! It will now corrupt your code!', 'bad');
         this.shake = 30; this.app.sfx('boom');
       }
       switch (b.state) {
@@ -693,7 +692,7 @@
       this.floater(b.x + b.w / 2, b.y, '-' + dmg, src === 'cannon' ? '#7df9ff' : '#ffe066');
       this.burst(b.x + b.w / 2, b.y + b.h / 2, '#ff5cf4', 10, 4);
       this.app.sfx('hit');
-      if (b.hp <= 0) { b.hp = 0; b.state = 'dying'; b.timer = 200; this.projectiles = []; this.bugs.forEach(x => { if (!x.dead) { x.dead = true; this.burst(x.x, x.y, '#fff', 8); } }); }
+      if (b.hp <= 0) { b.hp = 0; b.state = 'dying'; b.timer = 200; this.projectiles.length = 0; this.bugs.forEach(x => { if (!x.dead) { x.dead = true; this.burst(x.x, x.y, '#fff', 8); } }); }
       this.app.updateHUD();
     }
     shootBolts(n) {
@@ -736,6 +735,7 @@
       const p = this.player;
       for (let i = this.projectiles.length - 1; i >= 0; i--) {
         const pr = this.projectiles[i];
+        if (!pr) continue; // the list can be cleared mid-loop (e.g. the boss dies)
         pr.life--;
         if (pr.owner === 'cannon' && this.boss) {
           const b = this.boss;
@@ -913,7 +913,7 @@
             ctx.fillStyle = col; ctx.globalAlpha = 0.6 + 0.3 * Math.sin(this.t * 0.1 + y);
             for (let k = 0; k < 4; k++) ctx.fillRect(px + 4 + k * 7, py, 3, TILE);
             ctx.globalAlpha = 1;
-            if (!this.tiles[y + 1] || this.tiles[y + 1][x] !== T.GATE) { ctx.fillStyle = col; ctx.font = 'bold 14px monospace'; ctx.textAlign = 'center'; ctx.fillText('🔒', px + 16, py + 22); }
+            if (!this.tiles[y + 1] || this.tiles[y + 1][x] !== T.GATE) { ctx.fillStyle = col; ctx.font = 'bold 14px monospace'; ctx.textAlign = 'center'; this.drawLock(ctx, px + 16, py + 16, col); }
             break;
           }
           case T.PHANTOM: {
@@ -1084,6 +1084,12 @@
       for (const b of this.bugs) if (!b.dead) Art.drawBug(ctx, b, t + b.ph * 10);
       if (this.boss) Art.drawBoss(ctx, this.boss, t);
     }
+    drawLock(ctx, x, y, col) {
+      ctx.strokeStyle = col; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.arc(x, y - 2, 4, Math.PI, 0); ctx.stroke();
+      ctx.fillStyle = col; ctx.fillRect(x - 6, y - 2, 12, 9);
+      ctx.fillStyle = '#0a1428'; ctx.fillRect(x - 1, y + 1, 2, 3);
+    }
     prompt(ctx, x, y, key) {
       const bob = Math.sin(this.t * 0.15) * 2;
       ctx.fillStyle = '#fff'; Art.rr(ctx, x - 10, y - 10 + bob, 20, 18, 4); ctx.fill();
@@ -1109,7 +1115,7 @@
       if (blink) return;
       const gl = this.save.glitches || {};
       Art.drawHero(ctx, p.x + p.w / 2, p.y + p.h, this.save.hero, {
-        facing: p.facing, t, moving: Math.abs(p.vx) > 0.3, air: !p.onGround, weapon: this.save.weapon, attack: p.attackT > 0, hurt: p.knock > 0,
+        facing: p.facing, t, moving: Math.abs(p.vx) > 0.3, air: !p.onGround, weapon: this.save.weapon, attack: p.attackT > 0, attackK: p.attackT / 14, hurt: p.knock > 0,
       });
       if (p.attackT > 6) {
         ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 3;
@@ -1120,8 +1126,9 @@
       const kinds = Object.keys(gl);
       kinds.forEach((k, i) => {
         const G = GameData.GLITCHES[k];
-        ctx.font = '13px sans-serif'; ctx.textAlign = 'center';
-        ctx.fillText(G.icon, p.x + p.w / 2 + (i - (kinds.length - 1) / 2) * 16, p.y - 30 + Math.sin(t * 0.2 + i) * 2);
+        const gx = p.x + p.w / 2 + (i - (kinds.length - 1) / 2) * 14, gy = p.y - 34 + Math.sin(t * 0.2 + i) * 2;
+        ctx.fillStyle = G.color; ctx.beginPath(); ctx.arc(gx, gy, 5.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center'; ctx.fillText('!', gx, gy + 3);
       });
     }
     bubble(ctx, x, y, text) {

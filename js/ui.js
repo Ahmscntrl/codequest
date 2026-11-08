@@ -6,7 +6,7 @@
   const $$ = (s, el) => [...(el || document).querySelectorAll(s)];
   const SLOTS = 3;
   const KEY = (n) => `codequest.slot.${n}`;
-  const LANGS = { python: { label: 'Python', icon: '🐍' }, javascript: { label: 'JavaScript', icon: '⚡' } };
+  const LANGS = { python: { label: 'Python', icon: 'Py' }, javascript: { label: 'JavaScript', icon: 'JS' } };
   const WORLD_INDEX = LEVELS.findIndex(l => l.openWorld);
 
   const FUNC_DOCS = {
@@ -213,10 +213,10 @@
           const lvl = LEVELS[s.level] || LEVELS[0];
           const mins = Math.floor((s.playtime || 0) / 60);
           card.innerHTML = `<canvas width="80" height="90"></canvas>
-            <div class="slot-info"><div class="slot-name">${escapeHTML(s.hero.name)} ${s.completed ? '👑' : ''}</div>
-            <div class="slot-meta">${LANGS[s.lang].icon} ${LANGS[s.lang].label}</div>
-            <div class="slot-meta">📍 ${escapeHTML(lvl.name)}</div>
-            <div class="slot-meta">⏱ ${mins} min · 🐛 ${s.bugs || 0}</div></div>
+            <div class="slot-info"><div class="slot-name">${escapeHTML(s.hero.name)} ${s.completed ? '' : ''}</div>
+            <div class="slot-meta">${LANGS[s.lang].label}</div>
+            <div class="slot-meta">${escapeHTML(lvl.name)}</div>
+            <div class="slot-meta">${mins} min · ${s.bugs || 0} bugs fixed</div></div>
             <div class="slot-btns"><button class="btn primary" data-act="play">Continue</button><button class="btn ghost small" data-act="del">Delete</button></div>`;
           const cv = $('canvas', card);
           this.drawMini(cv, s.hero);
@@ -353,7 +353,7 @@
         this.persist();
         this.openTutorial(index);
       } else {
-        this.toast(`📍 ${escapeHTML(L.name)}`, 'info');
+        this.toast(`${escapeHTML(L.name)}`, 'info');
       }
     }
     levelComplete() {
@@ -363,7 +363,7 @@
       let extra = '';
       if (L.grantsSkills && !this.save.spUnlocked) {
         this.save.spUnlocked = true; this.save.sp += 2;
-        extra = '<div class="unlock">✨ <b>SKILL POINTS UNLOCKED!</b> ✨<br>You earned <b>2 SP</b>. Spend them at a Skill Shrine or press <b>K</b> anytime.<br>The <b>open world</b> awaits!</div>';
+        extra = '<div class="unlock"><b>SKILL POINTS UNLOCKED!</b> <br>You earned <b>2 SP</b>. Spend them at a Skill Shrine or press <b>K</b> anytime.<br>The <b>open world</b> awaits!</div>';
       }
       const firstClear = next > (this.save.maxLevel || 0);
       delete this.save.checkpoints[this.save.level];
@@ -373,7 +373,7 @@
       this.persist();
       const nextL = LEVELS[this.save.level];
       this.dialog(`Level ${LEVELS.indexOf(L) + 1} complete!`, `<p class="big-check">✔</p><p><b>${escapeHTML(L.topic)}</b> — ${escapeHTML(L.name)} cleared.</p>${extra}<p class="muted">Up next: <b>Level ${this.save.level + 1} · ${escapeHTML(nextL.topic)}</b></p>`,
-        [{ label: '🗺 Map', fn: () => this.showMap(false) }, { label: 'Next level ▶', cls: 'primary', fn: () => this.loadLevel(this.save.level) }], { noClose: true });
+        [{ label: 'Map', fn: () => this.showMap(false) }, { label: 'Next level ▶', cls: 'primary', fn: () => this.loadLevel(this.save.level) }], { noClose: true });
     }
     victory() {
       Sound.play('victory');
@@ -387,20 +387,20 @@
       const s = this.save;
       const mins = Math.floor((s.playtime || 0) / 60);
       const lang = LANGS[s.lang];
-      this.dialog('🏆 Segfault is defeated!', `
+      this.dialog('Segfault is defeated!', `
         <p>With one last blast of compiled code, the Bug King dissolves into harmless comments. Syntaxia is <b>bug-free</b>... for now.</p>
         <div class="credits">
           <div><span>Hero</span><b>${escapeHTML(s.hero.name)}</b></div>
-          <div><span>Language</span><b>${lang.icon} ${lang.label}</b></div>
+          <div><span>Language</span><b>${lang.label}</b></div>
           <div><span>Bugs squashed</span><b>${s.bugs}</b></div>
           <div><span>Terminals solved</span><b>${Object.keys(s.solved).length}</b></div>
           <div><span>Companions</span><b>i${s.pet ? ', ' + escapeHTML(s.pet.name) : ''}</b></div>
           <div><span>Weapon</span><b>${s.weapon ? escapeHTML(s.weapon.name) : '— (pure code!)'}</b></div>
           <div><span>Time</span><b>${mins} min</b></div>
         </div>
-        <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>. That's real programming. 🎉</p>
+        <p>You learned: <b>print</b>, <b>variables</b>, <b>if/else</b>, <b>loops</b>, <b>functions</b>, <b>classes</b>, <b>lists</b>, <b>strings</b> and <b>dictionaries</b>. That's real programming. </p>
         <p class="muted">${firstWin ? '+3 SP bonus. ' : ''}Return to the Wilds to finish any side quests.</p>`,
-        [{ label: 'Title screen', fn: () => this.showTitle() }, { label: '🗺 Map', fn: () => this.showMap(false) }, { label: 'Return to the Wilds', cls: 'primary', fn: () => this.loadLevel(WORLD_INDEX) }], { noClose: true, wide: true });
+        [{ label: 'Title screen', fn: () => this.showTitle() }, { label: 'Map', fn: () => this.showMap(false) }, { label: 'Return to the Wilds', cls: 'primary', fn: () => this.loadLevel(WORLD_INDEX) }], { noClose: true, wide: true });
     }
     // ------------------------------------------------------------ level map
     // Where "Continue" takes you: the furthest level you've unlocked (or the Wilds once the game is beaten).
@@ -417,7 +417,7 @@
     renderMap() {
       const s = this.save, max = s.maxLevel || 0, front = this.frontier();
       $('#map-back').classList.toggle('hidden', !this.mapFromGame);
-      $('#map-lang').textContent = `${LANGS[s.lang].icon} ${LANGS[s.lang].label}`;
+      $('#map-lang').textContent = LANGS[s.lang].label;
       // node positions on a 1000 x 560 map
       const pts = [[90, 460], [255, 395], [175, 235], [360, 135], [545, 220], [480, 405], [730, 430], [880, 190]];
       const regionColor = { meadow: '#3f8f4f', cave: '#4b3f8a', circuit: '#1d6b70', wilds: '#a35a3a', lair: '#7a1838' };
@@ -434,7 +434,7 @@
         const unlocked = i <= max, done = this.levelDone(i);
         const cls = ['map-node', unlocked ? '' : 'locked', done ? 'done' : '', i === front ? 'current' : '', i === this.mapSel ? 'sel' : ''].join(' ');
         return `<button class="${cls}" data-i="${i}" style="left:${x / 10}%;top:${y / 5.6}%" ${unlocked ? '' : `title="Finish ${escapeHTML(LEVELS[i - 1].topic)} to unlock"`}>
-          <span class="mn-dot">${unlocked ? (L.boss ? '👑' : i + 1) : '🔒'}</span>
+          <span class="mn-dot">${i + 1}</span>
           <span class="mn-label">${escapeHTML(L.topic)}</span></button>`;
       }).join('');
       const [hx, hy] = pts[front];
@@ -444,7 +444,7 @@
       $$('#map-board .map-node').forEach(b => b.onclick = () => {
         const i = +b.dataset.i;
         Sound.play('click');
-        if (i > max) { this.toast(`🔒 Finish <b>${escapeHTML(LEVELS[i - 1].topic)}</b> to unlock this level.`, 'info'); return; }
+        if (i > max) { this.toast(`Finish <b>${escapeHTML(LEVELS[i - 1].topic)}</b> to unlock this level.`, 'info'); return; }
         this.mapSel = i; this.renderMap();
       });
       // selected level panel
@@ -454,7 +454,7 @@
         <div><div class="mp-kicker">Level ${i + 1}${done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
         <div class="mp-title">${escapeHTML(L.topic)}</div>
         <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div></div>
-        <div class="mp-btns"><button class="btn" id="mp-tut">📖 Tutorial</button><button class="btn primary big" id="mp-go">${label}</button></div>`;
+        <div class="mp-btns"><button class="btn" id="mp-tut">Tutorial</button><button class="btn primary big" id="mp-go">${label}</button></div>`;
       $('#mp-go').onclick = () => { Sound.play('click'); this.loadLevel(i); };
       $('#mp-tut').onclick = () => { Sound.play('click'); this.openTutorial(i); };
     }
@@ -462,14 +462,14 @@
     onBit() {
       const n = this.save.bitsCollected;
       if (n % 20 === 0) {
-        if (this.save.spUnlocked) { this.save.sp += 1; this.toast(`💾 ${n} data bits collected: <b>+1 skill point!</b>`, 'good'); }
-        else this.toast(`💾 ${n} data bits collected! Keep them coming — once skill points unlock, every 20 bits earns one.`, 'info');
+        if (this.save.spUnlocked) { this.save.sp += 1; this.toast(`${n} data bits collected: <b>+1 skill point!</b>`, 'good'); }
+        else this.toast(`${n} data bits collected! Keep them coming — once skill points unlock, every 20 bits earns one.`, 'info');
       }
       this.updateHUD();
     }
     onBugSquashed() {
       this.save.bugs = (this.save.bugs || 0) + 1;
-      if (this.save.spUnlocked && this.save.bugs % 3 === 0) { this.save.sp += 1; this.toast('🐛 3 bugs squashed: <b>+1 skill point!</b>', 'good'); }
+      if (this.save.spUnlocked && this.save.bugs % 3 === 0) { this.save.sp += 1; this.toast('3 bugs squashed: <b>+1 skill point!</b>', 'good'); }
       this.updateHUD();
     }
     applyGlitch(kind) {
@@ -479,7 +479,7 @@
       this.save.glitches[kind] = { i };
       const G = GLITCHES[kind];
       Sound.play('glitch');
-      this.toast(`${G.icon} A bug corrupted your code! <b>${G.name}</b>: ${G.effect.toLowerCase()}. Press <b>Q</b> to debug.`, 'bad');
+      this.toast(`A bug corrupted your code! <b>${G.name}</b>: ${G.effect.toLowerCase()}. Press <b>Q</b> to debug.`, 'bad');
       this.updateHUD();
       this.persist();
     }
@@ -490,7 +490,7 @@
       this.save.code[lang].cannon = corruptCode(cur, lang);
       this.save.cannonCorrupt = true;
       Sound.play('glitch');
-      this.toast('☠️ Segfault <b>corrupted your cannon code</b>! Open the terminal and debug it.', 'bad');
+      this.toast('Segfault <b>corrupted your cannon code</b>! Open the terminal and debug it.', 'bad');
     }
 
     // ------------------------------------------------------------ HUD
@@ -503,22 +503,22 @@
       $('#hud-hearts').innerHTML = hearts;
       const L = LEVELS[s.level];
       const done = L.terminals.filter(id => s.solved[id] !== undefined).length;
-      $('#hud-level').innerHTML = `<button class="topic-chip" data-act="map" title="Level map (M)"><span class="tc-ch">LV ${s.level + 1}</span><span class="tc-topic">${escapeHTML(L.topic)}</span>${L.boss ? '' : `<span class="tc-prog">${done}/${L.terminals.length}</span>`}<span class="tc-map">🗺</span></button>`;
+      $('#hud-level').innerHTML = `<button class="topic-chip" data-act="map" title="Level map (M)"><span class="tc-ch">LV ${s.level + 1}</span><span class="tc-topic">${escapeHTML(L.topic)}</span>${L.boss ? '' : `<span class="tc-prog">${done}/${L.terminals.length}</span>`}<span class="tc-map">MAP</span></button>`;
       const extras = [];
-      if (s.spUnlocked) extras.push(`<button class="chip sp" data-act="skills">⭐ ${s.sp} SP <kbd>K</kbd></button>`);
-      if (LEVELS[s.level].openWorld) extras.push(`<span class="chip">💠 Cores ${g.coreCount()}/3</span>`);
-      extras.push(`<span class="chip">🐛 ${s.bugs || 0}</span>`);
-      extras.push(`<span class="chip" title="Data bits — every 20 earn a skill point">💾 ${s.bitsCollected || 0}</span>`);
+      if (s.spUnlocked) extras.push(`<button class="chip sp" data-act="skills">${s.sp} SP <kbd>K</kbd></button>`);
+      if (LEVELS[s.level].openWorld) extras.push(`<span class="chip">Cores ${g.coreCount()}/3</span>`);
+      extras.push(`<span class="chip">Bugs ${s.bugs || 0}</span>`);
+      extras.push(`<span class="chip" title="Data bits — every 20 earn a skill point">Bits ${s.bitsCollected || 0}</span>`);
       $('#hud-extra').innerHTML = extras.join('');
       const gl = Object.keys(s.glitches || {});
-      $('#hud-glitches').innerHTML = gl.map(k => `<button class="chip glitch" data-act="debug" style="--c:${GLITCHES[k].color}">${GLITCHES[k].icon} ${GLITCHES[k].name} <small>${GLITCHES[k].effect}</small></button>`).join('') + (gl.length ? '<span class="chip hint">press <kbd>Q</kbd> to debug</span>' : '');
+      $('#hud-glitches').innerHTML = gl.map(k => `<button class="chip glitch" data-act="debug" style="--c:${GLITCHES[k].color}">${GLITCHES[k].name} <small>${GLITCHES[k].effect}</small></button>`).join('') + (gl.length ? '<span class="chip hint">press <kbd>Q</kbd> to debug</span>' : '');
       $$('#hud [data-act]').forEach(b => b.onclick = () => { if (b.dataset.act === 'skills') this.openSkills(); else if (b.dataset.act === 'map') this.showMap(true); else this.openDebugger(); });
       // variables panel
       const vars = Object.entries(s.vars);
       const comp = [];
       if (s.foundI) comp.push('<span class="comp">i</span>');
-      if (s.pet) comp.push(`<span class="comp">🐾 ${escapeHTML(s.pet.name)}</span>`);
-      if (s.weapon) comp.push(`<span class="comp">⚔️ ${escapeHTML(s.weapon.name)} <small>dmg ${s.weapon.damage + (s.skills.sharp || 0)}</small></span>`);
+      if (s.pet) comp.push(`<span class="comp">${escapeHTML(s.pet.name)}</span>`);
+      if (s.weapon) comp.push(`<span class="comp">${escapeHTML(s.weapon.name)} <small>dmg ${s.weapon.damage + (s.skills.sharp || 0)}</small></span>`);
       $('#hud-vars').innerHTML = (vars.length ? `<div class="vars-title">Variables</div>` + vars.map(([k, v]) => `<div class="var"><span class="vn">${escapeHTML(this.save.lang === 'javascript' ? CodeRunner.camel(k) : k)}</span> = <span class="vv">${escapeHTML(JSON.stringify(v))}</span></div>`).join('') : '') + (comp.length ? `<div class="comps">${comp.join('')}</div>` : '');
       $('#hud-vars').classList.toggle('hidden', !vars.length && !comp.length);
     }
@@ -575,7 +575,7 @@
 
     pause() {
       const s = this.save;
-      const langBtns = Object.entries(LANGS).map(([k, v]) => `<button class="opt ${s.lang === k ? 'on' : ''}" data-lang="${k}">${v.icon} ${v.label}</button>`).join('');
+      const langBtns = Object.entries(LANGS).map(([k, v]) => `<button class="opt ${s.lang === k ? 'on' : ''}" data-lang="${k}">${v.label}</button>`).join('');
       this.dialog('Paused', `
         <div class="pause-grid">
           <div><h4>Language</h4><div class="row" id="pause-lang">${langBtns}</div><p class="muted">Switch any time — every terminal works in both.</p></div>
@@ -591,9 +591,9 @@
             <tr><td><kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>Run code</td></tr>
           </table></div>
         </div>`,
-        [{ label: Sound.on ? '🔊 Sound on' : '🔇 Sound off', keepOpen: true, fn: () => { Sound.on = !Sound.on; try { localStorage.setItem('codequest.sound', Sound.on ? 'on' : 'off'); } catch (e) { /* ignore */ } $$('#modal-btns .btn')[0].innerHTML = Sound.on ? '🔊 Sound on' : '🔇 Sound off'; } },
+        [{ label: Sound.on ? 'Sound on' : 'Sound off', keepOpen: true, fn: () => { Sound.on = !Sound.on; try { localStorage.setItem('codequest.sound', Sound.on ? 'on' : 'off'); } catch (e) { /* ignore */ } $$('#modal-btns .btn')[0].innerHTML = Sound.on ? 'Sound on' : 'Sound off'; } },
           { label: 'Save & quit', fn: () => { this.persist(); this.showTitle(); } },
-          { label: '🗺 Map', fn: () => this.showMap(true) },
+          { label: 'Map', fn: () => this.showMap(true) },
           { label: 'Resume ▶', cls: 'primary', fn: () => this.persist() }],
         {
           wide: true,
@@ -611,7 +611,7 @@
       if (!this.save.spUnlocked) { this.toast('Skill points unlock once you master <b>Classes</b> (Level 6).', 'info'); return; }
       const render = (body) => {
         const s = this.save;
-        body.innerHTML = `<p class="sp-big">⭐ <b>${s.sp}</b> skill point${s.sp === 1 ? '' : 's'} available</p>
+        body.innerHTML = `<p class="sp-big"><b>${s.sp}</b> skill point${s.sp === 1 ? '' : 's'} available</p>
           <p class="muted">Earn more from Core terminals, side quests, and squashing bugs (1 SP per 3).</p>
           <div class="skills">${SKILLS.map(k => {
             const lvl = s.skills[k.id] || 0;
@@ -633,7 +633,7 @@
           this.persist(); this.updateHUD(); render(body);
         });
       };
-      this.dialog(fromShrine ? '🔷 Skill Shrine' : '⭐ Skills', '', [{ label: 'Done', cls: 'primary' }], { wide: true, onOpen: render });
+      this.dialog(fromShrine ? 'Skill Shrine' : 'Skills', '', [{ label: 'Done', cls: 'primary' }], { wide: true, onOpen: render });
     }
 
     // ------------------------------------------------------------ code editor
@@ -763,7 +763,7 @@
     }
     openDebugger(kind) {
       const gl = Object.keys(this.save.glitches || {});
-      if (!gl.length) { this.toast('🔍 Debugger: no glitches. Your code is clean!', 'info'); return; }
+      if (!gl.length) { this.toast('Debugger: no glitches. Your code is clean!', 'info'); return; }
       kind = kind && gl.includes(kind) ? kind : gl[0];
       this.ed = { mode: 'debug', kind, hints: 0 };
       this.openEditorUI();
@@ -778,7 +778,6 @@
     renderEditor() {
       const ed = this.ed, lang = this.save.lang, ctx = this.ctx();
       $('#ed-lang').value = lang;
-      $('#ed-lang-icon').textContent = LANGS[lang].icon;
       $('#console').innerHTML = '<div class="c-dim">Output will appear here. Press <b>Run</b> or <kbd>Ctrl</kbd>+<kbd>Enter</kbd>.</div>';
       $('#feedback').innerHTML = ''; $('#feedback').className = 'feedback';
       $('#hints').innerHTML = '';
@@ -786,7 +785,7 @@
       ed.errLine = null;
       $('#ed-hint').classList.remove('hidden');
       $('#ed-hint').disabled = false;
-      $('#ed-hint').innerHTML = '💡 Hint';
+      $('#ed-hint').innerHTML = 'Hint';
       if (ed.mode === 'terminal') {
         const ch = CH[ed.chId];
         const solved = this.save.solved[ed.chId] !== undefined && !ch.repeatable;
@@ -796,7 +795,7 @@
         $('#ed-title').textContent = ch.title;
         let html = ch.desc(ctx);
         if (solved) html += '<p class="solved-note">✔ Already solved! Feel free to experiment — nothing will break.</p>';
-        if (ed.chId === 'cannon' && this.save.cannonCorrupt) html += '<p class="corrupt-note">☠️ Segfault <b>corrupted</b> this code! Find and fix the error, then fire.</p>';
+        if (ed.chId === 'cannon' && this.save.cannonCorrupt) html += '<p class="corrupt-note">Segfault <b>corrupted</b> this code! Find and fix the error, then fire.</p>';
         $('#ed-desc').innerHTML = html;
         // variables + functions
         const g = this.globalsFor(ch, null, true);
@@ -809,15 +808,15 @@
         const G = GLITCHES[ed.kind];
         const sn = SNIPPETS[ed.kind][lang][this.save.glitches[ed.kind].i % SNIPPETS[ed.kind][lang].length];
         $('#ed-kicker').textContent = 'DEBUGGER';
-        $('#ed-title').innerHTML = `${G.icon} ${G.name} glitch`;
+        $('#ed-title').innerHTML = `${G.name} glitch`;
         const others = Object.keys(this.save.glitches).filter(k => k !== ed.kind);
         $('#ed-desc').innerHTML = `<p>A <b style="color:${G.color}">${G.name.replace('Error', '')}Bug</b> bit you and scrambled some of your code. Effect: <b>${G.effect}</b>.</p>
           <p>Fix the code so it runs without errors and prints:</p><pre class="expect">${escapeHTML(sn.expect)}</pre>
-          ${others.length ? `<p class="muted">Other glitches: ${others.map(k => `<button class="btn small" data-glitch="${k}">${GLITCHES[k].icon} ${GLITCHES[k].name}</button>`).join(' ')}</p>` : ''}`;
+          ${others.length ? `<p class="muted">Other glitches: ${others.map(k => `<button class="btn small" data-glitch="${k}">${GLITCHES[k].name}</button>`).join(' ')}</p>` : ''}`;
         $$('[data-glitch]').forEach(b => b.onclick = () => { this.storeCode(); this.ed = { mode: 'debug', kind: b.dataset.glitch, hints: 0 }; this.renderEditor(); });
         const eye = this.save.skills.debugger;
         $('#ed-side').innerHTML = `<h4>How to debug</h4><ol class="small"><li>Press <b>Run</b> to see the error.</li><li>Read the error type and the <b>line number</b>.</li><li>Fix that line and run again.</li></ol>` +
-          (eye ? `<h4>🔍 Debugger's Eye</h4><div class="small">${escapeHTML(sn.hint || { syntax: 'Look for a missing bracket, quote, colon or brace.', name: 'A name is misspelled — compare it letter by letter (capitals too!).', type: 'A value is the wrong type for what the code does with it.' }[ed.kind])}</div>` : '<div class="muted small">Tip: the <b>Debugger\'s Eye</b> skill shows hints here.</div>');
+          (eye ? `<h4>Debugger's Eye</h4><div class="small">${escapeHTML(sn.hint || { syntax: 'Look for a missing bracket, quote, colon or brace.', name: 'A name is misspelled — compare it letter by letter (capitals too!).', type: 'A value is the wrong type for what the code does with it.' }[ed.kind])}</div>` : '<div class="muted small">Tip: the <b>Debugger\'s Eye</b> skill shows hints here.</div>');
         $('#ed-hint').classList.add('hidden');
       }
       const saved = this.save.code[lang][this.codeKey()];
@@ -840,14 +839,14 @@
       const shown = Math.min(ed.hints, hints.length);
       let html = hints.slice(0, shown).map((h, i) => `<div class="hint"><b>Hint ${i + 1}:</b> ${escapeHTML(h)}</div>`).join('');
       if (sim && ed.hints > hints.length) {
-        html += `<div class="hint similar"><b>📘 A similar problem, solved</b><p>${escapeHTML(sim.task)}</p><pre>${highlight(sim.code, lang)}</pre>
+        html += `<div class="hint similar"><b>A similar problem, solved</b><p>${escapeHTML(sim.task)}</p><pre>${highlight(sim.code, lang)}</pre>
           <p class="muted small">Same idea, different problem. Work out how to change it to fit <i>your</i> task.</p></div>`;
       }
       $('#hints').innerHTML = html;
       const max = hints.length + (sim ? 1 : 0);
       const btn = $('#ed-hint');
       btn.disabled = ed.hints >= max;
-      btn.innerHTML = ed.hints >= max ? '💡 No more hints' : ed.hints === hints.length && sim ? '📘 Similar example' : `💡 Hint ${ed.hints + 1}/${hints.length}`;
+      btn.innerHTML = ed.hints >= max ? 'No more hints' : ed.hints === hints.length && sim ? 'Similar example' : `Hint ${ed.hints + 1}/${hints.length}`;
     }
     // ------------------------------------------------------------ tutorials
     openTutorial(levelIndex, startPage) {
@@ -957,7 +956,7 @@
       }
       const fb = $('#feedback');
       fb.className = 'feedback bad';
-      fb.innerHTML = `<b>🐛 ${escapeHTML(err.type)}</b> — ${explain(err, lang)}`;
+      fb.innerHTML = `<b>${escapeHTML(err.type)}</b> — ${explain(err, lang)}`;
       Sound.play('error');
     }
     printOutput(lines, label) {
@@ -1028,7 +1027,7 @@
       Sound.play('success');
       fb.className = 'feedback good';
       fb.innerHTML = `✔ <b>${G.name} fixed!</b> ${G.effect.replace('disabled', 'restored').replace('reversed', 'back to normal').replace('slowed', 'back to full speed')}.`;
-      this.toast(`🔧 Glitch fixed: <b>${G.name}</b>`, 'good');
+      this.toast(`Glitch fixed: <b>${G.name}</b>`, 'good');
       const remaining = Object.keys(this.save.glitches);
       setTimeout(() => {
         if (!this.ed || this.ed.mode !== 'debug') return;
