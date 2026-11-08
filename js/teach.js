@@ -36,7 +36,7 @@
         '<p>Put <b>commas</b> between values to print them on one line. A space is added between each one — and you can mix text and numbers!</p>',
         'print("Level", 1)\nprint("Gems:", 3 * 4)\nprint("I am", 12, "years old")', 'console.log("Level", 1);\nconsole.log("Gems:", 3 * 4);\nconsole.log("I am", 12, "years old");'),
       page('Cheat sheet',
-        '<table class="cheat"><tr><td><code>{print}("Hi")</code></td><td>show text</td></tr><tr><td><code>"text"</code></td><td>text needs quotes</td></tr><tr><td><code>"a" + "b"</code></td><td>glue text → <code>ab</code></td></tr><tr><td><code>2 + 3 * 4</code></td><td>maths (no quotes) → 14</td></tr><tr><td><code>(2 + 3) * 4</code></td><td>brackets first → 20</td></tr><tr><td><code>{print}("Lv", 1)</code></td><td>commas → <code>Lv 1</code></td></tr></table><p>Each terminal in this level practises one of these. You can reopen this tutorial any time with the <b>📖 Tutorial</b> button.</p>'),
+        '<table class="cheat"><tr><td><code>{print}("Hi")</code></td><td>show text</td></tr><tr><td><code>"text"</code></td><td>text needs quotes</td></tr><tr><td><code>"a" + "b"</code></td><td>glue text → <code>ab</code></td></tr><tr><td><code>2 + 3 * 4</code></td><td>maths (no quotes) → 14</td></tr><tr><td><code>(2 + 3) * 4</code></td><td>brackets first → 20</td></tr><tr><td><code>{print}("Lv", 1)</code></td><td>commas → <code>Lv 1</code></td></tr></table><p>Each terminal in this level practises one of these. You can reopen this tutorial any time with the <b>Tutorial</b> button.</p>'),
     ],
     // ------------------------------------------------------------------ 2. variables
     vars: [
@@ -107,7 +107,7 @@
         '<p>A loop can visit every item in a <b>list</b>. Each time around, the loop variable holds the next item.</p>',
         'for snack in ["apple", "cake", "pie"]:\n    print("I ate the", snack)', 'for (const snack of ["apple", "cake", "pie"]) {\n  console.log("I ate the", snack);\n}'),
       page('while: repeat until...',
-        '<p>A <b>while loop</b> repeats <b>as long as</b> its condition is true. Use it when you don\'t know in advance how many times you need.</p><p>⚠️ Something inside the loop must eventually make the condition false — otherwise it runs <b>forever</b> (an infinite loop). Here, <code>fuel -= 1</code> does that.</p>',
+        '<p>A <b>while loop</b> repeats <b>as long as</b> its condition is true. Use it when you don\'t know in advance how many times you need.</p><p>Something inside the loop must eventually make the condition false — otherwise it runs <b>forever</b> (an infinite loop). Here, <code>fuel -= 1</code> does that.</p>',
         'fuel = 3\nwhile fuel > 0:\n    print("Flying! fuel =", fuel)\n    fuel -= 1\nprint("Landed")', 'let fuel = 3;\nwhile (fuel > 0) {\n  console.log("Flying! fuel =", fuel);\n  fuel -= 1;\n}\nconsole.log("Landed");'),
       page('Building up a total',
         '<p>A very common pattern: start a variable at 0 <b>before</b> the loop, add to it <b>inside</b> the loop, and use it <b>after</b>.</p>',

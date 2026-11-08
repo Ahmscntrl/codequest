@@ -71,7 +71,7 @@ pre code { background: none; padding: 0; }
 @keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 .langs { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .lang-card { text-align: left; background: #0f1330; border: 2px solid var(--line); border-radius: 14px; padding: 12px; color: var(--text); cursor: pointer; display: grid; grid-template-columns: 34px 1fr; column-gap: 8px; font-family: var(--ui); }
-.lang-card .lc-icon { font-size: 26px; grid-row: span 3; }
+.lang-card .lc-icon { grid-row: span 3; align-self: start; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 8px; background: rgba(78,240,255,.15); color: var(--accent); font: 800 13px var(--mono); }
 .lang-card b { font-size: 17px; }
 .lang-card small { color: var(--muted); }
 .lang-card code { margin-top: 6px; justify-self: start; }
@@ -149,7 +149,7 @@ body.touch .keyhints { display: none; }
 .skills { display: grid; gap: 8px; margin-top: 10px; }
 .skill { display: grid; grid-template-columns: 40px 1fr auto; gap: 10px; align-items: center; background: #0f1330; border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; }
 .skill.maxed { border-color: rgba(88,255,139,.45); }
-.sk-icon { font-size: 26px; text-align: center; }
+.sk-icon { font: 800 12px var(--mono); color: var(--accent); text-align: center; background: rgba(78,240,255,.12); border-radius: 8px; padding: 8px 0; }
 .sk-name { font-weight: 900; }
 .sk-lvl { color: var(--warn); letter-spacing: 2px; font-size: 13px; }
 .sk-desc { color: var(--muted); font-size: 14px; }

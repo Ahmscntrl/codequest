@@ -51,12 +51,13 @@
     rr(ctx, -8, -20, 16, 12, 4); ctx.fill();
     ctx.fillStyle = shade(shirt, -30);
     ctx.fillRect(-8, -11, 16, 2);
-    // arm
-    const armA = opt.attack ? -1.2 : (moving ? Math.sin(t * 0.35) * 0.5 : 0.1);
+    // arm (with weapon: held low and forward; on attack it sweeps from overhead to the front)
+    let armA = moving ? Math.sin(t * 0.35) * 0.5 : 0.1;
+    if (opt.weapon) armA = opt.attack ? -2.9 + (1 - (opt.attackK || 0)) * 2.3 : (moving ? -0.25 + Math.sin(t * 0.35) * 0.12 : -0.25);
     ctx.save(); ctx.translate(2, -17); ctx.rotate(armA);
     ctx.fillStyle = shade(shirt, -15); rr(ctx, -2, 0, 4, 9, 2); ctx.fill();
-    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, 9, 2.2, 0, Math.PI * 2); ctx.fill();
     if (opt.weapon) drawWeaponInHand(ctx, opt.weapon, opt.attack);
+    ctx.fillStyle = skin; ctx.beginPath(); ctx.arc(0, 9, 2.2, 0, Math.PI * 2); ctx.fill();
     ctx.restore();
     // head
     ctx.fillStyle = skin;
@@ -70,7 +71,7 @@
   function drawWeaponInHand(ctx, w, attacking) {
     ctx.save();
     ctx.translate(0, 9);
-    ctx.rotate(attacking ? 0.4 : -0.6);
+    ctx.rotate(attacking ? Math.PI : 1.05);
     const name = (w.name + ' ' + w.className).toLowerCase();
     if (/axe/.test(name)) {
       ctx.fillStyle = '#8b5a2b'; ctx.fillRect(-1, -16, 2.5, 18);
