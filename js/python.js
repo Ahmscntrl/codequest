@@ -642,7 +642,7 @@
           }
           if (depthB > 0) throw new PyError('SyntaxError', "f-string: expecting '}'", line);
           let inner = s.slice(i + 1, j);
-          let spec = null;
+          let spec = null, conv = null;
           // find top-level ':' for format spec (ignoring inside brackets/strings)
           let d = 0, q = null;
           for (let k = 0; k < inner.length; k++) {
@@ -652,8 +652,16 @@
             else if ('([{'.includes(ch)) d++;
             else if (')]}'.includes(ch)) d--;
             else if (ch === ':' && d === 0) { spec = inner.slice(k + 1); inner = inner.slice(0, k); break; }
-            else if (ch === '!' && d === 0 && inner[k + 1] !== '=') { inner = inner.slice(0, k); break; }
+            else if (ch === '!' && d === 0 && inner[k + 1] !== '=') {
+              const rest = inner.slice(k + 1), ci = rest.indexOf(':');
+              conv = (ci < 0 ? rest : rest.slice(0, ci)).trim();
+              if (!['r', 's', 'a'].includes(conv)) throw new PyError('SyntaxError', "f-string: invalid conversion character (expected 'r' or 's')", line);
+              if (ci >= 0) spec = rest.slice(ci + 1);
+              inner = inner.slice(0, k); break;
+            }
           }
+          // a format spec can itself contain {fields}, e.g. f"{name:<{width}}"
+          const specNode = spec && spec.includes('{') ? parseFString(spec, line) : null;
           let selfDoc = false;
           if (/=\s*$/.test(inner) && !/[=!<>]=\s*$/.test(inner)) { selfDoc = true; }
           const exprSrc = selfDoc ? inner.replace(/=\s*$/, '') : inner;
@@ -661,7 +669,7 @@
           let sub;
           try { sub = parseExpressionString(exprSrc, line); } catch (e) { if (e instanceof PyError) { e.line = line; } throw e; }
           if (selfDoc) parts.push({ type: 'Const', value: inner, line });
-          parts.push({ type: 'FValue', value: sub, spec, repr: selfDoc, line });
+          parts.push({ type: 'FValue', value: sub, spec, specNode, conv: conv || (selfDoc && !spec ? 'r' : null), line });
           i = j + 1; continue;
         }
         if (c === '}') throw new PyError('SyntaxError', "f-string: single '}' is not allowed", line);
@@ -852,6 +860,7 @@
       if (v instanceof PyInstance) {
         const r = v.cls.lookup('__repr__');
         if (r instanceof PyFunc) return str(callValue(new PyBound(v, r), [], {}));
+        if (v.isException || isExcClass(v.cls)) { const a = v.attrs.get('args') || []; return `${v.cls.name}(${a.map(x => repr(x, seen)).join(', ')})`; }
         return `<${v.cls.name} object>`;
       }
       if (v instanceof PyClass) return `<class '${v.name}'>`;
@@ -865,7 +874,7 @@
       if (v instanceof PyInstance) {
         const s = v.cls.lookup('__str__');
         if (s instanceof PyFunc) { const r = callValue(new PyBound(v, s), [], {}); if (typeof r !== 'string') throw E('TypeError', '__str__ returned non-string'); return r; }
-        if (v.isException || isExcClass(v.cls)) { const a = v.attrs.get('args'); return a && a.length ? (a.length === 1 ? str(a[0]) : repr(a)) : ''; }
+        if (v.isException || isExcClass(v.cls)) { const a = v.attrs.get('args'); return a && a.length ? (a.length === 1 ? (isSubclassName(v, builtins.vars.get('KeyError')) ? repr(a[0]) : str(a[0])) : repr(a)) : ''; }
       }
       return repr(v);
     }
@@ -936,8 +945,8 @@
       if (op === '*') {
         if (typeof a === 'string' && Number.isInteger(num(b))) return num(b) > 0 ? a.repeat(num(b)) : '';
         if (typeof b === 'string' && Number.isInteger(num(a))) return num(a) > 0 ? b.repeat(num(a)) : '';
-        if (Array.isArray(a) && Number.isInteger(num(b))) { let r = []; for (let i = 0; i < b; i++) r = r.concat(a); return r; }
-        if (Array.isArray(b) && Number.isInteger(num(a))) { let r = []; for (let i = 0; i < a; i++) r = r.concat(b); return r; }
+        if (Array.isArray(a) && Number.isInteger(num(b))) { let r = []; for (let i = 0; i < b; i++) r = r.concat(a); return a.isTuple ? tuple(r) : r; }
+        if (Array.isArray(b) && Number.isInteger(num(a))) { let r = []; for (let i = 0; i < a; i++) r = r.concat(b); return b.isTuple ? tuple(r) : r; }
         if (typeof a === 'string' || typeof b === 'string') throw E('TypeError', `can't multiply sequence by non-int of type '${typeName(typeof a === 'string' ? b : a)}'`);
       }
       if (op === '%' && typeof a === 'string') {
@@ -1061,10 +1070,10 @@
       const items = iterate(args[0]);
       const key = kw.key;
       const keyed = items.map(x => ({ x, k: key ? callValue(key, [x], {}) : x }));
-      keyed.sort((a, b) => sortKey(a.k, b.k));
-      const out = keyed.map(o => o.x);
-      if (kw.reverse && truthy(kw.reverse)) out.reverse();
-      return out;
+      // reverse=True keeps equal items in their original order, like Python's stable sort
+      const rev = kw.reverse && truthy(kw.reverse) ? -1 : 1;
+      keyed.sort((a, b) => rev * sortKey(a.k, b.k));
+      return keyed.map(o => o.x);
     });
     B('reversed', (args) => iterate(args[0]).reverse());
     B('enumerate', (args, kw) => { const start = args[1] || kw.start || 0; return iterate(args[0]).map((x, i) => tuple([i + start, x])); });
@@ -1108,11 +1117,19 @@
     excBase.isException = true;
     excBase.attrs.set('__init__', builtin('__init__', (args) => { args[0].attrs.set('args', tuple(args.slice(1))); args[0].isException = true; return null; }));
     builtins.vars.set('Exception', excBase);
-    for (const exc of ['ValueError', 'TypeError', 'NameError', 'KeyError', 'IndexError', 'ZeroDivisionError', 'RuntimeError', 'AttributeError', 'NotImplementedError', 'ArithmeticError', 'LookupError', 'StopIteration']) {
-      const cls = new PyClass(exc, excBase, new Map());
+    // built-in exceptions, with their real family tree (KeyError is a LookupError, ...)
+    for (const [exc, parent] of [['ArithmeticError'], ['LookupError'], ['RuntimeError'], ['ValueError'], ['TypeError'], ['NameError'], ['AttributeError'], ['StopIteration'], ['AssertionError'], ['ImportError'],
+      ['KeyError', 'LookupError'], ['IndexError', 'LookupError'], ['ZeroDivisionError', 'ArithmeticError'], ['OverflowError', 'ArithmeticError'], ['NotImplementedError', 'RuntimeError'], ['RecursionError', 'RuntimeError'], ['UnboundLocalError', 'NameError']]) {
+      const cls = new PyClass(exc, parent ? builtins.vars.get(parent) : excBase, new Map());
       cls.isException = true;
       builtins.vars.set(exc, cls);
     }
+    B('format', (args) => formatSpec(args[0], args.length > 1 ? str(args[1]) : ''));
+    B('issubclass', (args) => {
+      const classes = Array.isArray(args[1]) ? args[1] : [args[1]];
+      if (!(args[0] instanceof PyClass)) return classes.some(c => c === args[0]);
+      return classes.some(c => { let k = args[0]; while (k) { if (k === c) return true; k = k.base; } return false; });
+    });
     function isExcClass(c) { while (c) { if (c.isException) return true; c = c.base; } return false; }
 
     // host API functions (game actions)
@@ -1163,7 +1180,7 @@
         index: (a) => { const i = l.findIndex(x => eq(x, a[0])); if (i < 0) throw E('ValueError', `${repr(a[0])} is not in list`); return i; },
         count: (a) => l.filter(x => eq(x, a[0])).length,
         reverse: () => { l.reverse(); return null; },
-        sort: (a, kw) => { const key = kw.key; const keyed = l.map(x => ({ x, k: key ? callValue(key, [x], {}) : x })); keyed.sort((p, q) => sortKey(p.k, q.k)); if (kw.reverse && truthy(kw.reverse)) keyed.reverse(); l.splice(0, l.length, ...keyed.map(o => o.x)); return null; },
+        sort: (a, kw) => { const key = kw.key; const keyed = l.map(x => ({ x, k: key ? callValue(key, [x], {}) : x })); const rev = kw.reverse && truthy(kw.reverse) ? -1 : 1; keyed.sort((p, q) => rev * sortKey(p.k, q.k)); l.splice(0, l.length, ...keyed.map(o => o.x)); return null; },
         copy: () => l.slice(), clear: () => { l.length = 0; return null; },
       }[name];
     }
@@ -1187,20 +1204,45 @@
     }
     function formatSpec(v, spec) {
       if (!spec) return str(v);
-      let m = /^([<>^]?)(\d*)(?:\.(\d+))?([fdsx%]?)$/.exec(spec.replace(/^,/, ''));
-      if (!m) return str(v);
-      let [, align, width, prec, kind] = m;
-      let s;
-      if (kind === 'f' || (prec && isNum(v) && kind !== 's')) s = num(v).toFixed(prec ? +prec : 6);
-      else if (kind === '%') s = (num(v) * 100).toFixed(prec ? +prec : 6) + '%';
-      else if (kind === 'd') s = String(Math.trunc(num(v)));
-      else if (kind === 'x') s = num(v).toString(16);
-      else s = str(v);
-      if (spec.startsWith(',')) s = s.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-      if (width) {
-        const w = +width;
-        if (!align) align = isNum(v) ? '>' : '<';
-        if (align === '<') s = s.padEnd(w); else if (align === '>') s = s.padStart(w); else { const tot = Math.max(0, w - s.length), l = Math.floor(tot / 2); s = ' '.repeat(l) + s + ' '.repeat(tot - l); }
+      // [[fill]align][sign][#][0][width][grouping][.precision][type]
+      const m = /^(?:([^{}])?([<>^=]))?([+\- ]?)(#?)(0?)(\d*)([,_]?)(?:\.(\d+))?([bcdeEfFgGosxX%]?)$/.exec(spec);
+      if (!m) throw E('ValueError', `Invalid format specifier '${spec}' — the part after ':' looks like [fill][align][width][.precision][type], e.g. {x:>8.2f}`);
+      let [, fill, align, sign, alt, zero, width, group, prec, kind] = m;
+      if (typeof v === 'boolean' && !kind) v = str(v);
+      const numeric = typeof v === 'number' || typeof v === 'boolean';
+      if (kind && kind !== 's' && !numeric) throw E('ValueError', `Unknown format code '${kind}' for object of type '${typeName(v)}' (format codes like :${kind} need a number)`);
+      if (kind === 's' && numeric) throw E('ValueError', `Unknown format code 's' for object of type '${typeName(v)}'`);
+      let s, neg = false;
+      if (numeric) {
+        let n = +v;
+        neg = n < 0 || Object.is(n, -0); n = Math.abs(n);
+        const p = prec !== undefined ? +prec : 6;
+        if ('fF'.includes(kind) && kind) s = n.toFixed(p);
+        else if (kind === '%') s = (n * 100).toFixed(p) + '%';
+        else if (kind === 'e' || kind === 'E') { s = n.toExponential(p).replace(/e([+-])(\d)$/, 'e$10$2'); if (kind === 'E') s = s.toUpperCase(); }
+        else if ('dxXbo'.includes(kind) && kind) {
+          if (!Number.isInteger(n)) throw E('ValueError', `Unknown format code '${kind}' for object of type 'float' (use :.0f to show a float without decimals)`);
+          const base = { d: 10, x: 16, X: 16, b: 2, o: 8 }[kind];
+          s = n.toString(base); if (kind === 'X') s = s.toUpperCase();
+          if (alt && base !== 10) s = '0' + { 16: 'x', 2: 'b', 8: 'o' }[base] + s;
+        } else if (kind === 'c') s = String.fromCharCode(n);
+        else if (prec !== undefined) s = fmtNum(Number(n.toPrecision(Math.max(1, p))));
+        else s = fmtNum(n);
+        if (group) { const parts = s.split('.'); parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, group); s = parts.join('.'); }
+        if (neg && !/^0(\.0*)?%?$/.test(s)) s = '-' + s; else if (sign === '+') s = '+' + s; else if (sign === ' ') s = ' ' + s;
+      } else {
+        s = str(v);
+        if (prec !== undefined) s = s.slice(0, +prec);
+      }
+      if (zero && !align) { fill = '0'; align = numeric ? '=' : '<'; }
+      if (width && s.length < +width) {
+        const w = +width, f = fill || ' ', pad = (k) => f.repeat(k);
+        if (!align) align = numeric ? '>' : '<';
+        const tot = w - s.length;
+        if (align === '<') s = s + pad(tot);
+        else if (align === '>') s = pad(tot) + s;
+        else if (align === '^') { const l = Math.floor(tot / 2); s = pad(l) + s + pad(tot - l); }
+        else { const sg = /^[+\- ]/.test(s) ? s[0] : ''; s = sg + pad(tot) + s.slice(sg.length); }
       }
       return s;
     }
@@ -1298,6 +1340,7 @@
       if (f instanceof PyClass) {
         if (f.isException && !(f.lookup('__init__') instanceof PyFunc)) { const inst = new PyInstance(f); inst.attrs.set('args', tuple(args)); inst.isException = true; return inst; }
         const inst = new PyInstance(f);
+        if (isExcClass(f)) { inst.attrs.set('args', tuple(args.slice())); inst.isException = true; }
         const init = f.lookup('__init__');
         if (init instanceof PyFunc) {
           const r = callFunc(init, [inst, ...args], kwargs, inst);
@@ -1500,11 +1543,15 @@
           return;
         }
         case 'Raise': {
-          let exc = s.exc ? evalExpr(s.exc, scope) : null;
+          if (!s.exc) {
+            // a bare `raise` inside an except block re-raises the exception being handled
+            if (scope.handling && scope.handling.length) throw scope.handling[scope.handling.length - 1];
+            throw E('RuntimeError', 'No active exception to re-raise (a bare raise only works inside an except block)');
+          }
+          let exc = evalExpr(s.exc, scope);
           if (exc instanceof PyClass) exc = callValue(exc, [], {});
-          const name = exc instanceof PyInstance ? exc.cls.name : 'RuntimeError';
-          const args = exc instanceof PyInstance && exc.attrs.get('args');
-          const err = E(name, args && args.length ? str(args[0]) : '');
+          if (!(exc instanceof PyInstance) || !isExcClass(exc.cls)) throw E('TypeError', 'exceptions must derive from Exception (you can only raise an exception, like raise ValueError("message"))');
+          const err = E(exc.cls.name, str(exc));
           err.pyValue = exc;
           throw err;
         }
@@ -1523,11 +1570,15 @@
                 if (h.etype) {
                   const t = evalExpr(h.etype, scope);
                   const list = Array.isArray(t) ? t : [t];
-                  match = list.some(c => c instanceof PyClass && (c.name === 'Exception' || c.name === e.pyType || isSubclassName(e.pyValue, c)));
+                  const own = e.pyValue ? null : builtins.vars.get(e.pyType);
+                  match = list.some(c => c instanceof PyClass && (c.name === 'Exception' || c.name === e.pyType || isSubclassName(e.pyValue, c) || (own instanceof PyClass && isSubclassName({ cls: own }, c))));
                 }
                 if (match) {
-                  if (h.ename) { const inst = e.pyValue || new PyInstance(builtins.vars.get(e.pyType) || builtins.vars.get('Exception')); if (!e.pyValue) inst.attrs.set('args', tuple([e.message])); inst.isException = true; assignName(h.ename, inst, scope); }
-                  execBlock(h.body, scope); handled = true; break;
+                  if (!e.pyValue) { const inst = new PyInstance(builtins.vars.get(e.pyType) || builtins.vars.get('Exception')); inst.attrs.set('args', tuple(e.pyType === 'KeyError' && /^'.*'$/.test(e.message) ? [e.message.slice(1, -1)] : [e.message])); inst.isException = true; e.pyValue = inst; }
+                  if (h.ename) assignName(h.ename, e.pyValue, scope);
+                  (scope.handling = scope.handling || []).push(e);
+                  try { execBlock(h.body, scope); } finally { scope.handling.pop(); }
+                  handled = true; break;
                 }
               }
               if (!handled) throw e;
@@ -1540,14 +1591,19 @@
       }
       throw E('SyntaxError', `unsupported statement ${s.type}`);
     }
-    function isSubclassName(inst, cls) { if (!(inst instanceof PyInstance)) return false; let c = inst.cls; while (c) { if (c === cls) return true; c = c.base; } return false; }
+    function isSubclassName(inst, cls) { if (!inst || !inst.cls) return false; let c = inst.cls; while (c) { if (c === cls) return true; c = c.base; } return false; }
 
     // ---------------- expressions
     function evalExpr(e, scope) {
       switch (e.type) {
         case 'Const': return e.value;
         case 'Name': return lookupName(e.id, scope);
-        case 'JoinStr': return e.parts.map(p => p.type === 'FValue' ? (p.repr ? repr(evalExpr(p.value, scope)) : formatSpec(evalExpr(p.value, scope), p.spec)) : str(evalExpr(p, scope))).join('');
+        case 'JoinStr': return e.parts.map(p => {
+          if (p.type !== 'FValue') return str(evalExpr(p, scope));
+          let v = evalExpr(p.value, scope);
+          if (p.conv === 'r' || p.conv === 'a') v = repr(v); else if (p.conv === 's') v = str(v);
+          return formatSpec(v, p.specNode ? evalExpr(p.specNode, scope) : p.spec);
+        }).join('');
         case 'List': return e.items.map(x => evalExpr(x, scope));
         case 'Tuple': return tuple(e.items.map(x => evalExpr(x, scope)));
         case 'SetLit': { const s = new Set(); const seen = []; for (const x of e.items) { const v = evalExpr(x, scope); if (!seen.some(y => eq(y, v))) { seen.push(v); s.add(v); } } return s; }
