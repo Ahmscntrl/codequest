@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>CodeQuest</title>
+  <meta name="description" content="A puzzle platformer where you progress by writing real code in Python or JavaScript.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Nunito:wght@400;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- ============ TITLE ============ -->
+  <section id="screen-title" class="screen">
+    <div class="title-wrap">
+      <h1 class="logo"><span>Code</span>Quest</h1>
+      <p class="tagline">A puzzle platformer where your code changes the world.</p>
+      <canvas id="title-canvas" width="520" height="110"></canvas>
+      <div id="slots" class="slots"></div>
+      <p class="muted foot">Learn Python or JavaScript by building bridges, taming loops, forging weapons with classes, and debugging your way past an army of bugs.</p>
+    </div>
+  </section>
+
+  <!-- ============ CHARACTER CREATOR ============ -->
+  <section id="screen-creator" class="screen hidden">
+    <div class="creator">
+      <div class="cc-left">
+        <h2>Create your Coder</h2>
+        <canvas id="cc-preview" width="300" height="300"></canvas>
+        <button id="cc-random" class="btn ghost">🎲 Randomize</button>
+      </div>
+      <div class="cc-right">
+        <label class="cc-label">Name</label>
+        <input id="cc-name" maxlength="14" placeholder="Your hero's name" autocomplete="off" spellcheck="false">
+        <label class="cc-label">Choose your language <span class="muted">(you can switch any time)</span></label>
+        <div class="langs">
+          <button class="lang-card" data-lang="python"><span class="lc-icon">🐍</span><b>Python</b><small>Clean & readable. Great first language.</small><code>print("Hello")</code></button>
+          <button class="lang-card" data-lang="javascript"><span class="lc-icon">⚡</span><b>JavaScript</b><small>The language of the web.</small><code>console.log("Hello")</code></button>
+        </div>
+        <div class="cc-grid">
+          <div><label class="cc-label">Skin</label><div id="cc-skin" class="swatches"></div></div>
+          <div><label class="cc-label">Shirt</label><div id="cc-shirt" class="swatches"></div></div>
+          <div><label class="cc-label">Pants</label><div id="cc-pants" class="swatches"></div></div>
+          <div><label class="cc-label">Hat colour</label><div id="cc-hatcolor" class="swatches"></div></div>
+        </div>
+        <label class="cc-label">Hat</label><div id="cc-hat" class="opts"></div>
+        <label class="cc-label">Eyes</label><div id="cc-eyes" class="opts"></div>
+        <div class="cc-actions">
+          <button id="cc-back" class="btn ghost">← Back</button>
+          <button id="cc-start" class="btn primary big">Begin Quest ▶</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GAME ============ -->
+  <div id="stage" class="hidden">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div id="hud">
+      <div class="hud-left">
+        <div class="hud-row"><span id="hud-hearts"></span><span id="hud-level" class="hud-level"></span></div>
+        <div id="hud-extra" class="hud-row"></div>
+        <div id="hud-glitches" class="hud-row"></div>
+      </div>
+      <div id="hud-vars" class="hud-vars hidden"></div>
+    </div>
+    <div id="sign" class="sign hidden"></div>
+    <div id="toasts"></div>
+    <div class="keyhints"><kbd>E</kbd> use · <kbd>Q</kbd> debug · <kbd>Esc</kbd> menu</div>
+    <div id="touch">
+      <div class="t-left"><button data-k="left">◀</button><button data-k="right">▶</button></div>
+      <div class="t-right"><button data-k="attack">X</button><button data-k="interact">E</button><button data-k="jump" class="big">⤒</button></div>
+      <div class="t-top"><button data-k="debug">Q</button><button data-k="pause">❚❚</button></div>
+    </div>
+  </div>
+
+  <!-- ============ MODAL ============ -->
+  <div id="modal" class="overlay hidden">
+    <div id="modal-panel" class="panel">
+      <h2 id="modal-title"></h2>
+      <div id="modal-body"></div>
+      <div id="modal-btns" class="btns"></div>
+    </div>
+  </div>
+
+  <!-- ============ CODE EDITOR ============ -->
+  <div id="editor" class="overlay hidden">
+    <div class="ed">
+      <aside class="ed-task">
+        <div class="ed-kicker" id="ed-kicker">TERMINAL</div>
+        <h2 id="ed-title"></h2>
+        <div id="ed-desc" class="ed-desc"></div>
+        <div id="ed-side" class="ed-side"></div>
+        <div id="hints"></div>
+      </aside>
+      <main class="ed-main">
+        <div class="ed-bar">
+          <span id="ed-lang-icon">🐍</span>
+          <select id="ed-lang" title="Language">
+            <option value="python">Python</option>
+            <option value="javascript">JavaScript</option>
+          </select>
+          <span class="spacer"></span>
+          <button id="ed-hint" class="btn small ghost">💡 Hint</button>
+          <button id="ed-reset" class="btn small ghost" title="Reset to starter code">↺ Reset</button>
+          <button id="ed-close" class="btn small ghost" title="Close (Esc)">✕ Close</button>
+          <button id="ed-run" class="btn primary">▶ Run <small>Ctrl+Enter</small></button>
+        </div>
+        <div class="code-wrap">
+          <div id="gutter" class="gutter"></div>
+          <div class="code-box">
+            <div id="err-line" class="err-line hidden"></div>
+            <pre id="code-hl" class="code-hl" aria-hidden="true"></pre>
+            <textarea id="code" spellcheck="false" autocapitalize="off" autocomplete="off" autocorrect="off" wrap="off"></textarea>
+          </div>
+        </div>
+        <div id="feedback" class="feedback"></div>
+        <div class="console-title">Output</div>
+        <div id="console" class="console"></div>
+      </main>
+    </div>
+  </div>
+
+  <script src="js/python.js"></script>
+  <script src="js/runner.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/art.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
