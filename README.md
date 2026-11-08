@@ -50,6 +50,7 @@ Each save opens on a little map of the course: one stop per level, labelled with
   6. **Classes**: objects and attributes → constructor inputs and methods → methods that change attributes → methods with inputs → forge a weapon / adopt a pet
   7. **The Wilds**, an open world: list and string side quests, then the three Core puzzles, FizzBuzz and dictionaries
   8. **The final boss**: Segfault the Bug King
+- **Varied obstacles and fun paths.** Each terminal unlocks a different kind of obstacle: code-block stairs up a cliff, a code bridge over lava, a spike tunnel whose spikes retract, a launch spring over a tall wall, a lava lake that cools to stone, or the classic gate. Between terminals there are hills, lava pits with stepping platforms, moving platforms, climbable towers and hidden **data bits** (💾). Every 20 bits earns a skill point once skill points are unlocked.
 - **Hints that teach.** Hints nudge you toward the idea without giving code to copy. The last hint shows a *similar* problem solved step by step, never the answer to your own terminal (a test checks this).
 - **The `i` in loops is a little friend you can find.** `i` is hidden in the Loops level, and the Staircase Engine won't run until you find them. They hop up each step your loop builds (`i=0`, `i=1`, ...) and follow you for the rest of the game.
 - **Save slots.** There are 3 slots stored in your browser's localStorage. The game saves at checkpoints and when you solve terminals.
@@ -85,7 +86,7 @@ Levels are built with a small map builder in `js/levels.js`. Each character in a
 | `^` | spikes |
 | `~` | lava |
 | `%` | lava a terminal can cool |
-| `A` / `B` | gates |
+| `A`–`H` | gates (a terminal's effect opens its letter) |
 | `_` | bridge slot |
 | `S` | stair origin |
 | `P` | player start |
@@ -94,11 +95,14 @@ Levels are built with a small map builder in `js/levels.js`. Each character in a
 | `?` | sign |
 | `@` | the `i` friend |
 | `e` / `w` | walking / flying bug |
+| `o` | data bit collectible |
 | `s` | spring |
 | `K` | checkpoint |
 | `$` | skill shrine |
 | `F` | exit portal |
 | `Z` | boss |
+
+Obstacles tied to a terminal are placed with the helpers in `js/levels.js` (`room(m, x, n, 'climb' | 'bridge' | 'spikes' | 'spring' | 'lava' | 'wall', group)`), and travel pieces with `TR.hills / pit / mover / tower`. A terminal whose effect calls `openGate('C')` unlocks every group-C obstacle in its level.
 
 A challenge has a description, starter code for each language, the API functions it exposes, optional test cases, a `check()` function and a world `effect()`.
 

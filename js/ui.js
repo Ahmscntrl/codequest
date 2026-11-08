@@ -75,6 +75,7 @@
         case 'fail': this.tone(220, 0.18, 'square', 0.05, 150); break;
         case 'glitch': for (let i = 0; i < 5; i++) this.tone(200 + Math.random() * 800, 0.05, 'square', 0.04, null, i * 0.04); break;
         case 'click': this.tone(800, 0.03, 'square', 0.03); break;
+        case 'bit': this.tone(1200, 0.06, 'square', 0.025, 1600); break;
         case 'victory': [523, 659, 784, 1047, 784, 1047, 1319].forEach((f, i) => this.tone(f, 0.2, 'triangle', 0.07, null, i * 0.13)); break;
       }
     },
@@ -458,6 +459,14 @@
       $('#mp-tut').onclick = () => { Sound.play('click'); this.openTutorial(i); };
     }
 
+    onBit() {
+      const n = this.save.bitsCollected;
+      if (n % 20 === 0) {
+        if (this.save.spUnlocked) { this.save.sp += 1; this.toast(`💾 ${n} data bits collected: <b>+1 skill point!</b>`, 'good'); }
+        else this.toast(`💾 ${n} data bits collected! Keep them coming — once skill points unlock, every 20 bits earns one.`, 'info');
+      }
+      this.updateHUD();
+    }
     onBugSquashed() {
       this.save.bugs = (this.save.bugs || 0) + 1;
       if (this.save.spUnlocked && this.save.bugs % 3 === 0) { this.save.sp += 1; this.toast('🐛 3 bugs squashed: <b>+1 skill point!</b>', 'good'); }
@@ -499,6 +508,7 @@
       if (s.spUnlocked) extras.push(`<button class="chip sp" data-act="skills">⭐ ${s.sp} SP <kbd>K</kbd></button>`);
       if (LEVELS[s.level].openWorld) extras.push(`<span class="chip">💠 Cores ${g.coreCount()}/3</span>`);
       extras.push(`<span class="chip">🐛 ${s.bugs || 0}</span>`);
+      extras.push(`<span class="chip" title="Data bits — every 20 earn a skill point">💾 ${s.bitsCollected || 0}</span>`);
       $('#hud-extra').innerHTML = extras.join('');
       const gl = Object.keys(s.glitches || {});
       $('#hud-glitches').innerHTML = gl.map(k => `<button class="chip glitch" data-act="debug" style="--c:${GLITCHES[k].color}">${GLITCHES[k].icon} ${GLITCHES[k].name} <small>${GLITCHES[k].effect}</small></button>`).join('') + (gl.length ? '<span class="chip hint">press <kbd>Q</kbd> to debug</span>' : '');
