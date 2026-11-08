@@ -167,16 +167,6 @@
     return 'Read the error message carefully — it usually tells you exactly what went wrong.';
   }
 
-  // spread chapter 2 stops along a winding path when a chapter doesn't give its own points
-  function autoPoints(n) {
-    const out = [];
-    for (let i = 0; i < n; i++) {
-      const t = n === 1 ? 0.5 : i / (n - 1);
-      out.push([Math.round(110 + t * 780), Math.round(300 + Math.sin(t * Math.PI * 2.2) * 170)]);
-    }
-    return out;
-  }
-
   function corruptCode(code, lang) {
     const muts = lang === 'python'
       ? [c => c.replace(/:(\s*(#.*)?)$/m, '$1'), c => c.replace(/\bfire\(/, 'fier('), c => c.replace(/\brange\(/, 'rnage('), c => c.replace(/\(([^()\n]*)\)(\s*:)/, '($1$2'), c => c.replace(/^(\s+)fire/m, 'fire')]
@@ -225,6 +215,12 @@
       if (this.chapter() === 2) { const c = this.save.ch2 || (this.save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} }); if (!c.checkpoints) c.checkpoints = {}; return c; }
       return this.save;
     }
+    levelsOf(ch) { return GameData.levelsFor(ch, this.save.lang); }
+    progOf(ch) {
+      if (ch !== 2) return this.save;
+      const c = this.save.ch2 || (this.save.ch2 = { level: 0, maxLevel: 0, completed: false, checkpoints: {} }); if (!c.checkpoints) c.checkpoints = {}; return c;
+    }
+    chUnlocked(ch) { return ch === 1 || this.ch2Unlocked(); }
     ch2Unlocked() { return !!(this.save && this.save.completed && GameData.CHAPTER2[this.save.lang]); }
     ctx() { return { lang: this.save.lang, save: this.save, vars: this.save.vars, name: this.save.hero.name, game: this.game }; }
 
@@ -481,84 +477,97 @@
     }
     // ------------------------------------------------------------ level map
     // Where "Continue" takes you: the furthest level you've unlocked (or the Wilds once the game is beaten).
-    frontier() {
-      const LV = this.levels(), P = this.prog();
-      if (this.chapter() === 2) return P.completed ? LV.length - 1 : Math.min(P.maxLevel || 0, LV.length - 1);
+    frontier(ch) {
+      ch = ch || this.chapter();
+      const LV = this.levelsOf(ch), P = this.progOf(ch);
+      if (ch === 2) return P.completed ? LV.length - 1 : Math.min(P.maxLevel || 0, LV.length - 1);
       return this.save.completed ? WORLD_INDEX : Math.min(this.save.maxLevel || 0, LEVELS.length - 1);
     }
-    levelDone(i) {
-      const LV = this.levels(), P = this.prog();
-      if (this.chapter() === 2) return !!P.completed || i < (P.maxLevel || 0);
+    levelDone(i, ch) {
+      ch = ch || this.chapter();
+      const LV = this.levelsOf(ch), P = this.progOf(ch);
+      if (ch === 2) return !!P.completed || i < (P.maxLevel || 0);
       return LV[i].boss ? !!this.save.completed : i < (this.save.maxLevel || 0);
     }
     showMap(fromGame) {
       if (this.screen === 'game' && this.game.running) this.persist();
       this.mapFromGame = !!fromGame && !!this.game.tiles;
       this.game.running = false;
-      this.mapSel = this.frontier();
+      this.mapCh = this.chapter();
+      this.mapSel = this.frontier(this.mapCh);
       this.showScreen('map');
       this.renderMap();
     }
+    // The map shows any chapter and any level, even locked ones, so you can see what's coming.
+    // Only unlocked levels can be played.
     renderMap() {
-      const s = this.save, ch = this.chapter(), LEVELS = this.levels(), P = this.prog();
-      const max = P.maxLevel || 0, front = this.frontier();
+      const s = this.save, ch = this.mapCh || this.chapter(), LV = this.levelsOf(ch), P = this.progOf(ch);
+      const open = this.chUnlocked(ch);
+      const max = open ? (P.maxLevel || 0) : -1, front = open ? this.frontier(ch) : -1;
+      if (this.mapSel === null || this.mapSel === undefined || this.mapSel >= LV.length) this.mapSel = Math.max(0, front);
       $('#map-back').classList.toggle('hidden', !this.mapFromGame);
       $('#map-lang').textContent = LANGS[s.lang].label;
-      // chapter tabs
+      // chapter tabs: every chapter can be opened; locked ones are a preview
       const def2 = GameData.CHAPTER2[s.lang];
       $('#map-tabs').innerHTML = `<button class="map-tab ${ch === 1 ? 'on' : ''}" data-ch="1">Chapter 1<small>${escapeHTML(LANGS[s.lang].label)} basics</small></button>` +
         (def2 ? `<button class="map-tab ${ch === 2 ? 'on' : ''} ${this.ch2Unlocked() ? '' : 'locked'}" data-ch="2">Chapter 2<small>${escapeHTML(def2.title)}</small></button>` : '');
       $$('#map-tabs .map-tab').forEach(b => b.onclick = () => {
         const want = +b.dataset.ch;
         Sound.play('click');
-        if (want === 2 && !this.ch2Unlocked()) { this.toast(`Chapter 2 unlocks when you defeat <b>Segfault</b> at the end of Chapter 1.`, 'info'); return; }
-        if (want === this.chapter()) return;
-        this.save.chapter = want; this.persist();
-        this.mapFromGame = false;
-        this.mapSel = this.frontier();
+        if (want === ch) return;
+        this.mapCh = want;
+        this.mapSel = this.chUnlocked(want) ? this.frontier(want) : 0;
         this.renderMap();
       });
-      $('#map-board').className = 'map-board' + (ch === 2 ? ' ch2 ch2-' + s.lang : '');
-      // node positions on a 1000 x 560 map
-      const pts = ch === 2 ? (def2.mapPoints || autoPoints(LEVELS.length)) : [[90, 460], [255, 395], [175, 235], [360, 135], [545, 220], [480, 405], [730, 430], [880, 190]];
-      const regionColor = { meadow: '#3f8f4f', cave: '#4b3f8a', circuit: '#1d6b70', wilds: '#a35a3a', lair: '#7a1838', isle: '#1f8a8a', neon: '#7a2fa8', forge: '#a3502a', crystal: '#4a5fb8', coffee: '#7a5232' };
-      let svg = ch === 2 && def2.mapTitle ? `<text x="500" y="44" text-anchor="middle" class="map-ch-title">${escapeHTML(def2.title)}</text>` : '';
-      LEVELS.forEach((L, i) => { const [x, y] = pts[i]; svg += `<ellipse cx="${x}" cy="${y + 8}" rx="105" ry="70" fill="${regionColor[L.theme]}" opacity="0.35"/>`; });
-      for (let i = 0; i < LEVELS.length - 1; i++) {
+      // this language's board for this chapter: its own scenery, colours and route
+      const board = MapArt.board(s.lang, ch, LV.length);
+      const pts = board.pts;
+      const brd = $('#map-board');
+      brd.className = 'map-board' + (open ? '' : ' preview');
+      brd.style.background = board.bg;
+      let svg = board.back;
+      LV.forEach((L, i) => { const [x, y] = pts[i]; svg += board.pin ? board.pin(x, y) : `<ellipse cx="${x}" cy="${y + 8}" rx="100" ry="66" fill="${board.region(i)}" opacity="0.45"/>`; });
+      for (let i = 0; i < LV.length - 1; i++) {
         const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
         const cx = (x1 + x2) / 2 + (y2 - y1) * 0.25, cy = (y1 + y2) / 2 - (x2 - x1) * 0.25;
         const walked = i + 1 <= max;
-        svg += `<path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" class="map-path ${walked ? 'walked' : ''}"/>`;
+        svg += `<path d="M${x1} ${y1} Q${cx} ${cy} ${x2} ${y2}" class="map-path ${walked ? 'walked' : ''}" style="stroke:${walked ? board.walked : board.path}"/>`;
       }
-      const nodes = LEVELS.map((L, i) => {
+      const nodes = LV.map((L, i) => {
         const [x, y] = pts[i];
-        const unlocked = i <= max, done = this.levelDone(i);
+        const unlocked = i <= max, done = open && this.levelDone(i, ch);
         const cls = ['map-node', unlocked ? '' : 'locked', done ? 'done' : '', i === front ? 'current' : '', i === this.mapSel ? 'sel' : ''].join(' ');
-        return `<button class="${cls}" data-i="${i}" style="left:${x / 10}%;top:${y / 5.6}%" ${unlocked ? '' : `title="Finish ${escapeHTML(LEVELS[i - 1].topic)} to unlock"`}>
+        return `<button class="${cls}" data-i="${i}" style="left:${x / 10}%;top:${y / 5.6}%">
           <span class="mn-dot">${i + 1}</span>
           <span class="mn-label">${escapeHTML(L.topic)}</span></button>`;
       }).join('');
-      const [hx, hy] = pts[front];
-      $('#map-board').innerHTML = `<svg viewBox="0 0 1000 560" preserveAspectRatio="none">${svg}</svg>${nodes}
-        <canvas id="map-hero" width="60" height="70" style="left:${hx / 10}%;top:${hy / 5.6}%"></canvas>
-        ${ch === 2 ? `<div class="map-ch-label">${escapeHTML(def2.title)}</div>` : ''}`;
-      Art.drawHero($('#map-hero').getContext('2d'), 30, 66, s.hero, { scale: 1.3, t: 0 });
+      const banner = open ? '' : `<div class="map-preview">Preview · ${ch === 2 ? 'defeat <b>Segfault</b> at the end of Chapter 1 to unlock this chapter' : 'locked'}</div>`;
+      brd.innerHTML = `<svg viewBox="0 0 1000 560" preserveAspectRatio="none">${svg}</svg>${nodes}
+        ${open ? `<canvas id="map-hero" width="60" height="70" style="left:${pts[front][0] / 10}%;top:${pts[front][1] / 5.6}%"></canvas>` : ''}
+        <div class="map-ch-label">${escapeHTML(ch === 2 && def2 ? def2.title : board.name)}</div>${banner}`;
+      if (open) Art.drawHero($('#map-hero').getContext('2d'), 30, 66, s.hero, { scale: 1.3, t: 0 });
       $$('#map-board .map-node').forEach(b => b.onclick = () => {
-        const i = +b.dataset.i;
         Sound.play('click');
-        if (i > max) { this.toast(`Finish <b>${escapeHTML(LEVELS[i - 1].topic)}</b> to unlock this level.`, 'info'); return; }
-        this.mapSel = i; this.renderMap();
+        this.mapSel = +b.dataset.i; this.renderMap();
       });
-      // selected level panel
-      const i = this.mapSel, L = LEVELS[i], done = this.levelDone(i);
-      const label = i === front && !done ? (L.terminals.some(id => s.solved[id] !== undefined) || P.checkpoints[i] ? 'Continue ▶' : 'Start ▶') : done ? '↺ Replay' : 'Play ▶';
+      // selected level panel: what the level teaches and its terminals, playable or not
+      const i = this.mapSel, L = LV[i];
+      const locked = i > max, done = open && this.levelDone(i, ch);
+      const why = !open ? (ch === 2 ? 'Defeat Segfault in Chapter 1 to unlock' : 'Locked') : `Finish ${i > 0 ? LV[i - 1].topic : 'the previous level'} to unlock`;
+      const label = locked ? 'Locked' : i === front && !done ? (L.terminals.some(id => s.solved[id] !== undefined) || P.checkpoints[i] ? 'Continue ▶' : 'Start ▶') : done ? '↺ Replay' : 'Play ▶';
+      const terms = L.terminals.map(id => {
+        const t = CH[id]; const solved = s.solved[id] !== undefined;
+        return `<span class="mp-term ${solved ? 'solved' : ''}">${solved ? '✔ ' : ''}${escapeHTML(t.title.replace(/^Side Quest — /, ''))}</span>`;
+      }).join('');
       $('#map-panel').innerHTML = `
-        <div><div class="mp-kicker">${ch === 2 ? 'Chapter 2 · ' : ''}Level ${i + 1}${done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
+        <div><div class="mp-kicker">Chapter ${ch} · Level ${i + 1}${locked ? ' · locked' : done ? ' · ✔ complete' : i === front ? ' · you are here' : ''}</div>
         <div class="mp-title">${escapeHTML(L.topic)}</div>
-        <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div></div>
-        <div class="mp-btns"><button class="btn" id="mp-tut">Tutorial</button><button class="btn primary big" id="mp-go">${label}</button></div>`;
-      $('#mp-go').onclick = () => { Sound.play('click'); this.loadLevel(i); };
-      $('#mp-tut').onclick = () => { Sound.play('click'); this.openTutorial(i); };
+        <div class="mp-sub">${L.name !== L.topic ? escapeHTML(L.name) + ' — ' : ''}${escapeHTML(L.blurb)}</div>
+        <div class="mp-terms">${terms}</div>
+        ${locked ? `<div class="mp-why">${escapeHTML(why)}. You can still read the tutorial.</div>` : ''}</div>
+        <div class="mp-btns"><button class="btn" id="mp-tut">${locked ? 'Preview tutorial' : 'Tutorial'}</button><button class="btn primary big" id="mp-go" ${locked ? `disabled title="${escapeHTML(why)}"` : ''}>${label}</button></div>`;
+      $('#mp-go').onclick = () => { if (locked) return; Sound.play('click'); this.save.chapter = ch; this.loadLevel(i); };
+      $('#mp-tut').onclick = () => { Sound.play('click'); this.openTutorial(i, 0, ch); };
     }
 
     onBit() {
@@ -936,11 +945,12 @@
       btn.innerHTML = ed.hints >= max ? 'No more hints' : ed.hints === hints.length && sim ? 'Similar example' : `Hint ${ed.hints + 1}/${hints.length}`;
     }
     // ------------------------------------------------------------ tutorials
-    openTutorial(levelIndex, startPage) {
-      const L = this.levels()[levelIndex];
+    openTutorial(levelIndex, startPage, ch) {
+      ch = ch || this.chapter();
+      const L = this.levelsOf(ch)[levelIndex];
       const pages = GameData.tutorialFor(L.id, this.save.lang);
       if (!pages.length) return;
-      this.tut = { level: levelIndex, page: startPage || 0, pages, code: {} };
+      this.tut = { level: levelIndex, ch, page: startPage || 0, pages, code: {} };
       this.tutOpen = true;
       this.setFrozen();
       $('#tutorial').classList.remove('hidden');
@@ -955,7 +965,7 @@
       if (this.editorOpen) setTimeout(() => $('#code').focus(), 30);
     }
     renderTutorial() {
-      const T = this.tut, lang = this.save.lang, L = this.levels()[T.level];
+      const T = this.tut, lang = this.save.lang, L = this.levelsOf(T.ch || this.chapter())[T.level];
       const p = T.pages[T.page];
       const fill = (h) => GameData.fillTutorial(h, lang);
       $('#tut-kicker').textContent = `Level ${T.level + 1} tutorial · ${L.topic}`;
@@ -973,7 +983,7 @@
       }
       $('#tut-prev').disabled = T.page === 0;
       const last = T.page === T.pages.length - 1;
-      $('#tut-next').innerHTML = last ? (this.editorOpen ? 'Back to the terminal ▶' : 'Start the level ▶') : 'Next ▶';
+      $('#tut-next').innerHTML = last ? (this.editorOpen ? 'Back to the terminal ▶' : this.screen === 'map' ? 'Back to the map' : 'Start the level ▶') : 'Next ▶';
       $('#tut-count').textContent = `${T.page + 1} / ${T.pages.length}`;
     }
     async runTutorial() {

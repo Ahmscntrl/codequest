@@ -327,10 +327,14 @@ body.touch .keyhints { display: none; }
 .map-tab.on { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(78,240,255,.15); }
 .map-tab.locked { opacity: .55; }
 .map-tab.locked small::before { content: 'Locked · '; }
-.map-board.ch2 { background: radial-gradient(ellipse at center, #22183f 0%, #120c26 75%); }
-.map-board.ch2-python { background: radial-gradient(ellipse at 50% 60%, #0f4e5a 0%, #082832 80%); }
-.map-board.ch2-javascript { background: radial-gradient(ellipse at 50% 50%, #3a1460 0%, #12062a 80%); }
-.map-board.ch2-cpp { background: radial-gradient(ellipse at 50% 60%, #5a2a14 0%, #1e0d06 80%); }
-.map-board.ch2-csharp { background: radial-gradient(ellipse at 50% 40%, #2a2f7a 0%, #0c0e2e 80%); }
-.map-board.ch2-java { background: radial-gradient(ellipse at 50% 60%, #4e3220 0%, #1c110a 80%); }
 .map-ch-label { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); font-family: var(--pixel); font-size: clamp(11px, 1.6vw, 16px); color: rgba(255,255,255,.55); letter-spacing: 1px; pointer-events: none; white-space: nowrap; }
+.map-board.preview .map-node .mn-dot { opacity: .8; }
+.map-preview { position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); background: rgba(8,10,24,.8); border: 2px solid rgba(255,255,255,.25); color: #fff; padding: 6px 14px; border-radius: 999px; font-size: clamp(11px, 1.4vw, 14px); white-space: nowrap; pointer-events: none; }
+.map-node.locked { cursor: pointer; }
+.map-node.locked.sel .mn-dot { border-color: #9aa3d8; background: #262d55; }
+.map-ch-label { background: rgba(8,10,24,.55); padding: 4px 12px; border-radius: 8px; color: rgba(255,255,255,.85); }
+.mp-terms { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mp-term { font-size: 12px; font-weight: 800; background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 999px; padding: 3px 10px; color: #cfd5ff; }
+.mp-term.solved { color: var(--good); border-color: rgba(88,255,139,.4); }
+.mp-why { margin-top: 8px; font-size: 13px; color: var(--muted); }
+.btn[disabled] { opacity: .5; cursor: not-allowed; filter: grayscale(.6); }
